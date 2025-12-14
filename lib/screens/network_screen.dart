@@ -606,6 +606,7 @@ class _NetworkScreenState extends State<NetworkScreen>
           child: Icon(icon, color: iconColor),
         ),
         title: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Text(
@@ -653,14 +654,15 @@ class _NetworkScreenState extends State<NetworkScreen>
               ),
             if (!isNetwork && member.isActive == true)
               Container(
+                margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  'Actif',
-                  style: TextStyle(
+                child: Text(
+                  TranslationService.translate(context, 'status_active'),
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
