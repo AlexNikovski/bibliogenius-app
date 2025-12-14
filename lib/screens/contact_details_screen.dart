@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/contact.dart';
 import '../services/translation_service.dart';
 import '../services/api_service.dart';
+import '../providers/theme_provider.dart';
 
 class ContactDetailsScreen extends StatefulWidget {
   final Contact contact;
