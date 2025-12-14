@@ -219,6 +219,15 @@ class ThemeProvider with ChangeNotifier {
     final languageCode = prefs.getString('languageCode');
     if (languageCode != null) {
       _locale = Locale(languageCode);
+    } else {
+      // Auto-detect system language on first launch
+      final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
+      final supportedLanguages = ['en', 'fr'];
+      if (supportedLanguages.contains(systemLocale.languageCode)) {
+        _locale = Locale(systemLocale.languageCode);
+      } else {
+        _locale = const Locale('en'); // Fallback to English
+      }
     }
     
     _currentAvatarId = prefs.getString('avatarId') ?? 'individual';
