@@ -300,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Divider(),
                 ListTile(
                   title: Text(TranslationService.translate(context, 'profile_type')),
-                  subtitle: Text(_config?['profile_type'] == 'individual' ? TranslationService.translate(context, 'individual') : TranslationService.translate(context, 'professional')),
+                  subtitle: Text(TranslationService.translate(context, _config?['profile_type'] ?? 'individual') ?? _config?['profile_type'] ?? 'Individual'),
                   trailing: DropdownButton<String>(
                     value: _config?['profile_type'],
                     underline: Container(),
@@ -314,7 +314,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (value == null) return;
                       try {
                         final api = Provider.of<ApiService>(context, listen: false);
-                        await api.updateProfile(profileType: value);
+                        // Update provider immediately for UI sync
+                        await Provider.of<ThemeProvider>(context, listen: false).setProfileType(value, apiService: api);
                         _fetchStatus(); // Refresh to get updated config (including side effects)
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -620,12 +621,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         break;
       case 'kid':
         advantages = {
-          'profile_advantage_wishlist': ['✓'],
           'profile_advantage_simple_ui': ['✓'],
+          'profile_advantage_borrow': ['✓'],
+          'profile_advantage_lend': ['✓'],
+          'profile_advantage_wishlist': ['✓'],
         };
         restrictions = {
-          'profile_restriction_no_lend': ['✗'],
-          'profile_restriction_no_borrow': ['✗'],
+          // No specific restrictions for now, just simplified UI
         };
         break;
     }

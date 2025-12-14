@@ -70,18 +70,20 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
           // Action buttons
           Row(
             children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () => _borrowFromContact(context),
-                  icon: const Icon(Icons.book_outlined),
-                  label: Text(TranslationService.translate(context, 'borrow_from_contact') ?? 'Borrow a book'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+              if (!Provider.of<ThemeProvider>(context).isLibrarian) ...[
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _borrowFromContact(context),
+                    icon: const Icon(Icons.book_outlined),
+                    label: Text(TranslationService.translate(context, 'borrow_from_contact') ?? 'Borrow a book'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _lendToContact(context),
