@@ -112,28 +112,21 @@ class BadgeCollectionWidget extends StatelessWidget {
                               ),
                             ),
                             // Badge icon
-                            ColorFiltered(
-                              colorFilter: isUnlocked 
-                                  ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
-                                  : const ColorFilter.matrix(<double>[
-                                      0.2126, 0.7152, 0.0722, 0, 0,
-                                      0.2126, 0.7152, 0.0722, 0, 0,
-                                      0.2126, 0.7152, 0.0722, 0, 0,
-                                      0, 0, 0, 1, 0,
-                                    ]),
-                              child: Opacity(
-                                opacity: isUnlocked ? 1.0 : 0.5,
-                                child: SvgPicture.asset(
-                                  badgeInfo.assetPath,
-                                  width: 48,
-                                  height: 48,
-                                  fit: BoxFit.contain,
-                                  placeholderBuilder: (context) => Icon(
-                                    Icons.emoji_events, 
-                                    size: 28, 
-                                    color: Colors.grey[400]
-                                  ),
-                                ),
+                            Opacity(
+                              opacity: isUnlocked ? 1.0 : 0.5,
+                              child: SvgPicture.asset(
+                                badgeInfo.assetPath,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.contain,
+                                colorFilter: isUnlocked 
+                                    ? null
+                                    : const ColorFilter.matrix(<double>[
+                                        0.2126, 0.7152, 0.0722, 0, 0,
+                                        0.2126, 0.7152, 0.0722, 0, 0,
+                                        0.2126, 0.7152, 0.0722, 0, 0,
+                                        0, 0, 0, 1, 0,
+                                      ]),
                               ),
                             ),
                             // Lock icon for locked badges
