@@ -11,6 +11,7 @@ import 'services/auth_service.dart';
 import 'services/api_service.dart';
 import 'services/sync_service.dart';
 import 'services/translation_service.dart';
+import 'services/mdns_service.dart';
 import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/book_list_screen.dart';
@@ -133,6 +134,16 @@ void main() async {
       debugPrint('FFI Backend initialized: $result');
       useFfi = true;
       debugPrint('FFI: useFfi set to TRUE');
+      
+      // Auto-initialize mDNS for local network discovery (Native Bonjour)
+      // This makes the app discoverable on the local WiFi network
+      try {
+        final libraryName = themeProvider.libraryName ?? 'BiblioGenius Library';
+        await MdnsService.startAnnouncing(libraryName, 8000);
+        await MdnsService.startDiscovery();
+      } catch (mdnsError) {
+        debugPrint('mDNS: Init failed (non-blocking): $mdnsError');
+      }
     } catch (e, stackTrace) {
       debugPrint('FFI initialization failed: $e');
       debugPrint('FFI stack trace: $stackTrace');

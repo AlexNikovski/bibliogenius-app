@@ -30,6 +30,8 @@
 	<string>NSApplication</string>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to scan barcodes</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>BiblioGenius discovers other libraries on your local network to share books</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

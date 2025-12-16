@@ -14,6 +14,7 @@ import '../src/rust/api/frb.dart' as frb;
 import '../src/rust/frb_generated.dart';
 import 'auth_service.dart';
 import 'ffi_service.dart';
+import 'mdns_service.dart';
 import 'open_library_service.dart';
 
 class ApiService {
@@ -970,27 +971,25 @@ class ApiService {
 
   /// Get libraries discovered on the local network via mDNS
   Future<Response> getLocalPeers() async {
-    if (useFfi) {
-      // mDNS requires the Rust backend to be running
-      return Response(
-        requestOptions: RequestOptions(path: '/api/discovery/local'),
-        statusCode: 200,
-        data: {'peers': [], 'count': 0, 'mdns_active': false},
-      );
-    }
-    return await _dio.get('/api/discovery/local');
+    // Use native MdnsService for local discovery (works on iOS/macOS via Bonjour)
+    final peers = MdnsService.getPeersJson();
+    final isActive = MdnsService.isActive;
+    debugPrint('🔍 ApiService: getLocalPeers() returning ${peers.length} peers');
+    return Response(
+      requestOptions: RequestOptions(path: '/api/discovery/local'),
+      statusCode: 200,
+      data: {'peers': peers, 'count': peers.length, 'mdns_active': isActive},
+    );
   }
 
   /// Get mDNS service status (active/inactive)
   Future<Response> getMdnsStatus() async {
-    if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/discovery/status'),
-        statusCode: 200,
-        data: {'active': false, 'service_type': '_bibliogenius._tcp.local.'},
-      );
-    }
-    return await _dio.get('/api/discovery/status');
+    final isActive = MdnsService.isActive;
+    return Response(
+      requestOptions: RequestOptions(path: '/api/discovery/status'),
+      statusCode: 200,
+      data: {'active': isActive, 'service_type': '_bibliogenius._tcp'},
+    );
   }
 
   /// Connect to a locally discovered peer by URL

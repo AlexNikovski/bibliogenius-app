@@ -9,7 +9,7 @@ import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'frb.freezed.dart';
 
 // These functions are ignored because they are not marked as `pub`: `db`, `install_panic_hook`, `runtime`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`, `from`, `from`, `from`
 
 /// Initialize the FFI backend with database at the given path
 /// Must be called before any other FFI functions
@@ -25,6 +25,34 @@ String getVersion() => RustLib.instance.api.crateApiFrbGetVersion();
 /// Simple greeting function to test the bridge
 String greet({required String name}) =>
     RustLib.instance.api.crateApiFrbGreet(name: name);
+
+/// Check if mDNS discovery service is currently active
+/// This is a sync function that can be called to check status
+bool isMdnsAvailable() => RustLib.instance.api.crateApiFrbIsMdnsAvailable();
+
+/// Get the mDNS service type used for discovery
+String getMdnsServiceType() =>
+    RustLib.instance.api.crateApiFrbGetMdnsServiceType();
+
+/// Get locally discovered peers via mDNS
+/// This returns peers that have been found on the local network
+Future<List<FrbDiscoveredPeer>> getLocalPeersFfi() =>
+    RustLib.instance.api.crateApiFrbGetLocalPeersFfi();
+
+/// Initialize mDNS service for discovery
+/// Must be called to start announcing and discovering peers
+Future<String> initMdnsFfi({
+  required String libraryName,
+  required int port,
+  String? libraryId,
+}) => RustLib.instance.api.crateApiFrbInitMdnsFfi(
+  libraryName: libraryName,
+  port: port,
+  libraryId: libraryId,
+);
+
+/// Stop mDNS service
+Future<String> stopMdnsFfi() => RustLib.instance.api.crateApiFrbStopMdnsFfi();
 
 /// Create a new book
 Future<FrbBook> createBook({required FrbBook book}) =>
@@ -170,6 +198,19 @@ sealed class FrbContact with _$FrbContact {
     String? notes,
     required bool isActive,
   }) = _FrbContact;
+}
+
+/// Discovered peer on local network (FFI-compatible)
+@freezed
+sealed class FrbDiscoveredPeer with _$FrbDiscoveredPeer {
+  const factory FrbDiscoveredPeer({
+    required String name,
+    required String host,
+    required int port,
+    required List<String> addresses,
+    String? libraryId,
+    required String discoveredAt,
+  }) = _FrbDiscoveredPeer;
 }
 
 /// Simplified loan structure for FFI

@@ -604,6 +604,278 @@ as bool,
 }
 
 /// @nodoc
+mixin _$FrbDiscoveredPeer {
+
+ String get name; String get host; int get port; List<String> get addresses; String? get libraryId; String get discoveredAt;
+/// Create a copy of FrbDiscoveredPeer
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$FrbDiscoveredPeerCopyWith<FrbDiscoveredPeer> get copyWith => _$FrbDiscoveredPeerCopyWithImpl<FrbDiscoveredPeer>(this as FrbDiscoveredPeer, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FrbDiscoveredPeer&&(identical(other.name, name) || other.name == name)&&(identical(other.host, host) || other.host == host)&&(identical(other.port, port) || other.port == port)&&const DeepCollectionEquality().equals(other.addresses, addresses)&&(identical(other.libraryId, libraryId) || other.libraryId == libraryId)&&(identical(other.discoveredAt, discoveredAt) || other.discoveredAt == discoveredAt));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,name,host,port,const DeepCollectionEquality().hash(addresses),libraryId,discoveredAt);
+
+@override
+String toString() {
+  return 'FrbDiscoveredPeer(name: $name, host: $host, port: $port, addresses: $addresses, libraryId: $libraryId, discoveredAt: $discoveredAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $FrbDiscoveredPeerCopyWith<$Res>  {
+  factory $FrbDiscoveredPeerCopyWith(FrbDiscoveredPeer value, $Res Function(FrbDiscoveredPeer) _then) = _$FrbDiscoveredPeerCopyWithImpl;
+@useResult
+$Res call({
+ String name, String host, int port, List<String> addresses, String? libraryId, String discoveredAt
+});
+
+
+
+
+}
+/// @nodoc
+class _$FrbDiscoveredPeerCopyWithImpl<$Res>
+    implements $FrbDiscoveredPeerCopyWith<$Res> {
+  _$FrbDiscoveredPeerCopyWithImpl(this._self, this._then);
+
+  final FrbDiscoveredPeer _self;
+  final $Res Function(FrbDiscoveredPeer) _then;
+
+/// Create a copy of FrbDiscoveredPeer
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? host = null,Object? port = null,Object? addresses = null,Object? libraryId = freezed,Object? discoveredAt = null,}) {
+  return _then(_self.copyWith(
+name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,host: null == host ? _self.host : host // ignore: cast_nullable_to_non_nullable
+as String,port: null == port ? _self.port : port // ignore: cast_nullable_to_non_nullable
+as int,addresses: null == addresses ? _self.addresses : addresses // ignore: cast_nullable_to_non_nullable
+as List<String>,libraryId: freezed == libraryId ? _self.libraryId : libraryId // ignore: cast_nullable_to_non_nullable
+as String?,discoveredAt: null == discoveredAt ? _self.discoveredAt : discoveredAt // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [FrbDiscoveredPeer].
+extension FrbDiscoveredPeerPatterns on FrbDiscoveredPeer {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _FrbDiscoveredPeer value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _FrbDiscoveredPeer() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _FrbDiscoveredPeer value)  $default,){
+final _that = this;
+switch (_that) {
+case _FrbDiscoveredPeer():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _FrbDiscoveredPeer value)?  $default,){
+final _that = this;
+switch (_that) {
+case _FrbDiscoveredPeer() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String host,  int port,  List<String> addresses,  String? libraryId,  String discoveredAt)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _FrbDiscoveredPeer() when $default != null:
+return $default(_that.name,_that.host,_that.port,_that.addresses,_that.libraryId,_that.discoveredAt);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String host,  int port,  List<String> addresses,  String? libraryId,  String discoveredAt)  $default,) {final _that = this;
+switch (_that) {
+case _FrbDiscoveredPeer():
+return $default(_that.name,_that.host,_that.port,_that.addresses,_that.libraryId,_that.discoveredAt);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String host,  int port,  List<String> addresses,  String? libraryId,  String discoveredAt)?  $default,) {final _that = this;
+switch (_that) {
+case _FrbDiscoveredPeer() when $default != null:
+return $default(_that.name,_that.host,_that.port,_that.addresses,_that.libraryId,_that.discoveredAt);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _FrbDiscoveredPeer implements FrbDiscoveredPeer {
+  const _FrbDiscoveredPeer({required this.name, required this.host, required this.port, required final  List<String> addresses, this.libraryId, required this.discoveredAt}): _addresses = addresses;
+  
+
+@override final  String name;
+@override final  String host;
+@override final  int port;
+ final  List<String> _addresses;
+@override List<String> get addresses {
+  if (_addresses is EqualUnmodifiableListView) return _addresses;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_addresses);
+}
+
+@override final  String? libraryId;
+@override final  String discoveredAt;
+
+/// Create a copy of FrbDiscoveredPeer
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$FrbDiscoveredPeerCopyWith<_FrbDiscoveredPeer> get copyWith => __$FrbDiscoveredPeerCopyWithImpl<_FrbDiscoveredPeer>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FrbDiscoveredPeer&&(identical(other.name, name) || other.name == name)&&(identical(other.host, host) || other.host == host)&&(identical(other.port, port) || other.port == port)&&const DeepCollectionEquality().equals(other._addresses, _addresses)&&(identical(other.libraryId, libraryId) || other.libraryId == libraryId)&&(identical(other.discoveredAt, discoveredAt) || other.discoveredAt == discoveredAt));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,name,host,port,const DeepCollectionEquality().hash(_addresses),libraryId,discoveredAt);
+
+@override
+String toString() {
+  return 'FrbDiscoveredPeer(name: $name, host: $host, port: $port, addresses: $addresses, libraryId: $libraryId, discoveredAt: $discoveredAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$FrbDiscoveredPeerCopyWith<$Res> implements $FrbDiscoveredPeerCopyWith<$Res> {
+  factory _$FrbDiscoveredPeerCopyWith(_FrbDiscoveredPeer value, $Res Function(_FrbDiscoveredPeer) _then) = __$FrbDiscoveredPeerCopyWithImpl;
+@override @useResult
+$Res call({
+ String name, String host, int port, List<String> addresses, String? libraryId, String discoveredAt
+});
+
+
+
+
+}
+/// @nodoc
+class __$FrbDiscoveredPeerCopyWithImpl<$Res>
+    implements _$FrbDiscoveredPeerCopyWith<$Res> {
+  __$FrbDiscoveredPeerCopyWithImpl(this._self, this._then);
+
+  final _FrbDiscoveredPeer _self;
+  final $Res Function(_FrbDiscoveredPeer) _then;
+
+/// Create a copy of FrbDiscoveredPeer
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? host = null,Object? port = null,Object? addresses = null,Object? libraryId = freezed,Object? discoveredAt = null,}) {
+  return _then(_FrbDiscoveredPeer(
+name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,host: null == host ? _self.host : host // ignore: cast_nullable_to_non_nullable
+as String,port: null == port ? _self.port : port // ignore: cast_nullable_to_non_nullable
+as int,addresses: null == addresses ? _self._addresses : addresses // ignore: cast_nullable_to_non_nullable
+as List<String>,libraryId: freezed == libraryId ? _self.libraryId : libraryId // ignore: cast_nullable_to_non_nullable
+as String?,discoveredAt: null == discoveredAt ? _self.discoveredAt : discoveredAt // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$FrbLoan {
 
  int get id; int get copyId; int get contactId; int get libraryId; String get loanDate; String get dueDate; String? get returnDate; String get status; String? get notes; String get contactName; String get bookTitle;

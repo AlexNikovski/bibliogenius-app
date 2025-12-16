@@ -52,5 +52,11 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>BiblioGenius discovers other libraries on your local network to share books</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_bibliogenius._tcp</string>
+	</array>
 </dict>
 </plist>

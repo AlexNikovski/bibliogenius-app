@@ -287,4 +287,73 @@ class FfiService {
       return null;
     }
   }
+
+  // ============ mDNS Local Discovery (Modular) ============
+
+  /// Check if mDNS discovery service is available
+  bool isMdnsAvailable() {
+    try {
+      return frb.isMdnsAvailable();
+    } catch (e) {
+      debugPrint('FFI isMdnsAvailable error: $e');
+      return false;
+    }
+  }
+
+  /// Get the mDNS service type
+  String getMdnsServiceType() {
+    try {
+      return frb.getMdnsServiceType();
+    } catch (e) {
+      debugPrint('FFI getMdnsServiceType error: $e');
+      return '_bibliogenius._tcp.local.';
+    }
+  }
+
+  /// Get locally discovered peers via mDNS
+  Future<List<Map<String, dynamic>>> getLocalPeers() async {
+    try {
+      debugPrint('🔍 mDNS: Calling getLocalPeersFfi...');
+      final peers = await frb.getLocalPeersFfi();
+      debugPrint('🔍 mDNS: Found ${peers.length} peers');
+      for (final p in peers) {
+        debugPrint('  📚 Peer: ${p.name} at ${p.addresses.firstOrNull}:${p.port}');
+      }
+      return peers.map((p) => {
+        'name': p.name,
+        'host': p.host,
+        'port': p.port,
+        'addresses': p.addresses,
+        'library_id': p.libraryId,
+        'discovered_at': p.discoveredAt,
+      }).toList();
+    } catch (e) {
+      debugPrint('FFI getLocalPeers error: $e');
+      return [];
+    }
+  }
+
+  /// Initialize mDNS service for local discovery
+  Future<bool> initMdns(String libraryName, int port, {String? libraryId}) async {
+    try {
+      await frb.initMdnsFfi(
+        libraryName: libraryName,
+        port: port,
+        libraryId: libraryId,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('FFI initMdns error: $e');
+      return false;
+    }
+  }
+
+  /// Stop mDNS service
+  Future<void> stopMdns() async {
+    try {
+      await frb.stopMdnsFfi();
+    } catch (e) {
+      debugPrint('FFI stopMdns error: $e');
+    }
+  }
 }

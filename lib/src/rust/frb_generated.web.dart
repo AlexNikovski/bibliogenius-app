@@ -48,6 +48,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FrbContact dco_decode_frb_contact(dynamic raw);
 
   @protected
+  FrbDiscoveredPeer dco_decode_frb_discovered_peer(dynamic raw);
+
+  @protected
   FrbLoan dco_decode_frb_loan(dynamic raw);
 
   @protected
@@ -57,10 +60,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
   List<FrbBook> dco_decode_list_frb_book(dynamic raw);
 
   @protected
   List<FrbContact> dco_decode_list_frb_contact(dynamic raw);
+
+  @protected
+  List<FrbDiscoveredPeer> dco_decode_list_frb_discovered_peer(dynamic raw);
 
   @protected
   List<FrbLoan> dco_decode_list_frb_loan(dynamic raw);
@@ -82,6 +91,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   (String, PlatformInt64) dco_decode_record_string_i_64(dynamic raw);
+
+  @protected
+  int dco_decode_u_16(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -117,6 +129,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FrbContact sse_decode_frb_contact(SseDeserializer deserializer);
 
   @protected
+  FrbDiscoveredPeer sse_decode_frb_discovered_peer(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   FrbLoan sse_decode_frb_loan(SseDeserializer deserializer);
 
   @protected
@@ -126,10 +143,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
   List<FrbBook> sse_decode_list_frb_book(SseDeserializer deserializer);
 
   @protected
   List<FrbContact> sse_decode_list_frb_contact(SseDeserializer deserializer);
+
+  @protected
+  List<FrbDiscoveredPeer> sse_decode_list_frb_discovered_peer(
+    SseDeserializer deserializer,
+  );
 
   @protected
   List<FrbLoan> sse_decode_list_frb_loan(SseDeserializer deserializer);
@@ -155,6 +180,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (String, PlatformInt64) sse_decode_record_string_i_64(
     SseDeserializer deserializer,
   );
+
+  @protected
+  int sse_decode_u_16(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -193,6 +221,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_frb_contact(FrbContact self, SseSerializer serializer);
 
   @protected
+  void sse_encode_frb_discovered_peer(
+    FrbDiscoveredPeer self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_frb_loan(FrbLoan self, SseSerializer serializer);
 
   @protected
@@ -202,11 +236,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_frb_book(List<FrbBook> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_frb_contact(
     List<FrbContact> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_frb_discovered_peer(
+    List<FrbDiscoveredPeer> self,
     SseSerializer serializer,
   );
 
@@ -239,6 +282,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     (String, PlatformInt64) self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_u_16(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);

@@ -577,8 +577,8 @@ class _NetworkScreenState extends State<NetworkScreen>
     return Column(
       children: [
         _buildFilterChips(),
-        // Local Network Discovery Section (mDNS)
-        if (_localPeers.isNotEmpty || _mdnsActive) _buildLocalNetworkSection(),
+        // Local Network Discovery Section (mDNS) - always show for visibility
+        _buildLocalNetworkSection(),
         if (filtered.isEmpty && _localPeers.isEmpty)
           Expanded(
             child: Center(

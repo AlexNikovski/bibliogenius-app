@@ -1331,7 +1331,7 @@ class TranslationService {
       'local_network_title': 'Réseau local',
       'no_local_libraries_found': 'Aucune bibliothèque trouvée sur votre réseau',
       'libraries_found': 'bibliothèques trouvées',
-      'local_discovery_help': 'Assurez-vous que d\\'autres utilisateurs BiblioGenius sont connectés au même réseau WiFi.',
+      'local_discovery_help': 'Assurez-vous que d\'autres utilisateurs BiblioGenius sont connectés au même réseau WiFi.',
       // Feedback / Bug Report
       'nav_report_bug': 'Signaler un bug',
       'feedback_title': 'Signaler un problème',
