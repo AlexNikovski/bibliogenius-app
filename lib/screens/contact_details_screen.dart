@@ -6,6 +6,7 @@ import '../services/translation_service.dart';
 import '../services/api_service.dart';
 import '../providers/theme_provider.dart';
 import 'add_contact_screen.dart';
+import 'scan_screen.dart';
 
 class ContactDetailsScreen extends StatefulWidget {
   final Contact contact;
@@ -347,19 +348,17 @@ class _BorrowBookDialogState extends State<_BorrowBookDialog> {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.qr_code_scanner),
-                    onPressed: () {
-                      // TODO: Implement barcode scanning
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            TranslationService.translate(
-                                  context,
-                                  'scan_coming_soon',
-                                ) ??
-                                'Scan coming soon',
-                          ),
+                    onPressed: () async {
+                      // Navigate to scan screen and get result
+                      final result = await Navigator.push<String>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ScanScreen(),
                         ),
                       );
+                      if (result != null && result.isNotEmpty) {
+                        _isbnController.text = result;
+                      }
                     },
                   ),
                 ),

@@ -8,6 +8,7 @@ import '../utils/book_status.dart';
 import '../models/book.dart';
 import '../services/open_library_service.dart';
 import '../services/search_cache.dart';
+import 'scan_screen.dart';
 
 class AddBookScreen extends StatefulWidget {
   final String? isbn;
@@ -455,7 +456,6 @@ class _AddBookScreenState extends State<AddBookScreen> {
             ],
             const SizedBox(height: 24),
 
-            // ISBN
             _buildLabel(TranslationService.translate(context, 'isbn_label')),
             TextFormField(
               controller: _isbnController,
@@ -463,6 +463,22 @@ class _AddBookScreenState extends State<AddBookScreen> {
                 hint: TranslationService.translate(
                   context,
                   'enter_isbn_autofill',
+                ),
+                prefixIcon: IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: () async {
+                    final result = await Navigator.push<String>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ScanScreen(),
+                      ),
+                    );
+                    if (result != null && result.isNotEmpty) {
+                      _isbnController.text = result;
+                      _fetchBookDetails(result);
+                    }
+                  },
+                  tooltip: TranslationService.translate(context, 'scan_isbn_title'),
                 ),
                 suffixIcon: _isFetchingDetails
                     ? const Padding(
@@ -723,10 +739,11 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
-  InputDecoration _buildInputDecoration({String? hint, Widget? suffixIcon}) {
+  InputDecoration _buildInputDecoration({String? hint, Widget? suffixIcon, Widget? prefixIcon}) {
     return InputDecoration(
       hintText: hint,
       suffixIcon: suffixIcon,
+      prefixIcon: prefixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
