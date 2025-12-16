@@ -286,6 +286,43 @@ class ApiService {
   }
 
   Future<Response> getLoans({String? status, int? contactId}) async {
+    if (useFfi) {
+      try {
+        final loans = await RustLib.instance.api.crateApiFrbGetAllLoans(
+          status: status,
+          contactId: contactId,
+        );
+
+        final data = loans
+            .map((l) => {
+                  'id': l.id,
+                  'copy_id': l.copyId,
+                  'contact_id': l.contactId,
+                  'library_id': l.libraryId,
+                  'loan_date': l.loanDate,
+                  'due_date': l.dueDate,
+                  'return_date': l.returnDate,
+                  'status': l.status,
+                  'notes': l.notes,
+                  'contact_name': l.contactName,
+                  'book_title': l.bookTitle,
+                })
+            .toList();
+
+        return Response(
+          requestOptions: RequestOptions(path: '/api/loans'),
+          statusCode: 200,
+          data: {'loans': data},
+        );
+      } catch (e) {
+        return Response(
+          requestOptions: RequestOptions(path: '/api/loans'),
+          statusCode: 400,
+          data: {'error': e.toString()},
+        );
+      }
+    }
+
     Map<String, dynamic> params = {};
     if (status != null) params['status'] = status;
     if (contactId != null) params['contact_id'] = contactId;
@@ -293,6 +330,22 @@ class ApiService {
   }
 
   Future<Response> returnLoan(int loanId) async {
+    if (useFfi) {
+      try {
+        await RustLib.instance.api.crateApiFrbReturnLoan(id: loanId);
+        return Response(
+          requestOptions: RequestOptions(path: '/api/loans/$loanId/return'),
+          statusCode: 200,
+          data: {'message': 'Loan returned successfully'},
+        );
+      } catch (e) {
+        return Response(
+          requestOptions: RequestOptions(path: '/api/loans/$loanId/return'),
+          statusCode: 400,
+          data: {'error': e.toString()},
+        );
+      }
+    }
     return await _dio.post('/api/loans/$loanId/return');
   }
 

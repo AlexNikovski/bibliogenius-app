@@ -190,6 +190,31 @@ class _AddBookScreenState extends State<AddBookScreen> {
               style: const TextStyle(color: Colors.white),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0, left: 8.0),
+            child: _isSaving
+                ? const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : TextButton(
+                    onPressed: _saveBook,
+                    child: Text(
+                      TranslationService.translate(context, 'save_book') ?? 'Save',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+          ),
         ],
       ),
       body: Form(
@@ -688,37 +713,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Save Button
-            SizedBox(
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : _saveBook,
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(
-                  _isSaving
-                      ? TranslationService.translate(context, 'saving')
-                      : TranslationService.translate(context, 'save_book'),
-                ),
-                style: ElevatedButton.styleFrom(
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
+            // Save Button moved to AppBar
           ],
         ),
       ),

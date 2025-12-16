@@ -79,7 +79,7 @@ class _LoanDialogState extends State<LoanDialog> {
                   items: _contacts.map((contact) {
                     return DropdownMenuItem(
                       value: contact,
-                      child: Text(contact.name),
+                      child: Text(contact.displayName),
                     );
                   }).toList(),
                   onChanged: (value) {

@@ -241,7 +241,7 @@ class _BookListScreenState extends State<BookListScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(context),
+              // _buildHeader(context), // Header removed, avatar now in AppBar
               _buildFilterBar(),
               Expanded(
                 child: _isLoading
@@ -550,57 +550,8 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+// Header removed - Avatar is now in GenieAppBar
 
-    // Get avatar info
-    final avatarConfig = themeProvider.avatarConfig;
-    final avatar = availableAvatars.firstWhere(
-      (a) => a.id == themeProvider.currentAvatarId,
-      orElse: () => availableAvatars.first,
-    );
-
-    // Just avatar - title is already in AppBar
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => context.push('/profile'),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: avatar.themeColor, width: 2),
-                color: avatarConfig?.style == 'genie'
-                    ? Color(
-                        int.parse(
-                          'FF${avatarConfig?.genieBackground ?? "fbbf24"}',
-                          radix: 16,
-                        ),
-                      )
-                    : Colors.white,
-              ),
-              child: ClipOval(
-                child: (avatarConfig?.isGenie ?? false)
-                    ? Image.asset(
-                        avatarConfig?.assetPath ?? 'assets/genie_mascot.jpg',
-                        fit: BoxFit.cover,
-                      )
-                    : Image.network(
-                        avatarConfig?.toUrl(size: 32, format: 'png') ?? '',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Image.asset(avatar.assetPath, fit: BoxFit.cover),
-                      ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildFilterBar() {
     return SingleChildScrollView(

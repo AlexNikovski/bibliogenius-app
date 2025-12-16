@@ -275,7 +275,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
               TranslationService.translate(context, 'incoming_connections'),
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
             ),
           ),
           ...incoming.map((req) => _buildConnectionTile(req, isIncoming: true)),
@@ -287,7 +290,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
               TranslationService.translate(context, 'outgoing_connections'),
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
             ),
           ),
           ...outgoing.map(
@@ -305,6 +311,7 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     return Column(
       children: [
         ListTile(
+          textColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 8,
@@ -371,11 +378,11 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
+          const Icon(Icons.inbox, size: 64, color: Colors.white70),
           const SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            style: const TextStyle(fontSize: 18, color: Colors.white),
           ),
         ],
       ),
@@ -389,6 +396,7 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     return Column(
       children: [
         ListTile(
+          textColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 8,

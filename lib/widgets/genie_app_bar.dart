@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/theme_provider.dart';
+import '../utils/avatars.dart';
 
 class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
   final dynamic title;
@@ -25,6 +27,13 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     // Use provided subtitle, or fallback to library name from provider
     final displaySubtitle = subtitle ?? themeProvider.libraryName;
+
+    // Get avatar info
+    final avatarConfig = themeProvider.avatarConfig;
+    final avatar = availableAvatars.firstWhere(
+      (a) => a.id == themeProvider.currentAvatarId,
+      orElse: () => availableAvatars.first,
+    );
 
     return AppBar(
       automaticallyImplyLeading: automaticallyImplyLeading,
@@ -92,7 +101,45 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ],
       ),
-      actions: actions,
+      actions: [
+        if (actions != null) ...actions!,
+        // Avatar
+        Padding(
+          padding: const EdgeInsets.only(right: 16, left: 8),
+          child: GestureDetector(
+            onTap: () => context.push('/profile'),
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: avatar.themeColor, width: 2),
+                color: avatarConfig?.style == 'genie'
+                    ? Color(
+                        int.parse(
+                          'FF${avatarConfig?.genieBackground ?? "fbbf24"}',
+                          radix: 16,
+                        ),
+                      )
+                    : Colors.white,
+              ),
+              child: ClipOval(
+                child: (avatarConfig?.isGenie ?? false)
+                    ? Image.asset(
+                        avatarConfig?.assetPath ?? 'assets/genie_mascot.jpg',
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        avatarConfig?.toUrl(size: 32, format: 'png') ?? '',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Image.asset(avatar.assetPath, fit: BoxFit.cover),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ],
       bottom: bottom,
       centerTitle: false,
       backgroundColor: Colors.transparent, // Required for flexibleSpace to show

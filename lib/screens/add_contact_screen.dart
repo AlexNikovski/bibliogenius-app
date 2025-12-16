@@ -134,7 +134,34 @@ class _AddContactScreenState extends State<AddContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(TranslationService.translate(context, widget.contact != null ? 'edit_contact_title' : 'add_contact_title')),
+        title: Text(
+          widget.contact != null
+              ? TranslationService.translate(context, 'edit_contact_title')
+              : TranslationService.translate(context, 'add_contact_title'),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.teal, // Use a contrasting color or theme primary
+                    ),
+                  )
+                : TextButton(
+                    onPressed: _saveContact,
+                    child: Text(
+                      widget.contact != null
+                          ? (TranslationService.translate(context, 'update_contact') ?? 'Update')
+                          : (TranslationService.translate(context, 'save_contact') ?? 'Save'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -312,16 +339,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _saveContact,
-              child: _isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(TranslationService.translate(context, widget.contact != null ? 'update_contact' : 'save_contact')),
-            ),
+            // Save button moved to AppBar
           ],
         ),
       ),

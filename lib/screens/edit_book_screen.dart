@@ -361,6 +361,27 @@ class _EditBookScreenState extends State<EditBookScreen> {
             Navigator.of(context).pop(_hasChanges);
           },
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.teal, // Use a contrasting color or theme primary
+                    ),
+                  )
+                : TextButton(
+                    onPressed: _saveBook,
+                    child: Text(
+                      TranslationService.translate(context, 'save_changes') ?? 'Save',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+          ),
+        ],
       ),
       // Wrap in WillPopScope to handle system back button too
       body: WillPopScope(
@@ -768,39 +789,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
               const SizedBox(height: 32),
 
               // Save Button
-              SizedBox(
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _saveBook,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.save),
-                  label: Text(
-                    _isSaving
-                        ? TranslationService.translate(
-                            context,
-                            'saving_changes',
-                          )
-                        : TranslationService.translate(context, 'save_changes'),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
+            // Save Button moved to AppBar
               const SizedBox(height: 16),
 
               // Delete Button
