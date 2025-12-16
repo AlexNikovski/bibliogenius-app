@@ -217,15 +217,15 @@ class _AddCopyDialogState extends State<_AddCopyDialog> {
           children: [
             TextField(
               controller: _dateController,
-              decoration: const InputDecoration(
-                labelText: 'Acquisition Date (YYYY-MM-DD)',
+              decoration: InputDecoration(
+                labelText: TranslationService.translate(context, 'acquisition_date'),
                 hintText: '2024-01-15',
               ),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _selectedStatus,
-              decoration: const InputDecoration(labelText: 'Status'),
+              decoration: InputDecoration(labelText: TranslationService.translate(context, 'copy_status')),
               items: [
                 DropdownMenuItem(
                   value: 'available',
@@ -272,7 +272,7 @@ class _AddCopyDialogState extends State<_AddCopyDialog> {
             ),
             TextField(
               controller: _notesController,
-              decoration: const InputDecoration(labelText: 'Notes'),
+              decoration: InputDecoration(labelText: TranslationService.translate(context, 'notes_label')),
               maxLines: 3,
             ),
           ],
