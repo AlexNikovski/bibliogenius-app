@@ -146,6 +146,11 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                 ? TranslationService.translate(context, 'role_borrower')
                 : TranslationService.translate(context, 'role_library'),
           ),
+          _buildInfoCard(
+            context,
+            TranslationService.translate(context, 'contact_name_label'),
+            _contact.name,
+          ),
           if (_contact.firstName != null && _contact.firstName!.isNotEmpty)
             _buildInfoCard(
               context,
@@ -153,11 +158,6 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                   'First Name',
               _contact.firstName!,
             ),
-          _buildInfoCard(
-            context,
-            TranslationService.translate(context, 'contact_name_label'),
-            _contact.name,
-          ),
           if (_contact.email != null)
             _buildInfoCard(
               context,
