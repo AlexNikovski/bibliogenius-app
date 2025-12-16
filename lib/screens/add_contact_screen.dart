@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/translation_service.dart';
+import '../models/contact.dart';
 
 class AddContactScreen extends StatefulWidget {
-  const AddContactScreen({super.key});
+  final Contact? contact;
+
+  const AddContactScreen({super.key, this.contact});
 
   @override
   State<AddContactScreen> createState() => _AddContactScreenState();
@@ -25,6 +29,20 @@ class _AddContactScreenState extends State<AddContactScreen> {
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.contact != null) {
+      _type = widget.contact!.type;
+      _nameController.text = widget.contact!.name;
+      _firstNameController.text = widget.contact!.firstName ?? '';
+      _emailController.text = widget.contact!.email ?? '';
+      _phoneController.text = widget.contact!.phone ?? '';
+      _addressController.text = widget.contact!.address ?? '';
+      _notesController.text = widget.contact!.notes ?? '';
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _firstNameController.dispose();
@@ -38,37 +56,53 @@ class _AddContactScreenState extends State<AddContactScreen> {
   Future<void> _saveContact() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final apiService = Provider.of<ApiService>(context, listen: false);
+    // Added name validation as per instruction
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(TranslationService.translate(context, 'contact_name_required'))),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final libraryId = await authService.getLibraryId() ?? 1;
+      final userId = await authService.getUserId() ?? 1;
+
       final contactData = {
         'type': _type,
         'name': _nameController.text,
-        'first_name': _firstNameController.text.isEmpty
-            ? null
-            : _firstNameController.text,
-        'email': _emailController.text.isEmpty ? null : _emailController.text,
-        'phone': _phoneController.text.isEmpty ? null : _phoneController.text,
-        'address': _addressController.text.isEmpty
-            ? null
-            : _addressController.text,
-        'notes': _notesController.text.isEmpty ? null : _notesController.text,
-        'library_owner_id': 1, // TODO: Get from auth context
+        'first_name': _firstNameController.text.isNotEmpty ? _firstNameController.text : null,
+        'email': _emailController.text.isNotEmpty ? _emailController.text : null,
+        'phone': _phoneController.text.isNotEmpty ? _phoneController.text : null,
+        'address': _addressController.text.isNotEmpty ? _addressController.text : null,
+        'notes': _notesController.text.isNotEmpty ? _notesController.text : null,
+        'user_id': userId,
+        'library_owner_id': libraryId,
         'is_active': true,
       };
 
-      await apiService.createContact(contactData);
+      if (widget.contact != null) {
+        await apiService.updateContact(widget.contact!.id!, contactData);
+      } else {
+        await apiService.createContact(contactData);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              TranslationService.translate(context, 'contact_created'),
+              TranslationService.translate(
+                context, 
+                widget.contact != null ? 'contact_updated' : 'contact_created',
+              ),
             ),
           ),
         );
-        context.pop();
+        context.pop(true); // Return true to indicate refresh needed
       }
     } catch (e) {
       setState(() => _isSaving = false);
@@ -88,7 +122,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(TranslationService.translate(context, 'add_contact_title')),
+        title: Text(TranslationService.translate(context, widget.contact != null ? 'edit_contact_title' : 'add_contact_title')),
       ),
       body: Form(
         key: _formKey,
@@ -228,7 +262,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(TranslationService.translate(context, 'save_contact')),
+                  : Text(TranslationService.translate(context, widget.contact != null ? 'update_contact' : 'save_contact')),
             ),
           ],
         ),

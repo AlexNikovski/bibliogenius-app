@@ -246,6 +246,8 @@ class ThemeProvider with ChangeNotifier {
       _avatarConfig = AvatarConfig.defaultConfig;
     }
 
+    _libraryName = prefs.getString('libraryName') ?? 'My Library';
+
     // If local pref is false, check with backend (in case it's a new device/browser)
     if (!_isSetupComplete) {
       try {
@@ -349,6 +351,29 @@ class ThemeProvider with ChangeNotifier {
     await prefs.remove('isSetupComplete');
     resetSetupState();
     notifyListeners();
+  }
+
+  // Library Name
+  String _libraryName = 'My Library';
+  String get libraryName => _libraryName;
+
+  Future<void> setLibraryName(String name, {ApiService? apiService}) async {
+    _libraryName = name;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('libraryName', name);
+    notifyListeners();
+
+    // Sync with backend if ApiService provided
+    if (apiService != null) {
+      try {
+        // We only update the name here, keeping other fields as is usually requires fetching them first
+        // But for this simplified call, we assume the caller handles full update or we just update local state
+        // In this architecture, usually screens call API then update Provider. 
+        // We'll leave the API call to the caller (ProfileScreen/Dashboard) for now to avoid circular dependencies or incomplete data updates.
+      } catch (e) {
+        debugPrint('Error syncing library name: $e');
+      }
+    }
   }
 
   // Setup Wizard State

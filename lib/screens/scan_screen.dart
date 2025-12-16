@@ -53,18 +53,8 @@ class _ScanScreenState extends State<ScanScreen> {
         // Haptic feedback
         HapticFeedback.lightImpact();
 
-        // Navigate to add book screen with ISBN
-        context.push('/books/add', extra: {'isbn': rawValue});
-
-        // Delay to allow re-scanning (with different ISBN) after coming back
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) {
-            setState(() {
-              _isScanning = true;
-              _lastScannedIsbn = null; // Allow same ISBN after delay
-            });
-          }
-        });
+        // Return ISBN to previous screen (add book screen)
+        context.pop(rawValue);
         return;
       }
     }

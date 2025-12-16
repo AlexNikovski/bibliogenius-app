@@ -5,6 +5,7 @@ import '../models/contact.dart';
 import '../services/translation_service.dart';
 import '../services/api_service.dart';
 import '../providers/theme_provider.dart';
+import 'add_contact_screen.dart';
 
 class ContactDetailsScreen extends StatefulWidget {
   final Contact contact;
@@ -35,19 +36,33 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Navigate to edit screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    TranslationService.translate(
-                          context,
-                          'edit_feature_soon',
-                        ) ??
-                        'Coming soon',
-                  ),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddContactScreen(contact: _contact),
                 ),
               );
+
+              if (result == true && mounted) {
+                // Refresh contact details
+                try {
+                  final apiService = Provider.of<ApiService>(context, listen: false);
+                  final response = await apiService.getContact(_contact.id!);
+                  if (response.statusCode == 200 && response.data != null) {
+                    setState(() {
+                      // Handle both response formats (with or without 'contact' key)
+                      if (response.data['contact'] != null) {
+                        _contact = Contact.fromJson(response.data['contact']);
+                      } else {
+                        _contact = Contact.fromJson(response.data);
+                      }
+                    });
+                  }
+                } catch (e) {
+                  debugPrint('Error refreshing contact: $e');
+                }
+              }
             },
           ),
         ],
@@ -73,7 +88,7 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              _contact.displayName,
+              _contact.fullName,
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -130,6 +145,13 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
                 ? TranslationService.translate(context, 'role_borrower')
                 : TranslationService.translate(context, 'role_library'),
           ),
+          if (_contact.firstName != null && _contact.firstName!.isNotEmpty)
+            _buildInfoCard(
+              context,
+              TranslationService.translate(context, 'contact_first_name_label') ??
+                  'First Name',
+              _contact.firstName!,
+            ),
           _buildInfoCard(
             context,
             TranslationService.translate(context, 'contact_name_label'),

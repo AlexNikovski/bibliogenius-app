@@ -61,6 +61,12 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
   void _onIsbnChanged() {
     final isbn = _isbnController.text.replaceAll(RegExp(r'[^0-9X]'), '');
+    
+    // Reset last lookup if ISBN changed significantly (not just adding digits)
+    if (_lastLookedUpIsbn != null && !isbn.startsWith(_lastLookedUpIsbn!)) {
+      _lastLookedUpIsbn = null;
+    }
+    
     // Only lookup if valid length, not currently fetching, and not already looked up
     if ((isbn.length == 10 || isbn.length == 13) && 
         !_isFetchingDetails && 
@@ -117,6 +123,17 @@ class _AddBookScreenState extends State<AddBookScreen> {
       }
     } catch (e) {
       debugPrint('Error fetching ISBN: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              TranslationService.translate(context, 'error_fetching_isbn') ??
+                  'Error looking up ISBN. Please enter details manually.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isFetchingDetails = false);
     }

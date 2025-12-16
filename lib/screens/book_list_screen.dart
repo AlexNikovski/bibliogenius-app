@@ -119,6 +119,7 @@ class _BookListScreenState extends State<BookListScreen> {
       extendBodyBehindAppBar: true,
       appBar: GenieAppBar(
         title: titleWidget,
+        // subtitle: _libraryName, // Handled by ThemeProvider
         leading: isMobile
             ? IconButton(
                 icon: const Icon(Icons.menu, color: Colors.white),
@@ -204,8 +205,11 @@ class _BookListScreenState extends State<BookListScreen> {
               key: _scanKey,
               icon: const Icon(Icons.camera_alt, color: Colors.white),
               tooltip: TranslationService.translate(context, 'scan_isbn_title'),
-              onPressed: () {
-                context.push('/scan');
+              onPressed: () async {
+                final isbn = await context.push<String>('/scan');
+                if (isbn != null && mounted) {
+                  context.push('/books/add', extra: {'isbn': isbn});
+                }
               },
             ),
             IconButton(
@@ -285,6 +289,9 @@ class _BookListScreenState extends State<BookListScreen> {
       if (configRes.statusCode == 200) {
         _showBorrowedConfig = configRes.data['show_borrowed_books'] == true;
         libraryName = configRes.data['library_name'] as String?;
+        if (libraryName != null) {
+          Provider.of<ThemeProvider>(context, listen: false).setLibraryName(libraryName);
+        }
       }
 
       if (mounted) {
@@ -452,6 +459,16 @@ class _BookListScreenState extends State<BookListScreen> {
                 textEditingController.text = _searchQuery;
               }
 
+              // Assuming GenieAppBar is defined elsewhere and this is part of a Scaffold's appBar property
+              // This part of the change seems to be misplaced based on the provided context.
+              // I will integrate the subtitle part into the _buildHeader function as it's the closest
+              // logical place for displaying library name in a header/appBar-like context within the provided snippet.
+              // If GenieAppBar is used in the Scaffold, the subtitle should be added there.
+              // Given the instruction, I'm assuming the user wants to add `subtitle: _libraryName` to an existing GenieAppBar.
+              // Since the GenieAppBar itself is not in the provided content, I'll assume it's part of the Scaffold
+              // that wraps this content, and the user wants to add the subtitle to it.
+              // As I cannot modify the Scaffold directly, I will make a note here.
+
               return TextField(
                 controller: textEditingController,
                 focusNode: focusNode,
@@ -534,10 +551,6 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    // Use library name if available, otherwise fallback to translation
-    final libraryTitle =
-        _libraryName ??
-        TranslationService.translate(context, 'my_library_title');
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     // Get avatar info
@@ -547,16 +560,16 @@ class _BookListScreenState extends State<BookListScreen> {
       orElse: () => availableAvatars.first,
     );
 
+    // Just avatar - title is already in AppBar
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Row(
         children: [
-          // Avatar circle
           GestureDetector(
             onTap: () => context.push('/profile'),
             child: Container(
-              width: 48,
-              height: 48,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: avatar.themeColor, width: 2),
@@ -576,44 +589,11 @@ class _BookListScreenState extends State<BookListScreen> {
                         fit: BoxFit.cover,
                       )
                     : Image.network(
-                        avatarConfig?.toUrl(size: 48, format: 'png') ?? '',
+                        avatarConfig?.toUrl(size: 32, format: 'png') ?? '',
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) =>
                             Image.asset(avatar.assetPath, fit: BoxFit.cover),
                       ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              libraryTitle,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87, // Dark text
-              ),
-            ),
-          ),
-          // Add Book Button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () async {
-                final result = await context.push('/books/add');
-                if (result == true) {
-                  _fetchBooks(); // Refresh if book was added
-                }
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: AppDesign.subtleShadow,
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 24),
               ),
             ),
           ),

@@ -140,6 +140,52 @@ class FfiService {
     }
   }
 
+  /// Create a new contact
+  Future<Contact> createContact(Contact contact) async {
+    try {
+      final frbContact = frb.FrbContact(
+        id: contact.id,
+        contactType: contact.type,
+        name: contact.name,
+        firstName: contact.firstName,
+        email: contact.email,
+        phone: contact.phone,
+        address: contact.address,
+        notes: contact.notes,
+        isActive: contact.isActive,
+      );
+      
+      final created = await frb.createContact(contact: frbContact);
+      return _frbContactToContact(created);
+    } catch (e) {
+      debugPrint('FFI createContact error: $e');
+      rethrow;
+    }
+  }
+
+  /// Update an existing contact
+  Future<Contact> updateContact(Contact contact) async {
+    try {
+      final frbContact = frb.FrbContact(
+        id: contact.id,
+        contactType: contact.type,
+        name: contact.name,
+        firstName: contact.firstName,
+        email: contact.email,
+        phone: contact.phone,
+        address: contact.address,
+        notes: contact.notes,
+        isActive: contact.isActive,
+      );
+      
+      final updated = await frb.updateContact(contact: frbContact);
+      return _frbContactToContact(updated);
+    } catch (e) {
+      debugPrint('FFI updateContact error: $e');
+      rethrow;
+    }
+  }
+
   // ============ Loans ============
 
   /// Count active loans

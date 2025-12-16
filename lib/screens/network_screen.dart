@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../models/contact.dart';
 import '../models/network_member.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/translation_service.dart';
 // ThemeProvider import removed - not used in this screen
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -76,9 +77,12 @@ class _NetworkScreenState extends State<NetworkScreen>
         debugPrint('Could not get library config: $e');
       }
 
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final libraryId = await authService.getLibraryId() ?? 1;
+
       // Fetch contacts and peers in parallel
       final results = await Future.wait([
-        api.getContacts(libraryId: 1), // TODO: Get from auth context
+        api.getContacts(libraryId: libraryId),
         api.getPeers(),
       ]);
 

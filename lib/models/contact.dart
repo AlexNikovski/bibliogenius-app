@@ -28,6 +28,14 @@ class Contact {
   /// Returns display name: firstName if available, otherwise name
   String get displayName => firstName?.isNotEmpty == true ? firstName! : name;
 
+  /// Returns full name: firstName + name if firstName is available, otherwise name
+  String get fullName {
+    if (firstName != null && firstName!.isNotEmpty && name.isNotEmpty) {
+      return '$firstName $name';
+    }
+    return name;
+  }
+
   factory Contact.fromJson(Map<String, dynamic> json) {
     return Contact(
       id: json['id'] as int?,

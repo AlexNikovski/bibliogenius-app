@@ -487,6 +487,10 @@ class _SetupScreenState extends State<SetupScreen> {
           themeProvider.setupAvatarConfig,
           apiService: apiService,
         );
+        await themeProvider.setLibraryName(
+          themeProvider.setupLibraryName,
+          apiService: apiService,
+        );
         await themeProvider.completeSetup();
 
         final authService = Provider.of<AuthService>(context, listen: false);

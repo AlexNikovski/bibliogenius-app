@@ -20,6 +20,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:universal_html/html.dart' as html;
 import 'dart:io' as io;
 import 'package:dio/dio.dart' show Response;
+import 'dart:convert'; // For base64Decode
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -32,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _userStatus;
   Map<String, dynamic>? _config;
+  Map<String, dynamic>? _userInfo;
   String? _error;
 
   @override
@@ -45,11 +47,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final apiService = Provider.of<ApiService>(context, listen: false);
       final statusRes = await apiService.getUserStatus();
       final configRes = await apiService.getLibraryConfig();
+      final meRes = await apiService.getMe();
 
       if (mounted) {
+        // Sync library name
+        final name = configRes.data['library_name'] ?? configRes.data['name'];
+        if (name != null) {
+          Provider.of<ThemeProvider>(context, listen: false).setLibraryName(name);
+        }
+        
+        // Sync profile type
+        final profileType = configRes.data['profile_type'];
+        if (profileType != null) {
+             Provider.of<ThemeProvider>(context, listen: false).setProfileType(profileType);
+        }
+
         setState(() {
           _userStatus = statusRes.data;
           _config = configRes.data;
+          _userInfo = meRes.data;
           _isLoading = false;
         });
       }
@@ -148,6 +164,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _setupMfa() async {
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final response = await apiService.setup2Fa();
+      final data = response.data;
+      final secret = data['secret'];
+      final qrCode = data['qr_code']; // Base64 string
+
+      if (!mounted) return;
+
+      final codeController = TextEditingController();
+      String? verifyError;
+
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text(TranslationService.translate(context, 'setup_2fa') ?? 'Setup 2FA'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(TranslationService.translate(context, 'scan_qr_code') ?? 'Scan this QR code with your authenticator app:'),
+                  const SizedBox(height: 16),
+                  if (qrCode != null)
+                    Image.memory(base64Decode(qrCode), height: 200, width: 200),
+                  const SizedBox(height: 16),
+                  SelectableText('${TranslationService.translate(context, 'secret_key') ?? 'Secret Key'}: $secret'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: codeController,
+                    decoration: InputDecoration(
+                      labelText: TranslationService.translate(context, 'verification_code') ?? 'Verification Code',
+                      errorText: verifyError,
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  setState(() => verifyError = null);
+                  final code = codeController.text.trim();
+                  if (code.length != 6) {
+                    setState(() => verifyError = TranslationService.translate(context, 'invalid_code') ?? 'Invalid code');
+                    return;
+                  }
+
+                  try {
+                    await apiService.verify2Fa(secret, code);
+                    if (mounted) {
+                      Navigator.pop(context); // Close dialog
+                      _fetchStatus(); // Refresh status
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(TranslationService.translate(context, 'mfa_enabled_success') ?? 'MFA Enabled Successfully')),
+                      );
+                    }
+                  } catch (e) {
+                    setState(() => verifyError = TranslationService.translate(context, 'verification_failed') ?? 'Verification failed');
+                  }
+                },
+                child: Text(TranslationService.translate(context, 'verify') ?? 'Verify'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error initializing MFA: $e')),
+      );
+    }
+  }
+
   Widget _buildBody() {
     if (_userStatus == null)
       return Center(
@@ -234,12 +331,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           const SizedBox(height: 16),
-          Text(
-            TranslationService.translate(
-              context,
-              _config?['profile_type'] ?? 'individual',
-            ),
-            style: Theme.of(context).textTheme.headlineMedium,
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return Text(
+                TranslationService.translate(
+                  context,
+                  themeProvider.profileType,
+                ),
+                style: Theme.of(context).textTheme.headlineMedium,
+              );
+            },
           ),
           const SizedBox(height: 8),
           StatusBadge(level: level, size: 32),
@@ -362,82 +463,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: Text(
                     TranslationService.translate(context, 'profile_type'),
                   ),
-                  subtitle: Text(
-                    TranslationService.translate(
-                          context,
-                          _config?['profile_type'] ?? 'individual',
-                        ) ??
-                        _config?['profile_type'] ??
-                        'Individual',
-                  ),
-                  trailing: DropdownButton<String>(
-                    value: _config?['profile_type'],
-                    underline: Container(),
-                    items: [
-                      DropdownMenuItem(
-                        value: 'individual',
-                        child: Text(
-                          TranslationService.translate(context, 'individual'),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'professional',
-                        child: Text(
-                          TranslationService.translate(context, 'professional'),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'librarian',
-                        child: Text(
-                          TranslationService.translate(context, 'librarian'),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'kid',
-                        child: Text(
-                          TranslationService.translate(context, 'profile_kid'),
-                        ),
-                      ),
-                    ],
-                    onChanged: (value) async {
-                      if (value == null) return;
-                      try {
-                        final api = Provider.of<ApiService>(
-                          context,
-                          listen: false,
-                        );
-                        // Update provider immediately for UI sync
-                        await Provider.of<ThemeProvider>(
-                          context,
-                          listen: false,
-                        ).setProfileType(value, apiService: api);
-                        _fetchStatus(); // Refresh to get updated config (including side effects)
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'profile_updated',
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${TranslationService.translate(context, 'error_updating_profile')}: $e',
-                              ),
-                            ),
-                          );
-                        }
-                      }
+                  subtitle: Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Text(
+                        TranslationService.translate(
+                              context,
+                              themeProvider.profileType,
+                            ) ??
+                            themeProvider.profileType,
+                      );
                     },
                   ),
+                  trailing: Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      // Normalize profile type to match dropdown items
+                      String normalizedType = themeProvider.profileType;
+                      if (normalizedType == 'individual_reader') {
+                        normalizedType = 'individual';
+                      } else if (normalizedType == 'professional') {
+                        normalizedType = 'librarian';
+                      }
+                      // Ensure value is one of the valid options
+                      if (!['individual', 'librarian', 'kid'].contains(normalizedType)) {
+                        normalizedType = 'individual';
+                      }
+                      
+                      return SizedBox(
+                        width: 130,
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: normalizedType,
+                            isExpanded: true,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'individual',
+                              child: Text(
+                                TranslationService.translate(context, 'profile_individual'),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'librarian',
+                              child: Text(
+                                TranslationService.translate(context, 'profile_librarian'),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'kid',
+                              child: Text(
+                                TranslationService.translate(context, 'profile_kid'),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) async {
+                            if (value == null) return;
+                            try {
+                              final api = Provider.of<ApiService>(
+                                context,
+                                listen: false,
+                              );
+                              
+                              // 1. Update Provider (local state + persistence)
+                              await Provider.of<ThemeProvider>(
+                                context,
+                                listen: false,
+                              ).setProfileType(value, apiService: api);
+
+                              // 2. Update Library Config on Backend (so it persists remotely)
+                              if (_config != null) {
+                                await api.updateLibraryConfig(
+                                  name: _config!['library_name'] ?? _config!['name'] ?? 'My Library',
+                                  description: _config?['description'],
+                                  profileType: value,
+                                  tags: _config?['tags'] != null
+                                      ? List<String>.from(_config!['tags'])
+                                      : [],
+                                  latitude: _config?['latitude'],
+                                  longitude: _config?['longitude'],
+                                  showBorrowedBooks: _config?['show_borrowed_books'],
+                                  shareLocation: _config?['share_location'],
+                                );
+                              }
+
+                              _fetchStatus(); // Refresh to get updated config
+                              
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      TranslationService.translate(
+                                        context,
+                                        'profile_updated',
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '${TranslationService.translate(context, 'error_updating_profile')}: $e',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
+              ),
                 // TODO: Re-enable when borrowed books list is needed (currently using filters instead)
                 // if (_config?['profile_type'] == 'individual')
                 //   SwitchListTile(
@@ -473,6 +611,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Profile Type Summary Card
           _buildProfileTypeSummary(),
           const SizedBox(height: 32),
+
+          // Security Settings (MFA)
+          Text(
+            TranslationService.translate(context, 'security_settings') ?? 'Security Settings',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.security),
+                  title: Text(TranslationService.translate(context, 'two_factor_auth') ?? 'Two-Factor Authentication'),
+                  subtitle: Text(
+                    (_userInfo?['mfa_enabled'] == true) 
+                        ? (TranslationService.translate(context, 'mfa_enabled') ?? 'Enabled')
+                        : (TranslationService.translate(context, 'mfa_disabled') ?? 'Disabled'),
+                    style: TextStyle(
+                      color: (_userInfo?['mfa_enabled'] == true) ? Colors.green : Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  trailing: (_userInfo?['mfa_enabled'] == true)
+                      ? null // TODO: Add disable button
+                      : ElevatedButton(
+                          onPressed: _setupMfa,
+                          child: Text(TranslationService.translate(context, 'enable') ?? 'Enable'),
+                        ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+
 
           // Data Management
           Text(
@@ -734,7 +906,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileTypeSummary() {
-    final profileType = _config?['profile_type'] ?? 'individual';
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+       final profileType = themeProvider.profileType;
 
     // Define features and restrictions for each profile type
     Map<String, List<String>> advantages = {};
@@ -742,6 +916,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     switch (profileType) {
       case 'individual':
+      case 'individual_reader':
         advantages = {
           'profile_advantage_borrow': ['✓'],
           'profile_advantage_lend': ['✓'],
@@ -864,6 +1039,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ],
       ),
+    );
+      },
     );
   }
 
@@ -1080,9 +1257,103 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       //   themeProvider.setThemeStyle(newValue);
                       // }
                     ),
-                  ],
+                    const SizedBox(height: 8),
+                Text(
+                  TranslationService.translate(
+                    context,
+                    Provider.of<ThemeProvider>(context).profileType,
+                  ) ??
+                  (Provider.of<ThemeProvider>(context).profileType == 'individual'
+                      ? 'Particulier'
+                      : 'Bibliothèque'),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
-              ),
+                const SizedBox(height: 24),
+                ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(
+                    TranslationService.translate(context, 'profile_type_label') ??
+                        'Type de profil',
+                  ),
+                  trailing: Builder(
+                    builder: (context) {
+                      // Normalize profile type to match dropdown items
+                      String normalizedType = Provider.of<ThemeProvider>(context).profileType;
+                      if (normalizedType == 'individual_reader') {
+                        normalizedType = 'individual';
+                      } else if (normalizedType == 'professional' || normalizedType == 'library') {
+                        normalizedType = 'librarian';
+                      }
+                      // Ensure value is one of the valid options
+                      if (!['individual', 'librarian', 'kid'].contains(normalizedType)) {
+                        normalizedType = 'individual';
+                      }
+                      
+                      return SizedBox(
+                        width: 130,
+                        child: DropdownButton<String>(
+                          value: normalizedType,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'individual',
+                              child: Text(
+                                TranslationService.translate(context, 'profile_individual'),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'librarian',
+                              child: Text(
+                                TranslationService.translate(context, 'profile_librarian'),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'kid',
+                              child: Text(
+                                TranslationService.translate(context, 'profile_kid'),
+                              ),
+                            ),
+                          ],
+                    onChanged: (value) async {
+                      if (value != null) {
+                        final themeProvider = Provider.of<ThemeProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final apiService = Provider.of<ApiService>(
+                          context,
+                          listen: false,
+                        );
+                        
+                        // Update user profile and local provider state
+                        await themeProvider.setProfileType(
+                          value,
+                          apiService: apiService,
+                        );
+                        
+                        // Also update library config to ensure persistence and consistency
+                        // This handles the ffi_profile_type in FFI mode
+                        try {
+                          await apiService.updateLibraryConfig(
+                            name: _config?['name'] ?? 'Ma Bibliothèque',
+                            profileType: value,
+                          );
+                        } catch (e) {
+                          debugPrint('Error syncing library config profile type: $e');
+                        }
+
+                        _fetchStatus();
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),

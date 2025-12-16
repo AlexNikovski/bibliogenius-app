@@ -482,6 +482,16 @@ class _EditBookScreenState extends State<EditBookScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Author
+              _buildLabel(TranslationService.translate(context, 'author_label') ?? 'Author'),
+              TextFormField(
+                controller: _authorController,
+                decoration: _buildInputDecoration(
+                  hint: TranslationService.translate(context, 'enter_author') ?? 'Enter author name',
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // ISBN
               _buildLabel(TranslationService.translate(context, 'isbn_label')),
               TextFormField(

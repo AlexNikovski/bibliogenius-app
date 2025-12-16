@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book.dart';
 import '../models/genie.dart';
 import '../models/tag.dart';
+import '../models/contact.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../src/rust/api/frb.dart' as frb;
 import '../src/rust/frb_generated.dart';
@@ -63,10 +64,64 @@ class ApiService {
         data: {'token': 'ffi_local_token', 'message': 'Local mode - no auth needed'},
       );
     }
+    // We expect 403 if MFA is required. Dio throws exception on 403 by default unless validated.
+    // We should handle this in the UI, or wrap here.
+    // Ideally we let the UI catch the error.
     return await _dio.post(
       '/api/auth/login',
       data: {'username': username, 'password': password},
     );
+  }
+
+  Future<Response> loginMfa(String username, String password, String code) async {
+    return await _dio.post(
+      '/api/auth/login-mfa',
+      data: {'username': username, 'password': password, 'code': code},
+    );
+  }
+
+  Future<Response> setup2Fa() async {
+    if (useFfi) {
+      // MFA requires server connection
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/auth/2fa/setup'),
+        message: 'Two-factor authentication requires a server connection. Please configure a backend server.',
+        type: DioExceptionType.unknown,
+      );
+    }
+    return await _dio.post('/api/auth/2fa/setup');
+  }
+
+  Future<Response> verify2Fa(String secret, String code) async {
+    if (useFfi) {
+      // MFA requires server connection
+      throw DioException(
+        requestOptions: RequestOptions(path: '/api/auth/2fa/verify'),
+        message: 'Two-factor authentication requires a server connection. Please configure a backend server.',
+        type: DioExceptionType.unknown,
+      );
+    }
+    return await _dio.post(
+      '/api/auth/2fa/verify',
+      data: {'secret': secret, 'code': code},
+    );
+  }
+
+  Future<Response> getMe() async {
+    if (useFfi) {
+        // Return mock data for FFI/Offline mode
+        return Response(
+          requestOptions: RequestOptions(path: '/api/auth/me'),
+          statusCode: 200,
+          data: {
+             'user_id': 1,
+             'username': 'offline_user',
+             'library_id': 1, // Default to 1 for offline
+             'role': 'admin'
+          }
+        );
+    }
+    return await _dio.get('/api/auth/me');
   }
 
   Future<Response> createBook(Map<String, dynamic> bookData) async {
@@ -242,29 +297,86 @@ class ApiService {
     Map<String, dynamic> params = {};
     if (libraryId != null) params['library_id'] = libraryId;
     if (type != null) params['type'] = type;
+    if (useFfi) {
+      try {
+        final contacts = await FfiService().getContacts(
+          libraryId: 1, // Default to 1 for FFI
+        );
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts'),
+          statusCode: 200,
+          data: {
+            'contacts': contacts.map((c) => c.toJson()).toList(),
+          },
+        );
+      } catch (e) {
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts'),
+          statusCode: 500,
+          statusMessage: 'Error getting contacts: $e',
+        );
+      }
+    }
     return await _dio.get('/api/contacts', queryParameters: params);
   }
 
   Future<Response> getContact(int id) async {
-    // Contacts require network or Rust FFI support (not yet implemented)
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/contacts/$id'),
-        statusCode: 501,
-        statusMessage: 'Contacts not available in offline mode',
-      );
+      try {
+        final contact = await FfiService().getContact(id);
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts/$id'),
+          statusCode: 200,
+          data: {
+            'contact': contact.toJson(),
+          },
+        );
+      } catch (e) {
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts/$id'),
+          statusCode: 404,
+          statusMessage: 'Contact not found',
+        );
+      }
     }
     return await _dio.get('/api/contacts/$id');
   }
 
   Future<Response> createContact(Map<String, dynamic> contactData) async {
-    // Contacts require network or Rust FFI support (not yet implemented)
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/contacts'),
-        statusCode: 501,
-        statusMessage: 'Contacts not available in offline mode',
-      );
+      try {
+        // Create contact via FFI
+        final contact = Contact(
+          type: contactData['type'] ?? 'borrower',
+          name: contactData['name'] ?? '',
+          firstName: contactData['first_name'],
+          email: contactData['email'],
+          phone: contactData['phone'],
+          address: contactData['address'],
+          notes: contactData['notes'],
+          userId: contactData['user_id'] ?? 1,
+          libraryOwnerId: contactData['library_owner_id'] ?? 1,
+          isActive: contactData['is_active'] ?? true,
+        );
+        
+        // Actually persist to database via FFI
+        final created = await FfiService().createContact(contact);
+        
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts'),
+          statusCode: 201,
+          data: {
+            'contact': created.toJson(),
+            'message': 'Contact created successfully',
+          },
+        );
+      } catch (e) {
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts'),
+          statusCode: 500,
+          statusMessage: 'Error creating contact: $e',
+        );
+      }
     }
     return await _dio.post('/api/contacts', data: contactData);
   }
@@ -273,13 +385,39 @@ class ApiService {
     int id,
     Map<String, dynamic> contactData,
   ) async {
-    // Contacts require network or Rust FFI support (not yet implemented)
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/contacts/$id'),
-        statusCode: 501,
-        statusMessage: 'Contacts not available in offline mode',
-      );
+      try {
+        final contact = Contact(
+          id: id,
+          type: contactData['type'] ?? 'borrower',
+          name: contactData['name'] ?? '',
+          firstName: contactData['first_name'],
+          email: contactData['email'],
+          phone: contactData['phone'],
+          address: contactData['address'],
+          notes: contactData['notes'],
+          userId: contactData['user_id'] ?? 1,
+          libraryOwnerId: contactData['library_owner_id'] ?? 1,
+          isActive: contactData['is_active'] ?? true,
+        );
+        
+        final updated = await FfiService().updateContact(contact);
+        
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts/$id'),
+          statusCode: 200,
+          data: {
+            'contact': updated.toJson(),
+            'message': 'Contact updated successfully',
+          },
+        );
+      } catch (e) {
+        return Response(
+          requestOptions: RequestOptions(path: '/api/contacts/$id'),
+          statusCode: 500,
+          statusMessage: 'Error updating contact: $e',
+        );
+      }
     }
     return await _dio.put('/api/contacts/$id', data: contactData);
   }
@@ -832,13 +970,21 @@ class ApiService {
 
   Future<Response> resetApp() async {
     if (useFfi) {
-      // In FFI mode, reset would need to clear the local database
-      // For now, just return success - actual reset handled by clearing app data
-      return Response(
-        requestOptions: RequestOptions(path: '/api/reset'),
-        statusCode: 200,
-        data: {'message': 'Reset initiated. Please restart app.'},
-      );
+      // Call the FFI reset function which deletes all data from all tables
+      try {
+        final message = await RustLib.instance.api.crateApiFrbResetApp();
+        return Response(
+          requestOptions: RequestOptions(path: '/api/reset'),
+          statusCode: 200,
+          data: {'success': true, 'message': message},
+        );
+      } catch (e) {
+        return Response(
+          requestOptions: RequestOptions(path: '/api/reset'),
+          statusCode: 500,
+          data: {'success': false, 'message': e.toString()},
+        );
+      }
     }
     return await _dio.post('/api/reset');
   }
@@ -866,6 +1012,14 @@ class ApiService {
     final Map<String, dynamic> data = {'profile_type': profileType};
     if (avatarConfig != null) {
       data['avatar_config'] = avatarConfig;
+    }
+    // In FFI/offline mode, profile is stored locally only
+    if (useFfi) {
+      return Response(
+        requestOptions: RequestOptions(path: '/api/profile'),
+        statusCode: 200,
+        data: {'success': true, 'message': 'Profile stored locally'},
+      );
     }
     return await _dio.put('/api/profile', data: data);
   }
@@ -984,6 +1138,7 @@ class ApiService {
     String? author,
     String? publisher,
     String? subject,
+    String? lang, // User's preferred language for relevance boost (e.g., "fr", "en")
   }) async {
     try {
       final queryParams = <String, dynamic>{};
@@ -994,8 +1149,14 @@ class ApiService {
         queryParams['publisher'] = publisher;
       if (subject != null && subject.isNotEmpty)
         queryParams['subject'] = subject;
+      if (lang != null && lang.isNotEmpty) queryParams['lang'] = lang;
 
-      final response = await _dio.get(
+      // External search always uses HTTP to Rust backend, even in FFI mode
+      // because OpenLibrary/Google Books API calls must go through Rust HTTP server
+      final searchDio = Dio();
+      searchDio.options.baseUrl = defaultBaseUrl;
+      
+      final response = await searchDio.get(
         '/api/integrations/search_unified',
         queryParameters: queryParams,
       );

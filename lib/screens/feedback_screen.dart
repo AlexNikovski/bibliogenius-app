@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../services/translation_service.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/genie_app_bar.dart';
@@ -31,9 +32,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   // App info - Hub URL configurable via .env
   static const String appVersion = '1.0.0';
 
-  // Hub URL - hardcoded for now, can use dotenv later
-  // Hub URL - hardcoded for now due to environment issues
-  static const String _hubUrl = 'http://localhost:8082';
+  // Hub URL from environment with production fallback
+  static String get _hubUrl => dotenv.env['HUB_URL'] ?? 'https://hub.bibliogenius.org';
 
   @override
   void dispose() {

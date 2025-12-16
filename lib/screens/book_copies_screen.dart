@@ -129,7 +129,38 @@ class _BookCopiesScreenState extends State<BookCopiesScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _copies.isEmpty
           ? Center(
-              child: Text(TranslationService.translate(context, 'no_copies')),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.library_books_outlined,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      TranslationService.translate(context, 'no_copies'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      TranslationService.translate(context, 'copies_explanation'),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _addCopy,
+                      icon: const Icon(Icons.add),
+                      label: Text(TranslationService.translate(context, 'add_copy_title')),
+                    ),
+                  ],
+                ),
+              ),
             )
           : ListView.builder(
               itemCount: _copies.length,

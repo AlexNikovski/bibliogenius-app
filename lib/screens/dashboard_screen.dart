@@ -26,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   Quote? _dailyQuote;
   String? _userName;
+  String? _lastLocale;
   final Map<String, dynamic> _stats = {};
   List<Book> _recentBooks = [];
   List<Book> _readingListBooks = [];
@@ -42,8 +43,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _fetchDashboardData();
+    // Verify locale changes on startup/init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      _lastLocale = themeProvider.locale.languageCode;
+      _fetchDashboardData();
+    });
     _checkWizard();
     _checkBackupReminder();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final currentLocale = themeProvider.locale.languageCode;
+    if (_lastLocale != null && _lastLocale != currentLocale) {
+      _lastLocale = currentLocale;
+      _fetchQuote();
+    }
   }
 
   void _checkBackupReminder() async {
@@ -73,6 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _fetchDashboardData() async {
     final api = Provider.of<ApiService>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     // Background fetch of translations
     TranslationService.fetchTranslations(context);
 
@@ -89,9 +108,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             books = books.where((b) => b.readingStatus != 'borrowed').toList();
           }
           // Store library name
+          final name = config['library_name'] ?? config['name'];
+          if (name != null) {
+            themeProvider.setLibraryName(name);
+          }
           if (mounted) {
             setState(() {
-              _libraryName = config['library_name'] ?? config['name'];
+              _libraryName = name;
             });
           }
         }
@@ -168,21 +191,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       } catch (e) {
         debugPrint('Error fetching user status: $e');
       }
+        
+      // Fetch quote separate from main data to allow localized refresh
+      await _fetchQuote();
 
-      // Fetch Quote
       if (mounted) {
-        final allBooks = [..._recentBooks, ..._readingListBooks];
-        if (allBooks.isNotEmpty) {
-          final quoteService = QuoteService();
-          final quote = await quoteService.fetchRandomQuote(allBooks);
-          if (mounted) {
-            setState(() {
-              _dailyQuote = quote;
-            });
-          }
-        }
+        setState(() {
+           _isLoading = false;
+        });
       }
     } catch (e) {
+      debugPrint('Error fetching dashboard data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -191,11 +210,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         );
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _fetchQuote() async {
+    try {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      final allBooks = [..._recentBooks, ..._readingListBooks];
+      
+      // Even if books are empty, we try to fetch a quote (service handles fallback)
+      final quoteService = QuoteService();
+      final quote = await quoteService.fetchRandomQuote(
+        allBooks,
+        locale: themeProvider.locale.languageCode,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _dailyQuote = quote;
+        });
+      }
+    } catch (e) {
+       debugPrint('Error fetching quote: $e');
     }
   }
 
@@ -212,6 +250,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       extendBodyBehindAppBar: true,
       appBar: GenieAppBar(
         title: 'BiblioGenius',
+        // subtitle: _libraryName, // Handled by ThemeProvider
         leading: isWide
             ? null
             : IconButton(
@@ -230,13 +269,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/genie-chat');
-        },
-        backgroundColor: Colors.blueAccent,
-        child: const Icon(Icons.auto_awesome, color: Colors.white),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     context.push('/genie-chat');
+      //   },
+      //   backgroundColor: Colors.blueAccent,
+      //   child: const Icon(Icons.auto_awesome, color: Colors.white),
+      // ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: AppDesign.pageGradient, // Discrete light background
@@ -361,7 +400,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                       Icons.qr_code_scanner,
                                       Colors.orange,
-                                      () => context.push('/scan'),
+                                      () async {
+                                        final isbn = await context.push<String>('/scan');
+                                        if (isbn != null && context.mounted) {
+                                          context.push('/books/add', extra: {'isbn': isbn});
+                                        }
+                                      },
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -438,15 +482,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       Icons.upload_file,
                                       () => context.push('/network-search'),
                                     ),
-                                    _buildActionButton(
-                                      context,
-                                      TranslationService.translate(
-                                        context,
-                                        'ask_genie',
-                                      ), // Translated
-                                      Icons.auto_awesome,
-                                      () => context.push('/genie-chat'),
-                                    ),
+                                    // _buildActionButton(
+                                    //   context,
+                                    //   TranslationService.translate(
+                                    //     context,
+                                    //     'ask_genie',
+                                    //   ), // Translated
+                                    //   Icons.auto_awesome,
+                                    //   () => context.push('/genie-chat'),
+                                    // ),
                                   ],
                                 ),
                               ),
@@ -584,90 +628,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Welcome Banner
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF667eea).withValues(alpha: 0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Logo
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Name and streak
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _libraryName ?? _userName ?? 'BiblioGenius',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        height: 1.1,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (_gamificationStatus != null &&
-                        _gamificationStatus!.streak.hasStreak)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.local_fire_department,
-                              color: Colors.orange,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${_gamificationStatus!.streak.current} ${TranslationService.translate(context, 'days')}',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
         if (_dailyQuote != null) ...[
           const SizedBox(height: 24),
           Container(

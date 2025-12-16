@@ -279,7 +279,9 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${tag.count} ${tag.count == 1 ? 'book' : 'books'}',
+                          tag.count == 1
+                              ? '${tag.count} ${TranslationService.translate(context, 'book') ?? 'book'}'
+                              : '${tag.count} ${TranslationService.translate(context, 'books') ?? 'books'}',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 13,

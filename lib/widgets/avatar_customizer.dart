@@ -102,7 +102,12 @@ class _AvatarCustomizerState extends State<AvatarCustomizer> {
                   if (preset != null) {
                     _updateConfig(preset.copyWith(seed: _config.seed));
                   } else {
-                    _updateConfig(_config.copyWith(style: value));
+                    // Set default mouth to smile for human-like styles
+                    final isHumanStyle = ['man', 'woman', 'boy', 'girl', 'grandfather', 'grandmother', 'avataaars'].contains(value);
+                    _updateConfig(_config.copyWith(
+                      style: value,
+                      mouth: isHumanStyle ? 'smile' : null,
+                    ));
                   }
                 },
               ),

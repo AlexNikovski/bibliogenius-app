@@ -219,14 +219,42 @@ class _AppRouterState extends State<AppRouter> {
         final isSetup = themeProvider.isSetupComplete;
         final isSetupRoute = state.uri.path == '/setup';
         final isOnboardingRoute = state.uri.path == '/onboarding';
+        final isLoginRoute = state.uri.path == '/login';
 
+        // 1. Setup check
         if (!isSetup && !isSetupRoute) return '/setup';
         if (isSetup && isSetupRoute) {
-          final hasSeenTour = await WizardService.hasSeenOnboardingTour();
-          if (!hasSeenTour && !isOnboardingRoute) {
-            return '/onboarding';
-          }
+             // If setup is done but user tries to go to setup, redirect.
+             // We'll let the next checks decide where.
+             return '/dashboard'; 
+        }
+
+        // 2. Auth check
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final isLoggedIn = await authService.isLoggedIn();
+
+        if (!isLoggedIn) {
+          if (isLoginRoute) return null; // Allow access to login
+          if (isOnboardingRoute) return null; // Allow onboarding? Maybe. 
+          // Usually onboarding is post-setup, pre-login or post-login? 
+          // Current logic: `if (isSetup && isSetupRoute)` -> onboarding.
+          // Let's assume onBoarding is accessible or part of the flow.
+          // Re-reading original logic: it redirected to onboarding if setup was JUST done.
+          // Let's keep it simple: Secure the app.
+          return '/login';
+        }
+
+        // 3. Logged in user trying to access login
+        if (isLoggedIn && isLoginRoute) {
           return '/dashboard';
+        }
+
+        // 4. Onboarding check (only if logged in or allowed)
+        if (isLoggedIn && state.uri.path == '/dashboard') {
+             // Check if user has seen tour only if going to dashboard root? 
+             // Original logic checked it when redirecting FROM setup.
+             final hasSeenTour = await WizardService.hasSeenOnboardingTour();
+             if (!hasSeenTour) return '/onboarding';
         }
 
         return null;

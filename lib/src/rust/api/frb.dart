@@ -8,7 +8,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'frb.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `db`, `runtime`
+// These functions are ignored because they are not marked as `pub`: `db`, `install_panic_hook`, `runtime`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`, `from`, `from`
 
 /// Initialize the FFI backend with database at the given path
@@ -78,6 +78,14 @@ Future<FrbContact> getContactById({required int id}) =>
 Future<PlatformInt64> countContacts() =>
     RustLib.instance.api.crateApiFrbCountContacts();
 
+/// Create a new contact
+Future<FrbContact> createContact({required FrbContact contact}) =>
+    RustLib.instance.api.crateApiFrbCreateContact(contact: contact);
+
+/// Update an existing contact
+Future<FrbContact> updateContact({required FrbContact contact}) =>
+    RustLib.instance.api.crateApiFrbUpdateContact(contact: contact);
+
 /// Get all loans with optional filters
 Future<List<FrbLoan>> getAllLoans({
   int? libraryId,
@@ -96,6 +104,10 @@ Future<PlatformInt64> countActiveLoans() =>
 /// Return a loan
 Future<String> returnLoan({required int id}) =>
     RustLib.instance.api.crateApiFrbReturnLoan(id: id);
+
+/// Reset the entire application - deletes all data from all tables
+/// This is irreversible and should be used with caution
+Future<String> resetApp() => RustLib.instance.api.crateApiFrbResetApp();
 
 /// Simplified book structure for FFI
 @freezed

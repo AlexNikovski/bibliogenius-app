@@ -106,6 +106,59 @@ class OpenLibraryService {
       return [];
     } catch (e) {
       print('Error searching Open Library: $e');
+      // Fallback to Inventaire.io when Open Library fails
+      return _searchInventaireFallback(query);
+    }
+  }
+
+  /// Fallback search using Inventaire.io when Open Library is unavailable
+  Future<List<OpenLibraryBook>> _searchInventaireFallback(String query) async {
+    try {
+      print('Falling back to Inventaire.io for search...');
+      final response = await _dio.get(
+        'https://inventaire.io/api/search',
+        queryParameters: {
+          'types': 'works',
+          'search': query,
+          'limit': 10,
+          'lang': 'en',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final results = response.data['results'] as List? ?? [];
+        return results.map((item) {
+          final label = item['label'] as String? ?? 'Unknown Title';
+          final description = item['description'] as String?;
+          final uri = item['uri'] as String?;
+          
+          // Inventaire doesn't return author in search results directly
+          // but description often contains author info
+          String author = 'Unknown Author';
+          if (description != null && description.contains(' by ')) {
+            author = description.split(' by ').last.trim();
+          }
+          
+          // Inventaire uses Wikidata-style entity URIs
+          String? coverUrl;
+          if (uri != null) {
+            coverUrl = 'https://inventaire.io/img/entities/$uri';
+          }
+
+          return OpenLibraryBook(
+            title: label,
+            author: author,
+            isbn: null,
+            publisher: null,
+            year: null,
+            coverUrl: coverUrl,
+            key: uri,
+          );
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Inventaire fallback also failed: $e');
       return [];
     }
   }

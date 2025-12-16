@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/translation_service.dart';
 import '../services/wizard_service.dart';
+import 'package:go_router/go_router.dart';
 
 class OnboardingTourScreen extends StatefulWidget {
   const OnboardingTourScreen({super.key});
@@ -105,7 +106,9 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
 
   void _finishTour() {
     WizardService.markOnboardingTourSeen();
-    Navigator.of(context).pop();
+    // Navigate to the main dashboard after onboarding completes
+    // Using GoRouter to replace the onboarding route with the dashboard route
+    GoRouter.of(context).go('/dashboard');
   }
 
   void _onPageChanged(int index) {
