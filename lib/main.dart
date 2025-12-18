@@ -12,6 +12,7 @@ import 'services/api_service.dart';
 import 'services/sync_service.dart';
 import 'services/translation_service.dart';
 import 'services/mdns_service.dart';
+import 'services/ffi_service.dart';
 import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/book_list_screen.dart';
@@ -39,6 +40,7 @@ import 'screens/onboarding_tour_screen.dart';
 import 'screens/shelves_screen.dart';
 import 'screens/network_screen.dart';
 import 'screens/feedback_screen.dart';
+import 'screens/animations_test_screen.dart';
 import 'services/wizard_service.dart';
 import 'widgets/scaffold_with_nav.dart';
 
@@ -102,6 +104,13 @@ void main() async {
   await TranslationService.loadFromCache();
   final themeProvider = ThemeProvider();
 
+  // Load settings early so library name is available for mDNS
+  try {
+    await themeProvider.loadSettings();
+  } catch (e) {
+    debugPrint('Error loading settings early: $e');
+  }
+
   // Initialize FFI for native platforms
   bool useFfi = false;
 
@@ -135,11 +144,24 @@ void main() async {
       useFfi = true;
       debugPrint('FFI: useFfi set to TRUE');
       
+      // Start HTTP server for P2P capabilities
+      int httpPort = 8000;
+      try {
+        final startedPort = await FfiService().startServer(8000);
+        if (startedPort != null) {
+          httpPort = startedPort;
+          ApiService.setHttpPort(httpPort); // Store the actual port globally
+          debugPrint('FFI: HTTP server confirmed running on port $httpPort');
+        }
+      } catch (e) {
+        debugPrint('FFI: Failed to start HTTP server: $e');
+      }
+      
       // Auto-initialize mDNS for local network discovery (Native Bonjour)
       // This makes the app discoverable on the local WiFi network
       try {
         final libraryName = themeProvider.libraryName ?? 'BiblioGenius Library';
-        await MdnsService.startAnnouncing(libraryName, 8000);
+        await MdnsService.startAnnouncing(libraryName, httpPort);
         await MdnsService.startDiscovery();
       } catch (mdnsError) {
         debugPrint('mDNS: Init failed (non-blocking): $mdnsError');
@@ -151,12 +173,7 @@ void main() async {
     }
   }
 
-  try {
-    await themeProvider.loadSettings();
-  } catch (e, stackTrace) {
-    debugPrint('Error loading settings: $e');
-    debugPrint(stackTrace.toString());
-  }
+  // Settings already loaded earlier, no need to call again
 
   runApp(MyApp(
     themeProvider: themeProvider,
@@ -398,7 +415,7 @@ class _AppRouterState extends State<AppRouter> {
             ),
             GoRoute(
               path: '/peers',
-              redirect: (context, state) => '/network',
+              builder: (context, state) => const NetworkScreen(), // Fallback to network
               routes: [
                 GoRoute(
                   path: ':id/books',
@@ -436,6 +453,10 @@ class _AppRouterState extends State<AppRouter> {
             GoRoute(
               path: '/feedback',
               builder: (context, state) => const FeedbackScreen(),
+            ),
+            GoRoute(
+              path: '/animations-test',
+              builder: (context, state) => const AnimationsTestScreen(),
             ),
           ],
         ),

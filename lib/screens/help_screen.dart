@@ -300,6 +300,31 @@ class _HelpScreenState extends State<HelpScreen> {
             ),
           ],
         ),
+        
+        const SizedBox(height: 24),
+        
+        // Tests Section
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Text(
+                '🧪 Tests',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            _buildActionCard(
+              context,
+              icon: Icons.animation,
+              label: 'Animation Tests',
+              gradient: AppDesign.accentGradient,
+              onTap: () => context.push('/animations-test'),
+            ),
+          ],
+        ),
       ],
     );
   }

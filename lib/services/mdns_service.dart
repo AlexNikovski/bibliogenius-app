@@ -5,8 +5,10 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/foundation.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 /// Service type for BiblioGenius mDNS announcements
 const String kServiceType = '_bibliogenius._tcp';
@@ -54,19 +56,76 @@ class MdnsService {
   /// Get discovered peers (excluding own service)
   static List<DiscoveredPeer> get peers => _peers.values.toList();
 
+  /// Check if an IP address is a link-local address (169.254.x.x)
+  /// These addresses are auto-assigned when DHCP fails and are not routable
+  static bool _isLinkLocalAddress(String ip) {
+    return ip.startsWith('169.254.');
+  }
+
+  /// Try to get a valid LAN IP from network interfaces
+  /// Returns the first non-link-local, non-loopback IPv4 address found
+  static Future<String?> _getValidLanIp() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLinkLocal: false,
+      );
+      for (final interface in interfaces) {
+        for (final address in interface.addresses) {
+          final ip = address.address;
+          // Skip loopback and link-local
+          if (!address.isLoopback && !_isLinkLocalAddress(ip)) {
+            debugPrint('🔍 mDNS: Found valid IP $ip on ${interface.name}');
+            return ip;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ mDNS: Error listing network interfaces - $e');
+    }
+    return null;
+  }
+
   /// Start announcing this library on the network
   static Future<bool> startAnnouncing(String libraryName, int port,
       {String? libraryId}) async {
     try {
-      // Clean name for mDNS (alphanumeric, spaces, hyphens only)
-      final safeName = libraryName.replaceAll(RegExp(r'[^\w\s-]'), '');
+      // Clean name for mDNS - keep Unicode letters, numbers, spaces, hyphens
+      // Note: mDNS/Bonjour supports UTF-8 names, so we preserve accented chars
+      final safeName = libraryName.replaceAll(RegExp(r'[^\p{L}\p{N}\s-]', unicode: true), '');
       _ownServiceName = safeName;
+
+      // Get local IP to include in attributes for reliable peer discovery
+      // Filter out link-local addresses (169.254.x.x) as they're not routable
+      String? localIp;
+      try {
+        final info = NetworkInfo();
+        // Try WiFi IP first
+        String? wifiIp = await info.getWifiIP();
+        if (wifiIp != null && !_isLinkLocalAddress(wifiIp)) {
+          localIp = wifiIp;
+        }
+        // If WiFi IP is link-local or null, try getting wired IP (on macOS/desktop)
+        if (localIp == null) {
+          // Fallback: get IP from network interfaces
+          localIp = await _getValidLanIp();
+        }
+        if (localIp == null) {
+          debugPrint('⚠️ mDNS: No valid LAN IP found (only link-local available)');
+        }
+      } catch (e) {
+        debugPrint('⚠️ mDNS: Could not get local IP - $e');
+      }
+
+      final attributes = <String, String>{};
+      if (libraryId != null) attributes['library_id'] = libraryId;
+      if (localIp != null) attributes['ip'] = localIp;
 
       final service = BonsoirService(
         name: safeName,
         type: kServiceType,
         port: port,
-        attributes: libraryId != null ? {'library_id': libraryId} : {},
+        attributes: attributes,
       );
 
       _broadcast = BonsoirBroadcast(service: service);
@@ -74,7 +133,7 @@ class MdnsService {
       await _broadcast!.start();
       _isRunning = true;
 
-      debugPrint('📡 mDNS: Broadcasting "$safeName" on port $port');
+      debugPrint('📡 mDNS: Broadcasting "$safeName" on port $port (IP: $localIp)');
       return true;
     } catch (e) {
       debugPrint('❌ mDNS: Failed to start broadcasting - $e');
@@ -97,23 +156,40 @@ class MdnsService {
           // Skip our own service
           if (service.name == _ownServiceName) return;
           
-          // Generate hostname from service name
-          final hostGuess = service.name
-              .toLowerCase()
-              .replaceAll(RegExp(r'[^a-z0-9]'), '-')
-              .replaceAll(RegExp(r'-+'), '-');
+          // Prefer IP from attributes (reliable), fallback to hostname guess
+          final ipFromAttrs = service.attributes['ip'];
+          String host;
+          if (ipFromAttrs != null && ipFromAttrs.isNotEmpty && !_isLinkLocalAddress(ipFromAttrs)) {
+            host = ipFromAttrs;
+            debugPrint('📚 mDNS: Using IP from attributes: $host');
+          } else {
+            if (ipFromAttrs != null && _isLinkLocalAddress(ipFromAttrs)) {
+              debugPrint('⚠️ mDNS: Peer advertised link-local IP ($ipFromAttrs), trying hostname fallback');
+            }
+            // Fallback: Generate hostname from service name (less reliable)
+            final hostGuess = service.name
+                .toLowerCase()
+                .replaceAll(RegExp(r'[^a-z0-9]'), '-')
+                .replaceAll(RegExp(r'-+'), '-')
+                .replaceAll(RegExp(r'-$'), ''); // Remove trailing dash
+            host = '$hostGuess.local';
+            debugPrint('⚠️ mDNS: No valid IP in attributes, guessing hostname: $host');
+          }
+          
+          // Use actual port from service (default to 8000 if not available)
+          final actualPort = service.port > 0 ? service.port : 8000;
           
           final peer = DiscoveredPeer(
             name: service.name,
-            host: '$hostGuess.local',
-            port: 8000,
-            addresses: [],
+            host: host,
+            port: actualPort,
+            addresses: [host],
             libraryId: service.attributes['library_id'],
             discoveredAt: DateTime.now(),
           );
 
           _peers[service.name] = peer;
-          debugPrint('📚 mDNS: Discovered "${peer.name}"');
+          debugPrint('📚 mDNS: Discovered "${peer.name}" at ${peer.host}:${peer.port}');
         }
         // Handle service resolved (preferred if it fires)
         else if (event is BonsoirDiscoveryServiceResolvedEvent) {

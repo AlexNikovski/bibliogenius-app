@@ -154,6 +154,12 @@ Future<String> returnLoan({required int id}) =>
 /// This is irreversible and should be used with caution
 Future<String> resetApp() => RustLib.instance.api.crateApiFrbResetApp();
 
+/// Start the HTTP server on the specified port (FFI)
+/// This is required for P2P functionality in standalone mode
+/// If the specified port is occupied, tries the next 10 ports automatically
+Future<int> startServer({required int port}) =>
+    RustLib.instance.api.crateApiFrbStartServer(port: port);
+
 /// Simplified book structure for FFI
 @freezed
 sealed class FrbBook with _$FrbBook {

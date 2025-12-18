@@ -159,31 +159,195 @@ class _SearchPeerScreenState extends State<SearchPeerScreen> {
                           peer['status'] == 'active' ||
                           peer['status'] == 'pending';
 
-                      return ListTile(
-                        leading: CircleAvatar(
-                          child: Icon(isLocal ? Icons.bookmark : Icons.public),
-                        ),
-                        title: Text(peer['name']),
-                        subtitle: Text(peer['url']),
-                        trailing: isConnected
-                            ? Chip(
-                                label: Text(
-                                  TranslationService.translate(
-                                    context,
-                                    'already_connected',
-                                  ),
-                                ),
-                              )
-                            : ElevatedButton(
-                                onPressed: () => _connect(peer),
-                                child: Text(
-                                  TranslationService.translate(
-                                    context,
-                                    'add_peer_btn',
-                                  ),
-                                ),
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withAlpha(13)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: Theme.of(context).brightness == Brightness.dark
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(13),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                      );
+                            ],
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withAlpha(26)
+                            : Colors.grey.withAlpha(26),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: (peer['status'] == 'active'
+                                    ? Colors.indigo
+                                    : (peer['status'] == 'pending'
+                                        ? Colors.orange
+                                        : Colors.teal))
+                                .withAlpha(26),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            peer['status'] == 'active'
+                                ? Icons.public_rounded
+                                : (peer['status'] == 'pending'
+                                    ? Icons.hourglass_top_rounded
+                                    : Icons.library_add_rounded),
+                            color: peer['status'] == 'active'
+                                ? Colors.indigo
+                                : (peer['status'] == 'pending'
+                                    ? Colors.orange
+                                    : Colors.teal),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                peer['name'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                peer['url'],
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (peer['status'] == 'active') ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withAlpha(26),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'CONNECTED',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              if (peer['status'] == 'pending') ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withAlpha(26),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'PENDING',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.orange,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (peer['status'] == 'active')
+                          ElevatedButton(
+                            onPressed: () {
+                              context.push(
+                                '/peers/${peer['id']}/books',
+                                extra: {
+                                  'id': peer['id'],
+                                  'name': peer['name'],
+                                  'url': peer['url']
+                                },
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              'Browse',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          )
+                        else if (peer['status'] == 'pending')
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withAlpha(26),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.orange.withAlpha(51)),
+                            ),
+                            child: const Text(
+                              'Sent',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          )
+                        else
+                          ElevatedButton(
+                            onPressed: () => _connect(peer),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              TranslationService.translate(
+                                context,
+                                'add_peer_btn',
+                              ),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
                     },
                   ),
           ),

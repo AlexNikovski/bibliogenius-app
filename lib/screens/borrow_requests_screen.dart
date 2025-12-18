@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/genie_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -52,6 +53,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
           _outgoingRequests = outRes.data;
           _connectionRequests = connRes.data['requests'] ?? [];
         });
+        debugPrint('📋 _fetchRequests: ${_connectionRequests.length} connection requests');
+        for (var r in _connectionRequests) {
+          debugPrint('  📚 Connection: id=${r['id']}, name="${r['name']}", url=${r['url']}');
+        }
       }
     } catch (e) {
       if (mounted && !silent) {
@@ -88,10 +93,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     }
   }
 
-  Future<void> _updatePeerStatus(int id, String status) async {
+  Future<void> _updatePeerStatus(Map<String, dynamic> peer, String status) async {
     final api = Provider.of<ApiService>(context, listen: false);
     try {
-      await api.updatePeerStatus(id, status);
+      await api.updatePeerStatus(peer['id'], status);
       _fetchRequests();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -101,6 +106,15 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
             ),
           ),
         );
+
+        // Navigate to peer's library after accepting
+        if (status == 'active') {
+          context.push('/peers/${peer['id']}/books', extra: {
+            'id': peer['id'],
+            'name': peer['name'] ?? 'Unknown',
+            'url': peer['url'] ?? '',
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -173,11 +187,9 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
         automaticallyImplyLeading: false,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Theme.of(context).appBarTheme.foregroundColor,
-          unselectedLabelColor: Theme.of(
-            context,
-          ).appBarTheme.foregroundColor?.withValues(alpha: 0.7),
-          indicatorColor: Theme.of(context).appBarTheme.foregroundColor,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
           tabs: [
             Tab(
               icon: const Icon(Icons.move_to_inbox),
@@ -195,7 +207,7 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchRequests,
           ),
         ],
@@ -308,68 +320,139 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     Map<String, dynamic> req, {
     required bool isIncoming,
   }) {
-    return Column(
-      children: [
-        ListTile(
-          textColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: CircleAvatar(
-            backgroundColor: isIncoming
-                ? Colors.purple.withOpacity(0.1)
-                : Colors.blueGrey.withOpacity(0.1),
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = (isDark ? Colors.white70 : Colors.black54);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withAlpha(13) : Colors.grey.withAlpha(13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withAlpha(26) : Colors.grey.withAlpha(26),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isIncoming
+                  ? Colors.purple.withAlpha(26)
+                  : Colors.blueGrey.withAlpha(26),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(
-              isIncoming ? Icons.link : Icons.link_off,
+              isIncoming ? Icons.link : Icons.send_rounded,
               color: isIncoming ? Colors.purple : Colors.blueGrey,
+              size: 24,
             ),
           ),
-          title: Text(
-            req['name'] ??
-                TranslationService.translate(context, 'unknown_library'),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(req['url'] ?? ''),
-          trailing: isIncoming
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      onPressed: () => _updatePeerStatus(req['id'], 'active'),
-                      child: Text(
-                        TranslationService.translate(context, 'btn_accept'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      onPressed: () => _updatePeerStatus(req['id'], 'rejected'),
-                      child: Text(
-                        TranslationService.translate(context, 'btn_reject'),
-                      ),
-                    ),
-                  ],
-                )
-              : Chip(
-                  label: Text(
-                    TranslationService.translate(context, 'status_pending'),
+          const SizedBox(width: 16),
+          
+          // Library Info (Between Icon and Buttons)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  req['name'] ??
+                      TranslationService.translate(context, 'unknown_library'),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: textColor,
                   ),
-                  backgroundColor: Colors.orange.withOpacity(0.1),
-                  labelStyle: const TextStyle(color: Colors.orange),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-        ),
-        const Divider(height: 1, indent: 72),
-      ],
+                const SizedBox(height: 4),
+                Text(
+                  req['url'] ?? '',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: subColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(width: 12),
+
+          // Actions
+          if (isIncoming)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => _updatePeerStatus(req, 'active'),
+                  child: Text(
+                    TranslationService.translate(context, 'btn_accept'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red, width: 1.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => _updatePeerStatus(req, 'rejected'),
+                  child: Text(
+                    TranslationService.translate(context, 'btn_reject'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue.withAlpha(26),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.blue.withAlpha(51)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle_outline, size: 14, color: Colors.blue),
+                  const SizedBox(width: 6),
+                  Text(
+                    TranslationService.translate(context, 'status_sent') ?? "Sent",
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 

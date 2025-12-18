@@ -13,6 +13,7 @@ import '../services/translation_service.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'peer_book_list_screen.dart';
 
 /// Filter options for the network list
 enum NetworkFilter { all, libraries, contacts }
@@ -108,11 +109,29 @@ class _NetworkScreenState extends State<NetworkScreen>
       // Fetch mDNS discovered peers (local network)
       List<Map<String, dynamic>> localPeers = [];
       bool mdnsActive = false;
+      String? myLibraryName;
+      try {
+        final configRes = await api.getLibraryConfig();
+        myLibraryName = configRes.data['library_name'] as String?;
+      } catch (e) {
+        debugPrint('Could not get library name: $e');
+      }
       try {
         final localRes = await api.getLocalPeers();
         if (localRes.statusCode == 200) {
           final List<dynamic> localJson = localRes.data['peers'] ?? [];
-          localPeers = localJson.cast<Map<String, dynamic>>();
+          // Filter out own library by name
+          localPeers = localJson
+              .cast<Map<String, dynamic>>()
+              .where((peer) {
+                final peerName = peer['name'] as String?;
+                if (peerName != null && myLibraryName != null && peerName == myLibraryName) {
+                  debugPrint('🔇 Filtering out own library from mDNS: $peerName');
+                  return false;
+                }
+                return true;
+              })
+              .toList();
           mdnsActive = localRes.data['mdns_active'] ?? false;
         }
       } catch (e) {
@@ -279,7 +298,7 @@ class _NetworkScreenState extends State<NetworkScreen>
       );
 
       if (_localIp != null && _libraryName != null) {
-        final data = {"name": _libraryName, "url": "http://$_localIp:8000"};
+        final data = {"name": _libraryName, "url": "http://$_localIp:${ApiService.httpPort}"};
         _qrData = jsonEncode(data);
       }
     } catch (e) {
@@ -475,7 +494,7 @@ class _NetworkScreenState extends State<NetworkScreen>
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, color: Colors.white),
             tooltip: TranslationService.translate(
               context,
               'network_search_title',
@@ -483,8 +502,11 @@ class _NetworkScreenState extends State<NetworkScreen>
             onPressed: () => context.push('/network-search'),
           ),
           IconButton(
-            icon: const Icon(Icons.keyboard),
-            tooltip: 'Manual Connection',
+            icon: const Icon(Icons.keyboard, color: Colors.white),
+            tooltip: TranslationService.translate(
+              context,
+              'manual_connection_btn',
+            ),
             onPressed: _showManualConnectionDialog,
           ),
         ],
@@ -690,66 +712,194 @@ class _NetworkScreenState extends State<NetworkScreen>
     final addresses = (peer['addresses'] as List<dynamic>?)?.cast<String>() ?? [];
     final port = peer['port'] ?? 8000;
     final address = addresses.isNotEmpty ? addresses.first : '?';
+    final url = 'http://$address:$port';
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.teal.withValues(alpha: 0.2),
-        child: const Icon(Icons.library_books, color: Colors.teal, size: 20),
+    // Find if this peer is already a member
+    final existingMember = _members.firstWhere(
+      (m) => m.url == url,
+      orElse: () => NetworkMember(
+        id: -1,
+        name: '',
+        type: NetworkMemberType.library,
+        source: NetworkMemberSource.local,
       ),
-      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text('$address:$port', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-      trailing: ElevatedButton.icon(
-        onPressed: () => _connectToLocalPeer(name, 'http://$address:$port'),
-        icon: const Icon(Icons.add_link, size: 16),
-        label: Text(TranslationService.translate(context, 'connect')),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
+    );
+
+    final bool isConnected =
+        existingMember.id != -1 && existingMember.status == 'connected';
+    final bool isPending =
+        existingMember.id != -1 && existingMember.isPending == true;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isConnected
+                  ? Colors.green.withAlpha(26)
+                  : (isPending ? Colors.orange.withAlpha(26) : Colors.teal.withAlpha(26)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isConnected
+                  ? Icons.cloud_done_rounded
+                  : (isPending ? Icons.hourglass_top_rounded : Icons.library_books),
+              color: isConnected
+                  ? Colors.green
+                  : (isPending ? Colors.orange : Colors.teal),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '$address:$port',
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white70
+                        : Colors.grey[600],
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Always show Browse for mDNS peers (server will check permissions)
+          ElevatedButton.icon(
+            onPressed: () {
+              debugPrint('📚 Browse mDNS peer: name=$name, url=$url');
+              context.push(
+                '/peers/0/books',  // Use 0 as ID since this is direct mDNS access
+                extra: {
+                  'id': 0,
+                  'name': name,
+                  'url': url,
+                },
+              );
+            },
+            icon: const Icon(Icons.auto_stories_rounded, size: 14),
+            label: const Text('Browse', style: TextStyle(fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  /// Connect to a locally discovered peer
-  Future<void> _connectToLocalPeer(String name, String url) async {
-    final api = Provider.of<ApiService>(context, listen: false);
-    
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator()),
-    );
+  /// Connect to a locally discovered peer (sends connection request)
+Future<void> _connectToLocalPeer(String name, String url) async {
+  final api = Provider.of<ApiService>(context, listen: false);
+  
+  // Show loading dialog (non-blocking)
+  unawaited(showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(TranslationService.translate(ctx, 'sending_request')),
+          ],
+        ),
+      ),
+    ),
+  ));
 
-    try {
-      await api.connectLocalPeer(name, url);
-      if (mounted) {
-        Navigator.pop(context);
+  // Small delay to ensure dialog is rendered
+  await Future.delayed(const Duration(milliseconds: 50));
+
+  try {
+    final response = await api.connectLocalPeer(name, url);
+    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+      
+      // Check if the request was successful
+      if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${TranslationService.translate(context, 'connected_to')} $name!'),
+            content: Text(
+              TranslationService.translate(context, 'connection_request_sent')
+                  .replaceAll('{name}', name),
+            ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: TranslationService.translate(context, 'view_requests'),
+              textColor: Colors.white,
+              onPressed: () {
+                // Navigate to Requests screen
+                context.go('/requests');
+              },
+            ),
           ),
         );
+        // Refresh the network list
         _loadAllMembers();
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
+      } else {
+        // Request failed at the remote end
+        final error = response.data?['error'] ?? 'Unknown error';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${TranslationService.translate(context, 'connection_failed')}: $e'),
-            backgroundColor: Colors.red,
+            content: Text('${TranslationService.translate(context, 'connection_failed')}: $error'),
+            backgroundColor: Colors.orange,
           ),
         );
       }
     }
+  } catch (e) {
+    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${TranslationService.translate(context, 'connection_failed')}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-
-
+}
   Widget _buildMemberCard(NetworkMember member) {
     final isNetwork = member.source == NetworkMemberSource.network;
     final isPending = member.isPending;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     // Determine icon and color
     IconData icon;
@@ -757,118 +907,137 @@ class _NetworkScreenState extends State<NetworkScreen>
     Color bgColor;
 
     if (isNetwork) {
-      icon = isPending ? Icons.hourglass_empty : Icons.public;
+      icon = isPending ? Icons.hourglass_top_rounded : Icons.public_rounded;
       iconColor = isPending ? Colors.orange : Colors.indigo;
-      bgColor = isPending
-          ? Colors.orange.withValues(alpha: 0.1)
-          : Colors.indigo.withValues(alpha: 0.1);
+      bgColor = isPending ? Colors.orange : Colors.indigo;
     } else if (member.type == NetworkMemberType.borrower) {
-      icon = Icons.person;
+      icon = Icons.person_rounded;
       iconColor = Colors.blue;
-      bgColor = Colors.blue.withValues(alpha: 0.1);
+      bgColor = Colors.blue;
     } else {
-      icon = Icons.library_books;
+      icon = Icons.library_books_rounded;
       iconColor = Colors.purple;
-      bgColor = Colors.purple.withValues(alpha: 0.1);
+      bgColor = Colors.purple;
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDark ? Colors.white.withAlpha(13) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withAlpha(13),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+          color: isDark ? Colors.white.withAlpha(26) : Colors.grey.withAlpha(26),
+          width: 1,
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 24,
-          backgroundColor: bgColor,
-          child: Icon(icon, color: iconColor),
-        ),
-        title: Text(
-          member.name,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            color: isPending ? Colors.grey[700] : null,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: bgColor.withAlpha(26),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            member.secondaryInfo,
-            style: TextStyle(color: Colors.grey[600], fontSize: 13),
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isNetwork)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isPending
-                      ? Colors.orange.withValues(alpha: 0.1)
-                      : Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isPending
-                        ? Colors.orange.withValues(alpha: 0.3)
-                        : Colors.green.withValues(alpha: 0.3),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  member.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: isPending ? Colors.grey : null,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isPending ? Icons.hourglass_empty : Icons.cloud_done,
-                      size: 12,
-                      color: isPending ? Colors.orange : Colors.green,
+                const SizedBox(height: 2),
+                Text(
+                  member.secondaryInfo,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (!isPending && isNetwork) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withAlpha(26),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      member.displayStatus,
+                    child: const Text(
+                      'ACTIVE',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
-                        color: isPending ? Colors.orange : Colors.green,
+                        color: Colors.green,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  ],
-                ),
-              ),
-            if (!isNetwork && member.isActive == true)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  TranslationService.translate(context, 'status_active'),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
                   ),
+                ],
+                if (isPending) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withAlpha(26),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'PENDING',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (!isPending && isNetwork)
+            ElevatedButton(
+              onPressed: () => _onMemberTap(member),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              child: const Text(
+                'Browse',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            )
+          else
             _buildMemberActions(member),
-          ],
-        ),
-        onTap: () => _onMemberTap(member),
+        ],
       ),
     );
   }
@@ -915,6 +1084,7 @@ class _NetworkScreenState extends State<NetworkScreen>
   }
 
   void _onMemberTap(NetworkMember member) {
+    debugPrint('👆 _onMemberTap: ${member.name}, source=${member.source}, url=${member.url}, status=${member.status}');
     if (member.source == NetworkMemberSource.network) {
       if (member.isPending) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -925,7 +1095,18 @@ class _NetworkScreenState extends State<NetworkScreen>
           ),
         );
       } else {
+        // Validate URL before navigating
+        if (member.url == null || member.url!.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error: Peer URL is missing'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
         // Navigate to peer's book list
+        debugPrint('📚 Navigating to peer books: id=${member.id}, name=${member.name}, url=${member.url}');
         context.push(
           '/peers/${member.id}/books',
           extra: {'id': member.id, 'name': member.name, 'url': member.url},

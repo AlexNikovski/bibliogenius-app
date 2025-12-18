@@ -356,4 +356,17 @@ class FfiService {
       debugPrint('FFI stopMdns error: $e');
     }
   }
+
+  /// Start the HTTP server on the specified port
+  /// This is required for P2P functionality in standalone mode
+  Future<int?> startServer(int port) async {
+    try {
+      final actualPort = await frb.startServer(port: port);
+      debugPrint('🚀 FfiService: HTTP Server started on port $actualPort');
+      return actualPort;
+    } catch (e) {
+      debugPrint('❌ FfiService: Failed to start server: $e');
+      return null;
+    }
+  }
 }

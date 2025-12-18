@@ -8,6 +8,7 @@ import '../utils/book_status.dart';
 import '../models/book.dart';
 import '../services/open_library_service.dart';
 import '../services/search_cache.dart';
+import '../widgets/plus_one_animation.dart';
 import 'scan_screen.dart';
 
 class AddBookScreen extends StatefulWidget {
@@ -160,7 +161,14 @@ class _AddBookScreenState extends State<AddBookScreen> {
     try {
       await apiService.createBook(book.toJson());
       if (mounted) {
-        context.pop(true); // Return true to indicate success
+        // Mario Bros-style +1 animation! 🎮
+        PlusOneAnimation.show(context);
+        
+        // Small delay to let animation be visible before navigation
+        await Future.delayed(const Duration(milliseconds: 400));
+        if (mounted) {
+          context.pop(true); // Return true to indicate success
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -184,22 +192,22 @@ class _AddBookScreenState extends State<AddBookScreen> {
         actions: [
           TextButton.icon(
             onPressed: () => context.push('/search/external'),
-            icon: const Icon(Icons.search, color: Colors.white),
+            icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onPrimary),
             label: Text(
               TranslationService.translate(context, 'btn_search_online'),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
             ),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0, left: 8.0),
             child: _isSaving
-                ? const Center(
+                ? Center(
                     child: SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                   )
@@ -207,8 +215,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
                     onPressed: _saveBook,
                     child: Text(
                       TranslationService.translate(context, 'save_book') ?? 'Save',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 
 import '../models/book.dart';
 import '../models/genie.dart';
@@ -26,6 +27,15 @@ class ApiService {
   static String get defaultBaseUrl =>
       dotenv.env['API_BASE_URL'] ?? 'http://localhost:8001';
   static String get hubUrl => dotenv.env['HUB_URL'] ?? 'http://localhost:8081';
+
+  /// The actual HTTP server port (may differ from 8000 if occupied)
+  static int httpPort = 8000;
+
+  /// Set the actual HTTP server port (called from main.dart after server starts)
+  static void setHttpPort(int port) {
+    httpPort = port;
+    debugPrint('📡 ApiService: HTTP port set to $port');
+  }
 
   ApiService(this._authService, {String? baseUrl, Dio? dio, this.useFfi = false})
     : _dio = dio ?? Dio() {
@@ -639,9 +649,14 @@ class ApiService {
     if (useFfi) {
       try {
         final books = await FfiService().getBooks();
+        final prefs = await SharedPreferences.getInstance();
         final totalBooks = books.length;
         final booksRead = books.where((b) => b.readingStatus == 'finished').length;
         final booksReading = books.where((b) => b.readingStatus == 'reading').length;
+        
+        // Read goals from SharedPreferences
+        final readingGoalYearly = prefs.getInt('ffi_reading_goal_yearly') ?? 12;
+        final readingGoalMonthly = prefs.getInt('ffi_reading_goal_monthly') ?? 0;
         
         // Calculate collector progress (thresholds: 10, 50, 100)
         int collectorLevel = 0;
@@ -682,7 +697,12 @@ class ApiService {
             },
             'streak': {'current': 0, 'longest': 0},
             'recent_achievements': [],
-            'config': {'achievements_style': 'minimal', 'reading_goal_yearly': 12, 'reading_goal_progress': booksRead},
+            'config': {
+              'achievements_style': 'minimal',
+              'reading_goal_yearly': readingGoalYearly,
+              'reading_goal_monthly': readingGoalMonthly,
+              'reading_goal_progress': booksRead,
+            },
             'level': 'Member',
             'loans_count': 0,
             'edits_count': 0,
@@ -714,6 +734,38 @@ class ApiService {
       );
     }
     return await _dio.get('/api/user/status');
+  }
+
+  /// Update gamification config (reading goals, etc.)
+  Future<Response> updateGamificationConfig({
+    int? readingGoalYearly,
+    int? readingGoalMonthly,
+    String? achievementsStyle,
+  }) async {
+    final data = <String, dynamic>{};
+    if (readingGoalYearly != null) data['reading_goal_yearly'] = readingGoalYearly;
+    if (readingGoalMonthly != null) data['reading_goal_monthly'] = readingGoalMonthly;
+    if (achievementsStyle != null) data['achievements_style'] = achievementsStyle;
+
+    if (useFfi) {
+      // In FFI mode, store in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      if (readingGoalYearly != null) {
+        await prefs.setInt('ffi_reading_goal_yearly', readingGoalYearly);
+      }
+      if (readingGoalMonthly != null) {
+        await prefs.setInt('ffi_reading_goal_monthly', readingGoalMonthly);
+      }
+      if (achievementsStyle != null) {
+        await prefs.setString('ffi_achievements_style', achievementsStyle);
+      }
+      return Response(
+        requestOptions: RequestOptions(path: '/api/user/config'),
+        statusCode: 200,
+        data: {'message': 'Config updated successfully'},
+      );
+    }
+    return await _dio.put('/api/user/config', data: data);
   }
 
   // Export
@@ -780,13 +832,25 @@ class ApiService {
 
   // P2P Advanced
   Future<Response> getPeers() async {
-    // P2P features require network - return empty in FFI mode
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/peers'),
-        statusCode: 200,
-        data: {'data': [], 'peers': []},  // Match expected format
-      );
+      // Call local HTTP API to get peers
+      try {
+        final localDio = Dio(BaseOptions(
+          baseUrl: 'http://localhost:${ApiService.httpPort}',
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ));
+        final response = await localDio.get('/api/peers');
+        debugPrint('✅ getPeers: ${response.data}');
+        return response;
+      } catch (e) {
+        debugPrint('❌ getPeers error: $e');
+        return Response(
+          requestOptions: RequestOptions(path: '/api/peers'),
+          statusCode: 500,
+          data: {'error': e.toString(), 'data': []},
+        );
+      }
     }
     return await _dio.get('$hubUrl/api/peers');
   }
@@ -807,11 +871,22 @@ class ApiService {
 
   Future<Response> syncPeer(String peerUrl) async {
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/peers/sync_by_url'),
-        statusCode: 200,
-        data: {'message': 'Sync not available in offline mode'},
-      );
+      // FFI mode: Direct P2P sync
+      try {
+        final myUrl = await _getMyUrl();
+        final dio = Dio();
+        debugPrint('P2P Sync: Requesting sync from $peerUrl/api/peers/sync_by_url with my URL $myUrl');
+        return await dio.post('$peerUrl/api/peers/sync_by_url', data: {
+          'url': myUrl
+        });
+      } catch (e) {
+        debugPrint('P2P Sync Error: $e');
+        return Response(
+          requestOptions: RequestOptions(path: '/api/peers/sync_by_url'),
+          statusCode: 502,
+          data: {'error': e.toString()},
+        );
+      }
     }
     return await _dio.post('/api/peers/sync_by_url', data: {'url': peerUrl});
   }
@@ -828,14 +903,21 @@ class ApiService {
   }
 
   Future<Response> getPeerBooksByUrl(String peerUrl) async {
-    if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/peers/books_by_url'),
-        statusCode: 200,
-        data: [],
-      );
+    // Direct P2P call to the peer's API
+    // We use a fresh Dio instance to avoid using our backend's BaseURL/Auth tokens
+    // which are not valid for the peer.
+    try {
+      final cleanUrl = peerUrl.endsWith('/') ? peerUrl.substring(0, peerUrl.length - 1) : peerUrl;
+      final targetUrl = '$cleanUrl/api/books';
+      
+      debugPrint('P2P: Fetching books from $targetUrl');
+      
+      final dio = Dio();
+      return await dio.get(targetUrl);
+    } catch (e) {
+      debugPrint('P2P: Error fetching books from $peerUrl - $e');
+      rethrow;
     }
-    return await _dio.get('/api/peers/books_by_url/$peerUrl');
   }
 
   Future<Response> requestBook(int peerId, String isbn, String title) async {
@@ -931,10 +1013,52 @@ class ApiService {
   // P2P Connection Requests (Hub)
   Future<Response> getPendingPeers() async {
     if (useFfi) {
+      // In FFI mode, call the local HTTP API to get peers
+      try {
+        final localDio = Dio(BaseOptions(
+          baseUrl: 'http://localhost:${ApiService.httpPort}',
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ));
+        final response = await localDio.get('/api/peers');
+        if (response.statusCode == 200) {
+          // Handle both formats: {data: [...]} or direct [...]
+          List allPeers;
+          if (response.data is Map && response.data['data'] != null) {
+            allPeers = response.data['data'] as List;
+          } else if (response.data is List) {
+            allPeers = response.data as List;
+          } else {
+            allPeers = [];
+          }
+          
+          // Filter for peers where auto_approve is false (pending connections)
+          final pendingPeers = allPeers
+              .where((p) => p['auto_approve'] == false)
+              .map((p) {
+                final Map<String, dynamic> peer = Map<String, dynamic>.from(p as Map);
+                peer['direction'] = 'incoming'; // Mark as incoming for UI
+                return peer;
+              })
+              .toList();
+          debugPrint('📋 getPendingPeers: Found ${pendingPeers.length} pending from ${allPeers.length} total');
+          for (var p in pendingPeers) {
+            debugPrint('  📚 Peer: id=${p['id']}, name="${p['name']}", url=${p['url']}, auto_approve=${p['auto_approve']}');
+          }
+          return Response(
+            requestOptions: RequestOptions(path: '/api/peers'),
+            statusCode: 200,
+            data: {'requests': pendingPeers},
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ getPendingPeers HTTP error: $e');
+      }
+      // Fallback to empty
       return Response(
         requestOptions: RequestOptions(path: '$hubUrl/api/peers/requests'),
         statusCode: 200,
-        data: {'requests': []},  // Match expected format: map with 'requests' key
+        data: {'requests': []},
       );
     }
     return await _dio.get('$hubUrl/api/peers/requests');
@@ -942,11 +1066,24 @@ class ApiService {
 
   Future<Response> updatePeerStatus(int id, String status) async {
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '$hubUrl/api/peers/$id/status'),
-        statusCode: 200,
-        data: {'message': 'Not available in offline mode'},
-      );
+      // Call local HTTP API to update peer status
+      try {
+        final localDio = Dio(BaseOptions(
+          baseUrl: 'http://localhost:${ApiService.httpPort}',
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ));
+        final response = await localDio.put('/api/peers/$id/status', data: {'status': status});
+        debugPrint('✅ updatePeerStatus: $status for peer $id');
+        return response;
+      } catch (e) {
+        debugPrint('❌ updatePeerStatus error: $e');
+        return Response(
+          requestOptions: RequestOptions(path: '/api/peers/$id/status'),
+          statusCode: 500,
+          data: {'error': e.toString()},
+        );
+      }
     }
     return await _dio.put(
       '$hubUrl/api/peers/$id/status',
@@ -956,11 +1093,24 @@ class ApiService {
 
   Future<Response> deletePeer(int id) async {
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '$hubUrl/api/peers/$id'),
-        statusCode: 200,
-        data: {'message': 'Not available in offline mode'},
-      );
+      // Call local HTTP API to delete peer
+      try {
+        final localDio = Dio(BaseOptions(
+          baseUrl: 'http://localhost:${ApiService.httpPort}',
+          connectTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ));
+        final response = await localDio.delete('/api/peers/$id');
+        debugPrint('🗑️ deletePeer: peer $id deleted');
+        return response;
+      } catch (e) {
+        debugPrint('❌ deletePeer error: $e');
+        return Response(
+          requestOptions: RequestOptions(path: '/api/peers/$id'),
+          statusCode: 500,
+          data: {'error': e.toString()},
+        );
+      }
     }
     return await _dio.delete('$hubUrl/api/peers/$id');
   }
@@ -992,14 +1142,74 @@ class ApiService {
     );
   }
 
+  /// Helper to get my own URL (IP address) for P2P handshake
+  Future<String> _getMyUrl() async {
+     String myIp = '127.0.0.1';
+     try {
+       final info = NetworkInfo();
+       myIp = await info.getWifiIP() ?? '127.0.0.1';
+     } catch (e) {
+       debugPrint('Failed to get local IP: $e');
+     }
+     // Use the dynamically discovered port
+     return 'http://$myIp:${ApiService.httpPort}';
+  }
+
   /// Connect to a locally discovered peer by URL
   Future<Response> connectLocalPeer(String name, String url) async {
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/peers/connect'),
-        statusCode: 200,
-        data: {'message': 'Not available in offline mode'},
-      );
+      try {
+        // 1. Get my own details
+        String myName = 'BiblioGenius User';
+        final myUrl = await _getMyUrl();
+        
+        try {
+           final config = await getLibraryConfig();
+           if (config.data is Map) {
+               myName = config.data['library_name'] ?? config.data['name'] ?? myName;
+           }
+        } catch (e) {
+            debugPrint('Error getting own config for handshake: $e');
+        }
+
+        // 2. Send handshake request to Peer
+        final targetUrl = '$url/api/peers/incoming';
+        debugPrint('P2P Handshake: Sending my info ($myName, $myUrl) to $targetUrl');
+        
+        final dio = Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ));
+        
+        final response = await dio.post(targetUrl, data: {
+            'name': myName,
+            'url': myUrl
+        });
+        
+        debugPrint('P2P Handshake Success: ${response.statusCode} - ${response.data}');
+        return response;
+      } on DioException catch (e) {
+        final statusCode = e.response?.statusCode;
+        final responseData = e.response?.data;
+        debugPrint('P2P Connect DioException: ${e.type}');
+        debugPrint('P2P Connect Status: $statusCode');
+        debugPrint('P2P Connect Response Body: $responseData');
+        debugPrint('P2P Connect Error: ${e.message}');
+        
+        // Return more informative error
+        return Response(
+          requestOptions: e.requestOptions,
+          statusCode: statusCode ?? 502,
+          data: {'error': 'Connection failed: ${responseData ?? e.message}', 'status': statusCode},
+        );
+      } catch (e) {
+        debugPrint('P2P Connect Error: $e');
+        return Response(
+          requestOptions: RequestOptions(path: '/api/peers/connect'),
+          statusCode: 500,
+          data: {'error': e.toString()},
+        );
+      }
     }
     // Use the existing peer connect mechanism
     return await _dio.post('/api/peers/connect', data: {'name': name, 'url': url});
@@ -1078,12 +1288,11 @@ class ApiService {
       if (shareLocation != null) await prefs.setBool('ffi_share_location', shareLocation);
       
       return Response(
-        requestOptions: RequestOptions(path: '/api/setup'),
+        requestOptions: RequestOptions(path: '/api/peers/sync'),
         statusCode: 200,
-        data: {'status': 'ok', 'message': 'Setup complete (FFI mode)'},
+        data: {'message': 'Sync initiated'},
       );
     }
-    
     return await _dio.post(
       '/api/setup',
       data: {
@@ -1097,6 +1306,7 @@ class ApiService {
       },
     );
   }
+
 
   Future<Response> resetApp() async {
     if (useFfi) {

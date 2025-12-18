@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/genie_app_bar.dart';
+import '../widgets/plus_one_animation.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
@@ -102,6 +103,9 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
       _booksAdded = true;
 
       if (mounted) {
+        // Mario Bros-style +1 animation! 🎮
+        PlusOneAnimation.show(context);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

@@ -59,10 +59,24 @@ class _PeerBookListScreenState extends State<PeerBookListScreen> {
   }
 
   Future<void> _fetchBooks() async {
+    debugPrint('📚 PeerBookList: Fetching books from ${widget.peerUrl}');
     final api = Provider.of<ApiService>(context, listen: false);
     try {
       final res = await api.getPeerBooksByUrl(widget.peerUrl);
-      final List<dynamic> data = res.data;
+      debugPrint('📚 PeerBookList: Got response: ${res.statusCode}');
+      
+      // Handle both response formats: [...] or {books: [...]}
+      List<dynamic> data;
+      if (res.data is List) {
+        data = res.data as List<dynamic>;
+      } else if (res.data is Map && res.data['books'] != null) {
+        data = res.data['books'] as List<dynamic>;
+      } else if (res.data is Map && res.data['data'] != null) {
+        data = res.data['data'] as List<dynamic>;
+      } else {
+        debugPrint('⚠️ PeerBookList: Unknown response format: ${res.data.runtimeType}');
+        data = [];
+      }
 
       if (mounted) {
         setState(() {
@@ -70,6 +84,7 @@ class _PeerBookListScreenState extends State<PeerBookListScreen> {
           _filteredBooks = _books;
           _isLoading = false;
         });
+        debugPrint('📚 PeerBookList: Loaded ${_books.length} books');
 
         // Auto-sync if empty
         if (_books.isEmpty) {
@@ -77,7 +92,16 @@ class _PeerBookListScreenState extends State<PeerBookListScreen> {
         }
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      debugPrint('❌ PeerBookList: Error fetching books: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading library: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

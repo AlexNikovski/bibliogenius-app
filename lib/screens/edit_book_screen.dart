@@ -7,6 +7,7 @@ import '../providers/theme_provider.dart';
 import '../utils/book_status.dart';
 import '../services/open_library_service.dart';
 import '../models/book.dart';
+import '../widgets/book_complete_animation.dart';
 
 class EditBookScreen extends StatefulWidget {
   final Book book;
@@ -32,6 +33,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
   late Book _book;
   List<String> _selectedTags = []; // Add this
   String _readingStatus = 'to_read';
+  String? _originalReadingStatus; // Track original status to detect changes to 'read'
   String? _coverUrl;
   bool _isEditing = true; // Always start in edit mode
   bool _isSaving = false;
@@ -73,6 +75,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
       setState(() {
         _readingStatus =
             widget.book.readingStatus ?? getDefaultStatus(isLibrarian);
+        _originalReadingStatus = _readingStatus; // Store original for comparison
       });
     });
 
@@ -233,6 +236,18 @@ class _EditBookScreenState extends State<EditBookScreen> {
             subjects: _selectedTags,
           );
         });
+        
+        // 🎉 Book Complete celebration when status changed to "read"
+        if (_readingStatus == 'read' && _originalReadingStatus != 'read') {
+          BookCompleteCelebration.show(
+            context,
+            bookTitle: _titleController.text,
+            subtitle: TranslationService.translate(context, 'book_complete_celebration'),
+          );
+          // Update original status so animation doesn't re-trigger
+          _originalReadingStatus = 'read';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -365,19 +380,23 @@ class _EditBookScreenState extends State<EditBookScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: _isSaving
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.teal, // Use a contrasting color or theme primary
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   )
                 : TextButton(
                     onPressed: _saveBook,
                     child: Text(
                       TranslationService.translate(context, 'save_changes') ?? 'Save',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                   ),
           ),

@@ -352,6 +352,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 32),
 
+          // Reading Goals Settings
+          _buildReadingGoalsSection(),
+          const SizedBox(height: 32),
           // Profile Settings
           Text(
             TranslationService.translate(context, 'profile_settings'),
@@ -904,6 +907,269 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  Widget _buildReadingGoalsSection() {
+    // Get current goals from status
+    final yearlyGoal = _userStatus?['config']?['reading_goal_yearly'] ?? 12;
+    final monthlyGoal = _userStatus?['config']?['reading_goal_monthly'] ?? 0;
+    final booksRead = _userStatus?['config']?['reading_goal_progress'] ?? 0;
+    final yearlyProgress = yearlyGoal > 0 ? (booksRead / yearlyGoal).clamp(0.0, 1.0) : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          TranslationService.translate(context, 'reading_goals_title'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 16),
+        
+        // Yearly Goal Card
+        _buildGoalCard(
+          icon: Icons.calendar_today,
+          color: Colors.teal,
+          title: TranslationService.translate(context, 'yearly_goal'),
+          subtitle: '$yearlyGoal ${TranslationService.translate(context, 'books_per_year')}',
+          progress: yearlyProgress,
+          current: booksRead,
+          onEdit: () => _showEditGoalDialog(yearlyGoal, isMonthly: false),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Monthly Goal Card (optional - only if set)
+        _buildGoalCard(
+          icon: Icons.today,
+          color: Colors.orange,
+          title: TranslationService.translate(context, 'monthly_goal'),
+          subtitle: monthlyGoal > 0 
+            ? '$monthlyGoal ${TranslationService.translate(context, 'books_per_month')}'
+            : TranslationService.translate(context, 'not_set'),
+          progress: 0.0, // TODO: Calculate monthly progress
+          current: 0, // TODO: Calculate books read this month
+          onEdit: () => _showEditGoalDialog(monthlyGoal, isMonthly: true),
+          isOptional: monthlyGoal == 0,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required double progress,
+    required int current,
+    required VoidCallback onEdit,
+    bool isOptional = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.1),
+            color.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: color, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: isOptional ? Colors.grey : color,
+                          fontSize: 13,
+                          fontStyle: isOptional ? FontStyle.italic : FontStyle.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: Icon(isOptional ? Icons.add_circle_outline : Icons.edit, color: color),
+                onPressed: onEdit,
+              ),
+            ],
+          ),
+          if (!isOptional && progress > 0) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  progress >= 1.0 ? Colors.green : color,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$current ${TranslationService.translate(context, 'books_read')}',
+                  style: TextStyle(fontSize: 12, color: color),
+                ),
+                Text(
+                  '${(progress * 100).toInt()}%',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: progress >= 1.0 ? Colors.green : color,
+                  ),
+                ),
+              ],
+            ),
+            if (progress >= 1.0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.celebration, color: Colors.green, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      TranslationService.translate(context, 'goal_reached_congrats'),
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+
+  Future<void> _showEditGoalDialog(int currentGoal, {required bool isMonthly}) async {
+    double sliderValue = currentGoal > 0 ? currentGoal.toDouble() : (isMonthly ? 2.0 : 12.0);
+    final color = isMonthly ? Colors.orange : Colors.teal;
+    final maxValue = isMonthly ? 20.0 : 100.0;
+    
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(TranslationService.translate(
+            context, 
+            isMonthly ? 'edit_monthly_goal' : 'edit_yearly_goal',
+          )),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${sliderValue.toInt()} ${TranslationService.translate(context, isMonthly ? 'books_per_month' : 'books_per_year')}',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Slider(
+                value: sliderValue,
+                min: isMonthly ? 0 : 1,
+                max: maxValue,
+                divisions: maxValue.toInt() - (isMonthly ? 0 : 1),
+                activeColor: color,
+                label: '${sliderValue.toInt()} ${TranslationService.translate(context, 'books')}',
+                onChanged: (value) {
+                  setState(() => sliderValue = value);
+                },
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(isMonthly ? '0 (${TranslationService.translate(context, 'disabled')})' : '1 ${TranslationService.translate(context, 'book')}'),
+                  Text('${maxValue.toInt()} ${TranslationService.translate(context, 'books')}'),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(TranslationService.translate(context, 'cancel')),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _updateReadingGoal(sliderValue.toInt(), isMonthly: isMonthly);
+              },
+              style: FilledButton.styleFrom(backgroundColor: color),
+              child: Text(TranslationService.translate(context, 'save')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateReadingGoal(int newGoal, {required bool isMonthly}) async {
+    try {
+      final api = Provider.of<ApiService>(context, listen: false);
+      if (isMonthly) {
+        await api.updateGamificationConfig(readingGoalMonthly: newGoal);
+      } else {
+        await api.updateGamificationConfig(readingGoalYearly: newGoal);
+      }
+      _fetchStatus(); // Refresh
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(TranslationService.translate(context, 'goal_updated')),
+            backgroundColor: isMonthly ? Colors.orange : Colors.teal,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${TranslationService.translate(context, 'error_updating')}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
 
   Widget _buildProfileTypeSummary() {
     return Consumer<ThemeProvider>(
