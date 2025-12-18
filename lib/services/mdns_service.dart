@@ -144,6 +144,13 @@ class MdnsService {
   /// Start discovering other libraries on the network
   static Future<bool> startDiscovery() async {
     try {
+      // Stop any existing discovery first to avoid duplicates
+      await stopDiscovery();
+      
+      // Clear cached peers to start fresh
+      _peers.clear();
+      debugPrint('🧹 mDNS: Cleared peer cache before discovery');
+      
       _discovery = BonsoirDiscovery(type: kServiceType);
       await _discovery!.initialize();
 
@@ -153,8 +160,12 @@ class MdnsService {
         if (event is BonsoirDiscoveryServiceFoundEvent) {
           final service = event.service;
           
-          // Skip our own service
-          if (service.name == _ownServiceName) return;
+          // Skip our own service (also handle Bonjour auto-suffix like "(2)")
+          final cleanServiceName = service.name.replaceAll(RegExp(r'\s*\(\d+\)$'), '');
+          if (_ownServiceName != null && cleanServiceName == _ownServiceName) {
+            debugPrint('🔇 mDNS: Skipping own service: ${service.name}');
+            return;
+          }
           
           // Prefer IP from attributes (reliable), fallback to hostname guess
           final ipFromAttrs = service.attributes['ip'];
@@ -179,8 +190,14 @@ class MdnsService {
           // Use actual port from service (default to 8000 if not available)
           final actualPort = service.port > 0 ? service.port : 8000;
           
+          // Strip Bonjour auto-suffix like "(2)", "(3)" from conflicting names
+          final cleanName = service.name.replaceAll(RegExp(r'\s*\(\d+\)$'), '');
+          
+          // Use host:port as key to deduplicate same library announced multiple times
+          final peerKey = '$host:$actualPort';
+          
           final peer = DiscoveredPeer(
-            name: service.name,
+            name: cleanName,
             host: host,
             port: actualPort,
             addresses: [host],
@@ -188,34 +205,48 @@ class MdnsService {
             discoveredAt: DateTime.now(),
           );
 
-          _peers[service.name] = peer;
-          debugPrint('📚 mDNS: Discovered "${peer.name}" at ${peer.host}:${peer.port}');
+          _peers[peerKey] = peer;
+          debugPrint('📚 mDNS: Discovered "$cleanName" at $peerKey');
         }
         // Handle service resolved (preferred if it fires)
         else if (event is BonsoirDiscoveryServiceResolvedEvent) {
           final service = event.service;
           
-          // Skip our own service
-          if (service.name == _ownServiceName) return;
+          // Skip our own service (also handle Bonjour auto-suffix)
+          // Strip Bonjour auto-suffix first
+          final cleanName = service.name.replaceAll(RegExp(r'\s*\(\d+\)$'), '');
+          if (_ownServiceName != null && cleanName == _ownServiceName) {
+            debugPrint('🔇 mDNS: Skipping own resolved service: ${service.name}');
+            return;
+          }
 
+          final resolvedHost = service.host ?? 'unknown';
+          final peerKey = '$resolvedHost:${service.port}';
+          
           // Update/add with resolved info (more accurate)
           final peer = DiscoveredPeer(
-            name: service.name,
-            host: service.host ?? 'unknown',
+            name: cleanName,
+            host: resolvedHost,
             port: service.port,
             addresses: service.host != null ? [service.host!] : [],
             libraryId: service.attributes['library_id'],
             discoveredAt: DateTime.now(),
           );
 
-          _peers[service.name] = peer;
-          debugPrint('📚 mDNS: Resolved "${peer.name}" at ${peer.host}:${peer.port}');
+          _peers[peerKey] = peer;
+          debugPrint('📚 mDNS: Resolved "$cleanName" at $peerKey');
         } 
         // Handle service lost
         else if (event is BonsoirDiscoveryServiceLostEvent) {
           final service = event.service;
-          if (_peers.remove(service.name) != null) {
-            debugPrint('👋 mDNS: Lost "${service.name}"');
+          // Try to find and remove by matching name (since we don't have the key)
+          final keysToRemove = _peers.entries
+              .where((e) => e.value.name == service.name.replaceAll(RegExp(r'\s*\(\d+\)$'), ''))
+              .map((e) => e.key)
+              .toList();
+          for (final key in keysToRemove) {
+            _peers.remove(key);
+            debugPrint('👋 mDNS: Lost "${service.name}" (key: $key)');
           }
         }
       });
@@ -234,12 +265,25 @@ class MdnsService {
     return _peers.values.map((p) => p.toJson()).toList();
   }
 
-  /// Stop mDNS service
-  static Future<void> stop() async {
+  /// Stop discovery only (keep broadcast running)
+  static Future<void> stopDiscovery() async {
     try {
       await _discoverySubscription?.cancel();
+      _discoverySubscription = null;
       await _discovery?.stop();
+      _discovery = null;
+      debugPrint('🔍 mDNS: Discovery stopped');
+    } catch (e) {
+      debugPrint('⚠️ mDNS: Error stopping discovery - $e');
+    }
+  }
+
+  /// Stop mDNS service completely
+  static Future<void> stop() async {
+    try {
+      await stopDiscovery();
       await _broadcast?.stop();
+      _broadcast = null;
       _peers.clear();
       _isRunning = false;
       debugPrint('📡 mDNS: Service stopped');

@@ -476,10 +476,14 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     Map<String, dynamic> req, {
     required bool isIncoming,
   }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white70 : Colors.black54;
+    
     return Column(
       children: [
         ListTile(
-          textColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 8,
@@ -497,7 +501,7 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
           title: Text(
             req['book_title'] ??
                 TranslationService.translate(context, 'unknown_book'),
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,6 +510,7 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
                 isIncoming
                     ? "${TranslationService.translate(context, 'from')}: ${req['peer_name']}"
                     : "${TranslationService.translate(context, 'to')}: ${req['peer_name']}",
+                style: TextStyle(color: subColor),
               ),
               const SizedBox(height: 4),
               _buildStatusText(req['status']),
