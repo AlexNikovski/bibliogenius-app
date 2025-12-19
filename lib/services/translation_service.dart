@@ -135,6 +135,7 @@ class TranslationService {
       'dialog_delete_confirm': 'Delete',
       'snack_error_fetching': 'Error fetching requests',
       'snack_error_updating': 'Error updating status',
+      'error_no_available_copies': 'No available copies for this book',
       'snack_connection_updated': 'Connection updated',
       'p2p_title': 'Connect Library',
       'tab_share_code': 'Share Code',
@@ -195,6 +196,9 @@ class TranslationService {
       'availability_borrowed': 'Borrowed',
       'availability_lost': 'Lost',
       'availability_wanted': 'Wanted',
+      // Owned checkbox
+      'own_this_book': 'I own this book',
+      'own_this_book_hint': 'Uncheck for wishlist items',
       'contact_type_label': 'Type',
       'contact_type_borrower': 'Borrower',
       'contact_type_lender': 'Lender',
@@ -321,6 +325,8 @@ class TranslationService {
       'country_label': 'Country',
       'role_borrower': 'Borrower',
       'role_library': 'Library',
+      'borrowed_from_label': 'Borrowed from',
+      'due_date_label': 'Due date',
       'no_books_found': 'No books found',
       'my_books': 'My Books',
       'tags': 'Shelves',
@@ -451,6 +457,9 @@ class TranslationService {
       'status_missing': 'Missing/Lost',
       'status_damaged': 'Damaged/Repair',
       'status_on_order': 'On Order',
+      'status_borrowed': 'Borrowed',
+      'status_lost': 'Lost',
+      'status_wanted': 'Wanted',
       // Profiles
       'profile_librarian': 'Librarian',
       'profile_librarian_desc':
@@ -882,6 +891,7 @@ class TranslationService {
       'dialog_delete_confirm': 'Supprimer',
       'snack_error_fetching': 'Erreur lors de la récupération des demandes',
       'snack_error_updating': 'Erreur lors de la mise à jour du statut',
+      'error_no_available_copies': 'Aucune copie disponible pour ce livre',
       'snack_connection_updated': 'Connexion mise à jour',
       'p2p_title': 'Connecter une bibliothèque',
       'tab_share_code': 'Partager le code',
@@ -943,6 +953,9 @@ class TranslationService {
       'availability_borrowed': 'Emprunté',
       'availability_lost': 'Perdu',
       'availability_wanted': 'Souhaité',
+      // Owned checkbox
+      'own_this_book': 'Je possède ce livre',
+      'own_this_book_hint': 'Décochez pour les livres de votre liste de souhaits',
       'contact_type_label': 'Type',
       'contact_type_borrower': 'Emprunteur',
       'contact_type_lender': 'Prêteur',
@@ -1179,6 +1192,9 @@ class TranslationService {
       'status_missing': 'Manquant/Perdu',
       'status_damaged': 'Endommagé/Réparation',
       'status_on_order': 'En commande',
+      'status_borrowed': 'Emprunté',
+      'status_lost': 'Perdu',
+      'status_wanted': 'Souhaité',
       // Profiles
       'profile_librarian': 'Bibliothécaire',
       'profile_librarian_desc':
@@ -1362,6 +1378,8 @@ class TranslationService {
       'contact_type_label': 'Type',
       'role_borrower': 'Emprunteur',
       'role_library': 'Bibliothèque',
+      'borrowed_from_label': 'Emprunté à',
+      'due_date_label': 'Date de retour',
       'contact_name_label': 'Nom *',
       'contact_name_required': 'Veuillez entrer un nom',
       'contact_first_name_label': 'Prénom',

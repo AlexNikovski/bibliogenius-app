@@ -23,6 +23,9 @@ class BookDetailsScreen extends StatefulWidget {
 class _BookDetailsScreenState extends State<BookDetailsScreen> {
   late Book _book;
 
+  List<dynamic> _copies = [];
+  bool _isLoadingCopies = true;
+
   @override
   void initState() {
     super.initState();
@@ -35,16 +38,80 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     try {
       if (_book.id == null) return;
 
-      final freshBook = await api.getBook(_book.id!);
+      // Fetch book details and copies in parallel
+      final results = await Future.wait([
+        api.getBook(_book.id!),
+        api.getBookCopies(_book.id!),
+      ]);
+
+      final freshBook = results[0] as Book;
+      final copiesResponse = results[1] as Response; // Assuming Dio Response
+
       if (mounted) {
         setState(() {
           _book = freshBook;
+          if (copiesResponse.statusCode == 200) {
+            final data = copiesResponse.data;
+            if (data is Map && data.containsKey('copies')) {
+              _copies = data['copies'];
+            } else if (data is List) {
+              _copies = data;
+            }
+          }
+          _isLoadingCopies = false;
         });
       }
     } catch (e) {
       debugPrint('Error fetching book details: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingCopies = false;
+        });
+      }
     }
   }
+// ... existing methods ...
+
+  bool get _hasAvailableCopies {
+    if (_copies.isEmpty) return false;
+    return _copies.any((copy) => copy['status'] == 'available');
+  }
+
+  // ... existing build methods ...
+
+        // Lend book button - only visible when book is not lent/borrowed AND owned
+        if (_book.readingStatus != 'lent' &&
+            _book.readingStatus != 'borrowed' &&
+            _book.owned) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _hasAvailableCopies ? () => _lendBook(context) : null,
+              icon: const Icon(Icons.handshake_outlined),
+              label: Text(
+                _hasAvailableCopies
+                    ? (TranslationService.translate(context, 'lend_book_btn') ??
+                        'Lend this book')
+                    : (TranslationService.translate(
+                          context,
+                          'no_copies_available',
+                        ) ??
+                        'No copies available'),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.purple,
+                side: BorderSide(
+                  color: _hasAvailableCopies ? Colors.purple : Colors.grey,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
 
   Future<void> _updateRating(int? newRating) async {
     final api = Provider.of<ApiService>(context, listen: false);

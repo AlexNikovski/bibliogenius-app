@@ -17,6 +17,7 @@ enum NetworkMemberSource {
 class NetworkMember {
   final int id;
   final String name;
+  final String? firstName;
   final NetworkMemberType type;
   final NetworkMemberSource source;
 
@@ -39,6 +40,7 @@ class NetworkMember {
   const NetworkMember({
     required this.id,
     required this.name,
+    this.firstName,
     required this.type,
     required this.source,
     this.email,
@@ -53,11 +55,20 @@ class NetworkMember {
     this.linkedContactId,
   });
 
+  /// Get display name: firstName + name if available, otherwise just name
+  String get displayName {
+    if (firstName != null && firstName!.isNotEmpty) {
+      return '$firstName $name';
+    }
+    return name;
+  }
+
   /// Create a NetworkMember from a Contact model
   factory NetworkMember.fromContact(Contact contact) {
     return NetworkMember(
       id: contact.id ?? 0,
       name: contact.name,
+      firstName: contact.firstName,
       type: contact.type == 'borrower'
           ? NetworkMemberType.borrower
           : NetworkMemberType.library,

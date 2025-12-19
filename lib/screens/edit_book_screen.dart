@@ -43,6 +43,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
   // Copy availability management
   String _copyStatus = 'available';
   int? _copyId;
+  bool _owned = true; // Whether I own this book (controls copy creation)
 
   @override
   void initState() {
@@ -80,6 +81,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
         _readingStatus =
             widget.book.readingStatus ?? getDefaultStatus(isLibrarian);
         _originalReadingStatus = _readingStatus; // Store original for comparison
+        _owned = widget.book.owned; // Initialize owned state
       });
       // Load copy status
       _loadCopyStatus();
@@ -228,6 +230,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
           ? DateTime.parse(_finishedDateController.text).toIso8601String()
           : null,
       'subjects': _selectedTags,
+      'owned': _owned,
     };
 
     try {
@@ -648,6 +651,26 @@ class _EditBookScreenState extends State<EditBookScreen> {
                 maxLines: 4,
               ),
               const SizedBox(height: 24),
+
+              // Owned checkbox - controls copy creation
+              CheckboxListTile(
+                title: Text(
+                  TranslationService.translate(context, 'own_this_book') ?? 'I own this book',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                subtitle: Text(
+                  TranslationService.translate(context, 'own_this_book_hint') ?? 
+                      'Uncheck for wishlist items',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                value: _owned,
+                onChanged: (value) {
+                  setState(() => _owned = value ?? true);
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
 
               // Status
               _buildLabel(

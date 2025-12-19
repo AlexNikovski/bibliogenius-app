@@ -150,6 +150,7 @@ class ApiService {
           coverUrl: bookData['cover_url'],
           subjects: bookData['subjects'] != null ? jsonEncode(bookData['subjects']) : null,
           readingStatus: bookData['reading_status'],
+          owned: bookData['owned'] ?? true, // Default to owned
         );
         
         final createdBook = await FfiService().createBook(frbBookInput);
@@ -209,6 +210,7 @@ class ApiService {
           userRating: bookData.containsKey('user_rating') ? bookData['user_rating'] : currentBook.userRating,
           createdAt: null, // Not in Book model
           updatedAt: null, // Not in Book model
+          owned: bookData.containsKey('owned') ? bookData['owned'] as bool : currentBook.owned,
         );
 
         final result = await FfiService().updateBook(id, updatedFrbBook);
@@ -255,17 +257,18 @@ class ApiService {
     return await _dio.delete('/api/books/$id');
   }
 
-  // Copy management
-  Future<Response> getBookCopies(int bookId) async {
-    return await _dio.get('/api/books/$bookId/copies');
-  }
-
+  // Copy management - createCopy with FFI support
   Future<Response> createCopy(Map<String, dynamic> copyData) async {
+    if (useFfi) {
+      try {
+        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        return await localDio.post('/api/copies', data: copyData);
+      } catch (e) {
+        debugPrint('❌ createCopy error: $e');
+        rethrow;
+      }
+    }
     return await _dio.post('/api/copies', data: copyData);
-  }
-
-  Future<Response> updateCopy(int id, Map<String, dynamic> copyData) async {
-    return await _dio.put('/api/copies/$id', data: copyData);
   }
 
   // Loan methods
@@ -1075,22 +1078,26 @@ class ApiService {
 
   Future<Response> deleteRequest(String requestId) async {
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/peers/requests/$requestId'),
-        statusCode: 200,
-        data: {'message': 'Not available in offline mode'},
-      );
+      try {
+        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        return await localDio.delete('/api/peers/requests/$requestId');
+      } catch (e) {
+        debugPrint('❌ deleteRequest error: $e');
+        rethrow;
+      }
     }
     return await _dio.delete('/api/peers/requests/$requestId');
   }
 
   Future<Response> deleteOutgoingRequest(String requestId) async {
     if (useFfi) {
-      return Response(
-        requestOptions: RequestOptions(path: '/api/peers/requests/outgoing/$requestId'),
-        statusCode: 200,
-        data: {'message': 'Not available in offline mode'},
-      );
+      try {
+        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        return await localDio.delete('/api/peers/requests/outgoing/$requestId');
+      } catch (e) {
+        debugPrint('❌ deleteOutgoingRequest error: $e');
+        rethrow;
+      }
     }
     return await _dio.delete('/api/peers/requests/outgoing/$requestId');
   }
@@ -1362,21 +1369,35 @@ class ApiService {
     double? longitude,
     bool? shareLocation,
   }) async {
-    // In FFI mode, persist setup config to SharedPreferences
+    // In FFI mode, call local HTTP server AND persist to SharedPreferences
     if (useFfi) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ffi_library_name', libraryName);
-      if (libraryDescription != null) await prefs.setString('ffi_library_description', libraryDescription);
-      await prefs.setString('ffi_profile_type', profileType);
-      if (latitude != null) await prefs.setDouble('ffi_latitude', latitude);
-      if (longitude != null) await prefs.setDouble('ffi_longitude', longitude);
-      if (shareLocation != null) await prefs.setBool('ffi_share_location', shareLocation);
-      
-      return Response(
-        requestOptions: RequestOptions(path: '/api/peers/sync'),
-        statusCode: 200,
-        data: {'message': 'Sync initiated'},
-      );
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('ffi_library_name', libraryName);
+        if (libraryDescription != null) await prefs.setString('ffi_library_description', libraryDescription);
+        await prefs.setString('ffi_profile_type', profileType);
+        if (latitude != null) await prefs.setDouble('ffi_latitude', latitude);
+        if (longitude != null) await prefs.setDouble('ffi_longitude', longitude);
+        if (shareLocation != null) await prefs.setBool('ffi_share_location', shareLocation);
+        
+        // Call local HTTP server to persist in database (creates library_config AND library entries)
+        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        return await localDio.post(
+          '/api/setup',
+          data: {
+            'library_name': libraryName,
+            'library_description': libraryDescription,
+            'profile_type': profileType,
+            'theme': theme,
+            'latitude': latitude,
+            'longitude': longitude,
+            'share_location': shareLocation,
+          },
+        );
+      } catch (e) {
+        debugPrint('❌ setup error: $e');
+        rethrow;
+      }
     }
     return await _dio.post(
       '/api/setup',

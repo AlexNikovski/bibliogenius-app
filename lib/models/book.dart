@@ -12,6 +12,7 @@ class Book {
   final List<String>? subjects;
   final String? _coverUrl; // Stored cover URL
   final int? userRating; // 0-10 scale
+  final bool owned; // Whether I physically own this book (default: true)
 
   Book({
     this.id,
@@ -27,6 +28,7 @@ class Book {
     this.subjects,
     String? coverUrl,
     this.userRating,
+    this.owned = true,
   }) : _coverUrl = coverUrl;
 
   factory Book.fromJson(Map<String, dynamic> json) {
@@ -57,6 +59,7 @@ class Book {
           ? List<String>.from(json['subjects'])
           : null,
       userRating: json['user_rating'],
+      owned: json['owned'] ?? true,
     );
   }
 
@@ -75,6 +78,7 @@ class Book {
       'subjects': subjects,
       'cover_url': _coverUrl,
       'user_rating': userRating,
+      'owned': owned,
       'created_at': now,
       'updated_at': now,
     };
@@ -96,6 +100,7 @@ class Book {
       subjects: subjects,
       coverUrl: _coverUrl,
       userRating: newRating,
+      owned: owned,
     );
   }
 

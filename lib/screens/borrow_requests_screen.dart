@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/genie_app_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import 'dart:async';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
@@ -80,6 +81,27 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     try {
       await api.updateRequestStatus(id, status);
       _fetchRequests(); // Refresh
+    } on DioException catch (e) {
+      if (mounted) {
+        String errorMessage;
+        // Handle 409 Conflict specifically (no available copies)
+        if (e.response?.statusCode == 409) {
+          final errorData = e.response?.data;
+          if (errorData is Map && errorData['error']?.toString().contains('copies') == true) {
+            errorMessage = TranslationService.translate(context, 'error_no_available_copies');
+          } else {
+            errorMessage = errorData?['error']?.toString() ?? 'Conflict: resource unavailable';
+          }
+        } else {
+          errorMessage = e.response?.data?['error']?.toString() ?? e.message ?? 'Unknown error';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

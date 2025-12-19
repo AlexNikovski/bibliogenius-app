@@ -117,6 +117,40 @@ class _BookCopiesScreenState extends State<BookCopiesScreen> {
     }
   }
 
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  Widget _buildCopySubtitle(BuildContext context, String? notes) {
+    if (notes == null || notes.isEmpty) {
+      return Text('No notes');
+    }
+
+    final regex = RegExp(r"Emprunté de (.+) jusqu'au (.+)");
+    final match = regex.firstMatch(notes);
+
+    if (match != null) {
+      final lenderName = match.group(1) ?? 'Unknown Library';
+      final rawDate = match.group(2) ?? '';
+      final formattedDate = _formatDate(rawDate);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${TranslationService.translate(context, 'borrowed_from_label')}: $lenderName'),
+          Text('${TranslationService.translate(context, 'due_date_label')}: $formattedDate'),
+        ],
+      );
+    }
+
+    return Text(notes);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,7 +214,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen> {
                       _StatusBadge(status: copy.status),
                     ],
                   ),
-                  subtitle: Text(copy.notes ?? 'No notes'),
+                  subtitle: _buildCopySubtitle(context, copy.notes),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () => _deleteCopy(copy.id!),
@@ -217,10 +251,36 @@ class _AddCopyDialogState extends State<_AddCopyDialog> {
           children: [
             TextField(
               controller: _dateController,
+              readOnly: true,
               decoration: InputDecoration(
                 labelText: TranslationService.translate(context, 'acquisition_date'),
-                hintText: '2024-01-15',
+                hintText: 'YYYY-MM-DD',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      _dateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    }
+                  },
+                ),
               ),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime.now(),
+                );
+                if (date != null) {
+                  _dateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                }
+              },
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(

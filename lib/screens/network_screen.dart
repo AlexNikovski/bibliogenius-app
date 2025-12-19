@@ -121,13 +121,13 @@ class _NetworkScreenState extends State<NetworkScreen>
         if (localRes.statusCode == 200) {
           final List<dynamic> localJson = localRes.data['peers'] ?? [];
           
-          // Build a set of URLs from connected peers for fast lookup
-          final connectedPeerUrls = peersJson
-              .map((p) => p['url'] as String?)
+          // Build a set of NAMES from connected peers for fast lookup (IPs may differ!)
+          final connectedPeerNames = peersJson
+              .map((p) => (p['name'] as String?)?.toLowerCase())
               .whereType<String>()
               .toSet();
           
-          // Filter out own library by name AND already-connected peers by URL
+          // Filter out own library by name AND already-connected peers by NAME
           localPeers = localJson
               .cast<Map<String, dynamic>>()
               .where((peer) {
@@ -137,15 +137,10 @@ class _NetworkScreenState extends State<NetworkScreen>
                   debugPrint('🔇 Filtering out own library from mDNS: $peerName');
                   return false;
                 }
-                // Filter out peers already connected (in DB)
-                final addresses = (peer['addresses'] as List<dynamic>?)?.cast<String>() ?? [];
-                final port = peer['port'] ?? 8000;
-                for (final addr in addresses) {
-                  final peerUrl = 'http://$addr:$port';
-                  if (connectedPeerUrls.contains(peerUrl)) {
-                    debugPrint('🔇 Filtering out already-connected peer from mDNS: $peerName ($peerUrl)');
-                    return false;
-                  }
+                // Filter out peers already connected (by name, since IPs can differ)
+                if (peerName != null && connectedPeerNames.contains(peerName.toLowerCase())) {
+                  debugPrint('🔇 Filtering out already-connected peer from mDNS: $peerName');
+                  return false;
                 }
                 return true;
               })
@@ -156,8 +151,17 @@ class _NetworkScreenState extends State<NetworkScreen>
         debugPrint('Could not fetch local peers (mDNS): $e');
       }
 
+      // Deduplicate: filter out local contacts of type 'library' if they match a connected peer by name
+      final peerNames = peers.map((p) => p.name.toLowerCase()).toSet();
+      final dedupedContacts = contacts.where((c) {
+        // Keep all borrowers, only filter library-type contacts
+        if (c.type == NetworkMemberType.borrower) return true;
+        // Filter out if a peer with the same name exists
+        return !peerNames.contains(c.name.toLowerCase());
+      }).toList();
+
       // Merge and sort: network libraries first, then local contacts
-      final allMembers = [...peers, ...contacts];
+      final allMembers = [...peers, ...dedupedContacts];
       allMembers.sort((a, b) {
         // Network first
         if (a.source != b.source) {
@@ -975,7 +979,7 @@ Future<void> _connectToLocalPeer(String name, String url) async {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  member.name,
+                  member.displayName,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

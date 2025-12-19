@@ -195,7 +195,6 @@ class _AddBookScreenState extends State<AddBookScreen> {
             icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onPrimary),
             label: Text(
               TranslationService.translate(context, 'btn_search_online'),
-              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
             ),
           ),
           Padding(
@@ -215,8 +214,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
                     onPressed: _saveBook,
                     child: Text(
                       TranslationService.translate(context, 'save_book') ?? 'Save',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),

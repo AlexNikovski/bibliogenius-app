@@ -623,47 +623,107 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    // Greeting logic removed as per user request
+    if (_dailyQuote == null) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_dailyQuote != null) ...[
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
-              boxShadow: AppDesign.subtleShadow,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _dailyQuote!.text,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Text(
-                    '- ${_dailyQuote!.author}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        const SizedBox(height: 24),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: AppDesign.primaryGradient,
+            borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+            boxShadow: AppDesign.elevatedShadow,
           ),
-        ],
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              // Decorative background icon
+              Positioned(
+                right: -24,
+                top: -20,
+                child: Icon(
+                  Icons.format_quote_rounded,
+                  size: 160,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.auto_awesome,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          TranslationService.translate(context, 'quote_of_the_day') ?? 'Quote of the Day',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.0,
+                            uppercase: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _dailyQuote!.text,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        height: 1.5,
+                        fontStyle: FontStyle.italic,
+                        fontFamily: 'Georgia', // Serif for quote elegance
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 1,
+                            color: Colors.white38,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _dailyQuote!.author,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
