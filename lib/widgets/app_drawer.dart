@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../services/translation_service.dart';
 import '../providers/theme_provider.dart';
+import '../utils/app_constants.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -76,14 +77,15 @@ class AppDrawer extends StatelessWidget {
               context.go('/network');
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.swap_horiz),
-            title: Text(TranslationService.translate(context, 'nav_requests')),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/requests');
-            },
-          ),
+          if (AppConstants.enableP2PFeatures)
+            ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: Text(TranslationService.translate(context, 'nav_requests')),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/requests');
+              },
+            ),
           // P2P Connect removed from drawer to simplify UX. Accessed via Network > Add.
           const Divider(),
           ListTile(

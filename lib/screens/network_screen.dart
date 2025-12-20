@@ -11,6 +11,7 @@ import '../services/auth_service.dart';
 import '../services/translation_service.dart';
 // ThemeProvider import removed - not used in this screen
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../utils/app_constants.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'peer_book_list_screen.dart';
@@ -27,10 +28,9 @@ class NetworkScreen extends StatefulWidget {
   State<NetworkScreen> createState() => _NetworkScreenState();
 }
 
-class _NetworkScreenState extends State<NetworkScreen>
     with SingleTickerProviderStateMixin {
   /// Feature flag to disable P2P features (mDNS, peers, QR) for alpha stability
-  static const bool _enableP2PFeatures = false;
+  // Using AppConstants.enableP2PFeatures instead
   
   late TabController _tabController;
 
@@ -53,12 +53,12 @@ class _NetworkScreenState extends State<NetworkScreen>
   void initState() {
     super.initState();
     // When P2P disabled, only show contacts tab (no Share/Scan tabs)
-    _tabController = TabController(length: _enableP2PFeatures ? 3 : 1, vsync: this);
+    _tabController = TabController(length: AppConstants.enableP2PFeatures ? 3 : 1, vsync: this);
     _loadAllMembers();
     _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted && _tabController.index == 0) _loadAllMembers(silent: true);
     });
-    if (_enableP2PFeatures) _initQRData();
+    if (AppConstants.enableP2PFeatures) _initQRData();
   }
 
   @override
@@ -79,7 +79,7 @@ class _NetworkScreenState extends State<NetworkScreen>
       final libraryId = await authService.getLibraryId() ?? 1;
 
       // When P2P disabled, only load contacts
-      if (!_enableP2PFeatures) {
+      if (!AppConstants.enableP2PFeatures) {
         final contactsRes = await api.getContacts(libraryId: libraryId);
         final List<dynamic> contactsJson = contactsRes.data['contacts'] ?? [];
         final contacts = contactsJson
@@ -544,7 +544,7 @@ class _NetworkScreenState extends State<NetworkScreen>
             : null,
         automaticallyImplyLeading: false,
         actions: [
-          if (_enableP2PFeatures) ...[
+          if (AppConstants.enableP2PFeatures) ...[
             IconButton(
               icon: const Icon(Icons.search, color: Colors.white),
               tooltip: TranslationService.translate(
@@ -565,7 +565,7 @@ class _NetworkScreenState extends State<NetworkScreen>
           ],
         ],
         // Only show TabBar when P2P features enabled
-        bottom: _enableP2PFeatures ? TabBar(
+        bottom: AppConstants.enableP2PFeatures ? TabBar(
           controller: _tabController,
           indicatorColor: Theme.of(context).buttonTheme.colorScheme?.onPrimary,
           labelColor: Colors.white,
@@ -586,13 +586,13 @@ class _NetworkScreenState extends State<NetworkScreen>
           ],
         ) : null,
       ),
-      body: _enableP2PFeatures 
+      body: AppConstants.enableP2PFeatures 
         ? TabBarView(
             controller: _tabController,
             children: [_buildMemberList(), _buildScanTab(), _buildShareTab()],
           )
         : _buildMemberList(),
-      floatingActionButton: (!_enableP2PFeatures || _tabController.index == 0)
+      floatingActionButton: (!AppConstants.enableP2PFeatures || _tabController.index == 0)
           ? FloatingActionButton(
               onPressed: () async {
                 await context.push('/contacts/add');
@@ -606,7 +606,7 @@ class _NetworkScreenState extends State<NetworkScreen>
   }
 
   Widget _buildFilterChips() {
-    if (!_enableP2PFeatures) return const SizedBox.shrink();
+    if (!AppConstants.enableP2PFeatures) return const SizedBox.shrink();
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -659,7 +659,7 @@ class _NetworkScreenState extends State<NetworkScreen>
       children: [
         _buildFilterChips(),
         // Local Network Discovery Section (mDNS) - only show when P2P enabled
-        if (_enableP2PFeatures) _buildLocalNetworkSection(),
+        if (AppConstants.enableP2PFeatures) _buildLocalNetworkSection(),
         if (filtered.isEmpty && _localPeers.isEmpty)
           Expanded(
             child: Center(
