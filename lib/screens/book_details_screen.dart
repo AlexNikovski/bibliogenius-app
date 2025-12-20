@@ -1310,12 +1310,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       if (selectedContact == null) return;
 
       // 3. Create a copy with 'borrowed' status
+      final borrowedFromLabel = TranslationService.translate(context, 'borrowed_from_label') ?? 'Borrowed from';
       await apiService.createCopy({
         'book_id': _book!.id,
         'library_id': 1,
         'status': 'borrowed',
         'is_temporary': false,
-        'notes': 'Borrowed from ${selectedContact.displayName}',
+        'notes': '$borrowedFromLabel ${selectedContact.displayName}',
       });
 
       if (context.mounted) {
