@@ -635,8 +635,8 @@ class ApiService {
 
   Future<Response> deleteCopy(int copyId) async {
     // FFI doesn't have deleteCopy, use local HTTP server
-    if (useFfi && _localServerPort != null) {
-      final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:$_localServerPort'));
+    if (useFfi) {
+      final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:${ApiService.httpPort}'));
       return await localDio.delete('/api/copies/$copyId');
     }
     return await _dio.delete('/api/copies/$copyId');
