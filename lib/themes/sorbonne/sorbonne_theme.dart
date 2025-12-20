@@ -298,7 +298,7 @@ class SorbonneTheme extends AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: SorbonneColors.waxRed,
+          foregroundColor: SorbonneColors.goldLeaf, // Changed from waxRed for visibility
           textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
