@@ -292,7 +292,10 @@ class _BookListScreenState extends State<BookListScreen> {
         _showBorrowedConfig = configRes.data['show_borrowed_books'] == true;
         libraryName = configRes.data['library_name'] as String?;
         if (libraryName != null) {
-          Provider.of<ThemeProvider>(context, listen: false).setLibraryName(libraryName);
+          Provider.of<ThemeProvider>(
+            context,
+            listen: false,
+          ).setLibraryName(libraryName);
         }
       }
 
@@ -454,48 +457,44 @@ class _BookListScreenState extends State<BookListScreen> {
         onSelected: (Book selection) {
           context.push('/books/${selection.id}');
         },
-        fieldViewBuilder:
-            (context, textEditingController, focusNode, onFieldSubmitted) {
-              // Sync internal _searchQuery with Autocomplete's controller
-              if (_searchQuery != textEditingController.text) {
-                textEditingController.text = _searchQuery;
-              }
+        fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+          // Sync internal _searchQuery with Autocomplete's controller
+          if (_searchQuery != textEditingController.text) {
+            textEditingController.text = _searchQuery;
+          }
 
-              // Assuming GenieAppBar is defined elsewhere and this is part of a Scaffold's appBar property
-              // This part of the change seems to be misplaced based on the provided context.
-              // I will integrate the subtitle part into the _buildHeader function as it's the closest
-              // logical place for displaying library name in a header/appBar-like context within the provided snippet.
-              // If GenieAppBar is used in the Scaffold, the subtitle should be added there.
-              // Given the instruction, I'm assuming the user wants to add `subtitle: _libraryName` to an existing GenieAppBar.
-              // Since the GenieAppBar itself is not in the provided content, I'll assume it's part of the Scaffold
-              // that wraps this content, and the user wants to add the subtitle to it.
-              // As I cannot modify the Scaffold directly, I will make a note here.
+          // Assuming GenieAppBar is defined elsewhere and this is part of a Scaffold's appBar property
+          // This part of the change seems to be misplaced based on the provided context.
+          // I will integrate the subtitle part into the _buildHeader function as it's the closest
+          // logical place for displaying library name in a header/appBar-like context within the provided snippet.
+          // If GenieAppBar is used in the Scaffold, the subtitle should be added there.
+          // Given the instruction, I'm assuming the user wants to add `subtitle: _libraryName` to an existing GenieAppBar.
+          // Since the GenieAppBar itself is not in the provided content, I'll assume it's part of the Scaffold
+          // that wraps this content, and the user wants to add the subtitle to it.
+          // As I cannot modify the Scaffold directly, I will make a note here.
 
-              return TextField(
-                controller: textEditingController,
-                focusNode: focusNode,
-                style: const TextStyle(color: Colors.black87),
-                decoration: InputDecoration(
-                  hintText: TranslationService.translate(
-                    context,
-                    'search_books',
-                  ),
-                  hintStyle: const TextStyle(color: Colors.black38),
-                  prefixIcon: const Icon(Icons.search, color: Colors.black54),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                    _filterBooks(); // Trigger filter on search query change
-                  });
-                },
-              );
+          return TextField(
+            controller: textEditingController,
+            focusNode: focusNode,
+            style: const TextStyle(color: Colors.black87),
+            decoration: InputDecoration(
+              hintText: TranslationService.translate(context, 'search_books'),
+              hintStyle: const TextStyle(color: Colors.black38),
+              prefixIcon: const Icon(Icons.search, color: Colors.black54),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+                _filterBooks(); // Trigger filter on search query change
+              });
             },
+          );
+        },
         optionsViewBuilder: (context, onSelected, options) {
           return Align(
             alignment: Alignment.topLeft,
@@ -552,8 +551,7 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
-// Header removed - Avatar is now in GenieAppBar
-
+  // Header removed - Avatar is now in GenieAppBar
 
   Widget _buildFilterBar() {
     return SingleChildScrollView(

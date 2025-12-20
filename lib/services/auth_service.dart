@@ -1,6 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-
 abstract class SecureStorageInterface {
   Future<void> write({required String key, required String? value});
   Future<String?> read({required String key});
@@ -10,7 +9,8 @@ abstract class SecureStorageInterface {
 class RealSecureStorage implements SecureStorageInterface {
   final _storage = const FlutterSecureStorage();
   @override
-  Future<void> write({required String key, required String? value}) => _storage.write(key: key, value: value);
+  Future<void> write({required String key, required String? value}) =>
+      _storage.write(key: key, value: value);
   @override
   Future<String?> read({required String key}) => _storage.read(key: key);
   @override
@@ -20,7 +20,8 @@ class RealSecureStorage implements SecureStorageInterface {
 class MockSecureStorage implements SecureStorageInterface {
   final Map<String, String> _data = {};
   @override
-  Future<void> write({required String key, required String? value}) async => _data[key] = value!;
+  Future<void> write({required String key, required String? value}) async =>
+      _data[key] = value!;
   @override
   Future<String?> read({required String key}) async => _data[key];
   @override
@@ -29,7 +30,7 @@ class MockSecureStorage implements SecureStorageInterface {
 
 class AuthService {
   static SecureStorageInterface storage = RealSecureStorage();
-  
+
   static const _tokenKey = 'auth_token';
   static const _usernameKey = 'username';
   static const _userIdKey = 'user_id';

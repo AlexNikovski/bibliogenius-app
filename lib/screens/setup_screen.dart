@@ -413,9 +413,10 @@ class _SetupScreenState extends State<SetupScreen> {
                               Expanded(
                                 child: Text(
                                   TranslationService.translate(
-                                    context,
-                                    'theme_${theme.id}',
-                                  ) ?? theme.displayName,
+                                        context,
+                                        'theme_${theme.id}',
+                                      ) ??
+                                      theme.displayName,
                                 ),
                               ),
                             ],

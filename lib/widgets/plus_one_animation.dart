@@ -5,16 +5,18 @@ import 'package:flutter/material.dart';
 class PlusOneAnimation {
   /// Shows the +1 animation at the given position (or screen center if not specified).
   /// The animation floats up and fades out like a Mario Bros coin.
-  static void show(BuildContext context, {Offset? position, String text = '+1'}) {
+  static void show(
+    BuildContext context, {
+    Offset? position,
+    String text = '+1',
+  }) {
     final overlay = Overlay.of(context);
     final screenSize = MediaQuery.of(context).size;
-    
+
     // Default to center of screen if no position specified
-    final animationPosition = position ?? Offset(
-      screenSize.width / 2,
-      screenSize.height / 2,
-    );
-    
+    final animationPosition =
+        position ?? Offset(screenSize.width / 2, screenSize.height / 2);
+
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => _PlusOneAnimationWidget(
@@ -23,7 +25,7 @@ class PlusOneAnimation {
         onComplete: () => entry.remove(),
       ),
     );
-    
+
     overlay.insert(entry);
   }
 }
@@ -40,7 +42,8 @@ class _PlusOneAnimationWidget extends StatefulWidget {
   });
 
   @override
-  State<_PlusOneAnimationWidget> createState() => _PlusOneAnimationWidgetState();
+  State<_PlusOneAnimationWidget> createState() =>
+      _PlusOneAnimationWidgetState();
 }
 
 class _PlusOneAnimationWidgetState extends State<_PlusOneAnimationWidget>
@@ -53,7 +56,7 @@ class _PlusOneAnimationWidgetState extends State<_PlusOneAnimationWidget>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -62,45 +65,45 @@ class _PlusOneAnimationWidgetState extends State<_PlusOneAnimationWidget>
     // Fade in quickly, then fade out
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 20,
       ),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.0), weight: 40),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.0),
-        weight: 40,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 40,
       ),
     ]).animate(_controller);
 
     // Float upward with deceleration (like Mario coins)
-    _moveAnimation = Tween<double>(begin: 0, end: -80).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutQuad,
-      ),
-    );
+    _moveAnimation = Tween<double>(
+      begin: 0,
+      end: -80,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad));
 
     // Quick pop-in scale effect
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.5, end: 1.3)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: 0.5,
+          end: 1.3,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.3, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 1.3,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 20,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.8),
-        weight: 50,
-      ),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.8), weight: 50),
     ]).animate(_controller);
 
     _controller.forward().then((_) => widget.onComplete());
@@ -128,7 +131,10 @@ class _PlusOneAnimationWidgetState extends State<_PlusOneAnimationWidget>
                   child: Transform.scale(
                     scale: _scaleAnimation.value,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFFFFD700), Color(0xFFFFA500)],

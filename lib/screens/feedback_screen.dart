@@ -33,7 +33,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   static const String appVersion = '1.0.0';
 
   // Hub URL from environment with production fallback
-  static String get _hubUrl => dotenv.env['HUB_URL'] ?? 'https://hub.bibliogenius.org';
+  static String get _hubUrl =>
+      dotenv.env['HUB_URL'] ?? 'https://hub.bibliogenius.org';
 
   @override
   void dispose() {

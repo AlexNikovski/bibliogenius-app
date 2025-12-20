@@ -32,7 +32,7 @@ class AnimationsTestScreen extends StatelessWidget {
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 32),
-            
+
             // Achievement Pop
             _AnimationCard(
               title: '🏆 Achievement Pop',
@@ -47,9 +47,9 @@ class AnimationsTestScreen extends StatelessWidget {
                 );
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Goal Reached
             _AnimationCard(
               title: '🎯 Goal Reached',
@@ -64,9 +64,9 @@ class AnimationsTestScreen extends StatelessWidget {
                 );
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Badge Unlock
             _AnimationCard(
               title: '🏅 Badge Unlock',
@@ -82,9 +82,9 @@ class AnimationsTestScreen extends StatelessWidget {
                 );
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Level Up
             _AnimationCard(
               title: '⬆️ Level Up',
@@ -100,9 +100,9 @@ class AnimationsTestScreen extends StatelessWidget {
                 );
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Book Complete
             _AnimationCard(
               title: '📚 Book Complete',
@@ -116,9 +116,9 @@ class AnimationsTestScreen extends StatelessWidget {
                 );
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Plus One
             _AnimationCard(
               title: '+1 Mario Style',
@@ -128,9 +128,9 @@ class AnimationsTestScreen extends StatelessWidget {
                 PlusOneAnimation.show(context);
               },
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Test multiple animations
             ElevatedButton.icon(
               onPressed: () async {
@@ -141,13 +141,13 @@ class AnimationsTestScreen extends StatelessWidget {
                   achievementIcon: Icons.local_fire_department,
                   color: Colors.red,
                 );
-                
+
                 await Future.delayed(const Duration(milliseconds: 1500));
-                
+
                 PlusOneAnimation.show(context);
-                
+
                 await Future.delayed(const Duration(milliseconds: 1500));
-                
+
                 LevelUpAnimation.show(
                   context,
                   newLevel: 2,
@@ -195,10 +195,7 @@ class _AnimationCard extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 2,
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
           ),
           child: Row(
             children: [
@@ -209,11 +206,7 @@ class _AnimationCard extends StatelessWidget {
                   color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  Icons.play_circle_filled,
-                  color: color,
-                  size: 30,
-                ),
+                child: Icon(Icons.play_circle_filled, color: color, size: 30),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -231,18 +224,12 @@ class _AnimationCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.touch_app,
-                color: color.withValues(alpha: 0.5),
-              ),
+              Icon(Icons.touch_app, color: color.withValues(alpha: 0.5)),
             ],
           ),
         ),

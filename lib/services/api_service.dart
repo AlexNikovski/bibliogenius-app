@@ -37,8 +37,12 @@ class ApiService {
     debugPrint('📡 ApiService: HTTP port set to $port');
   }
 
-  ApiService(this._authService, {String? baseUrl, Dio? dio, this.useFfi = false})
-    : _dio = dio ?? Dio() {
+  ApiService(
+    this._authService, {
+    String? baseUrl,
+    Dio? dio,
+    this.useFfi = false,
+  }) : _dio = dio ?? Dio() {
     _dio.options.baseUrl = baseUrl ?? defaultBaseUrl;
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -53,7 +57,6 @@ class ApiService {
     );
     _dio.interceptors.add(RetryInterceptor(_dio, this));
   }
-
 
   void updatePort(int port) {
     _dio.options.baseUrl = 'http://localhost:$port';
@@ -72,7 +75,10 @@ class ApiService {
       return Response(
         requestOptions: RequestOptions(path: '/api/auth/login'),
         statusCode: 200,
-        data: {'token': 'ffi_local_token', 'message': 'Local mode - no auth needed'},
+        data: {
+          'token': 'ffi_local_token',
+          'message': 'Local mode - no auth needed',
+        },
       );
     }
     // We expect 403 if MFA is required. Dio throws exception on 403 by default unless validated.
@@ -84,7 +90,11 @@ class ApiService {
     );
   }
 
-  Future<Response> loginMfa(String username, String password, String code) async {
+  Future<Response> loginMfa(
+    String username,
+    String password,
+    String code,
+  ) async {
     return await _dio.post(
       '/api/auth/login-mfa',
       data: {'username': username, 'password': password, 'code': code},
@@ -96,7 +106,8 @@ class ApiService {
       // MFA requires server connection
       throw DioException(
         requestOptions: RequestOptions(path: '/api/auth/2fa/setup'),
-        message: 'Two-factor authentication requires a server connection. Please configure a backend server.',
+        message:
+            'Two-factor authentication requires a server connection. Please configure a backend server.',
         type: DioExceptionType.unknown,
       );
     }
@@ -108,7 +119,8 @@ class ApiService {
       // MFA requires server connection
       throw DioException(
         requestOptions: RequestOptions(path: '/api/auth/2fa/verify'),
-        message: 'Two-factor authentication requires a server connection. Please configure a backend server.',
+        message:
+            'Two-factor authentication requires a server connection. Please configure a backend server.',
         type: DioExceptionType.unknown,
       );
     }
@@ -120,17 +132,17 @@ class ApiService {
 
   Future<Response> getMe() async {
     if (useFfi) {
-        // Return mock data for FFI/Offline mode
-        return Response(
-          requestOptions: RequestOptions(path: '/api/auth/me'),
-          statusCode: 200,
-          data: {
-             'user_id': 1,
-             'username': 'offline_user',
-             'library_id': 1, // Default to 1 for offline
-             'role': 'admin'
-          }
-        );
+      // Return mock data for FFI/Offline mode
+      return Response(
+        requestOptions: RequestOptions(path: '/api/auth/me'),
+        statusCode: 200,
+        data: {
+          'user_id': 1,
+          'username': 'offline_user',
+          'library_id': 1, // Default to 1 for offline
+          'role': 'admin',
+        },
+      );
     }
     return await _dio.get('/api/auth/me');
   }
@@ -142,26 +154,29 @@ class ApiService {
           title: bookData['title'] ?? 'Untitled',
           author: bookData['author'],
           isbn: bookData['isbn'],
-          summary: bookData['description'] ?? bookData['summary'], // Handle mapping
+          summary:
+              bookData['description'] ?? bookData['summary'], // Handle mapping
           publisher: bookData['publisher'],
-          publicationYear: bookData['publication_year'] is int 
-              ? bookData['publication_year'] 
+          publicationYear: bookData['publication_year'] is int
+              ? bookData['publication_year']
               : int.tryParse(bookData['publication_year']?.toString() ?? ''),
           coverUrl: bookData['cover_url'],
-          subjects: bookData['subjects'] != null ? jsonEncode(bookData['subjects']) : null,
+          subjects: bookData['subjects'] != null
+              ? jsonEncode(bookData['subjects'])
+              : null,
           readingStatus: bookData['reading_status'],
           owned: bookData['owned'] ?? true, // Default to owned
         );
-        
+
         final createdBook = await FfiService().createBook(frbBookInput);
-        
+
         return Response(
           requestOptions: RequestOptions(path: '/api/books'),
           statusCode: 201,
           data: {
-             'id': createdBook.id,
-             'title': createdBook.title,
-             // Add other fields if needed by caller
+            'id': createdBook.id,
+            'title': createdBook.title,
+            // Add other fields if needed by caller
           },
         );
       } catch (e) {
@@ -182,35 +197,62 @@ class ApiService {
       try {
         // Fetch current book to preserve unchanged fields (especially required ones like title)
         final currentBook = await FfiService().getBook(id);
-        
+
         final updatedFrbBook = frb.FrbBook(
           id: id,
           title: bookData['title'] ?? currentBook.title,
-          author: bookData.containsKey('author') ? bookData['author'] : currentBook.author,
-          isbn: bookData.containsKey('isbn') ? bookData['isbn'] : currentBook.isbn,
-          summary: bookData.containsKey('description') ? bookData['description'] : 
-                   bookData.containsKey('summary') ? bookData['summary'] : currentBook.summary,
-          publisher: bookData.containsKey('publisher') ? bookData['publisher'] : currentBook.publisher,
-          publicationYear: bookData.containsKey('publication_year') 
-              ? (bookData['publication_year'] is int 
-                 ? bookData['publication_year'] 
-                 : int.tryParse(bookData['publication_year']?.toString() ?? ''))
+          author: bookData.containsKey('author')
+              ? bookData['author']
+              : currentBook.author,
+          isbn: bookData.containsKey('isbn')
+              ? bookData['isbn']
+              : currentBook.isbn,
+          summary: bookData.containsKey('description')
+              ? bookData['description']
+              : bookData.containsKey('summary')
+              ? bookData['summary']
+              : currentBook.summary,
+          publisher: bookData.containsKey('publisher')
+              ? bookData['publisher']
+              : currentBook.publisher,
+          publicationYear: bookData.containsKey('publication_year')
+              ? (bookData['publication_year'] is int
+                    ? bookData['publication_year']
+                    : int.tryParse(
+                        bookData['publication_year']?.toString() ?? '',
+                      ))
               : currentBook.publicationYear,
-          coverUrl: bookData.containsKey('cover_url') ? bookData['cover_url'] : currentBook.coverUrl,
-          readingStatus: bookData.containsKey('reading_status') ? bookData['reading_status'] : currentBook.readingStatus,
-          finishedReadingAt: bookData.containsKey('finished_reading_at') ? bookData['finished_reading_at'] : currentBook.finishedReadingAt,
-          startedReadingAt: bookData.containsKey('started_reading_at') ? bookData['started_reading_at'] : currentBook.startedReadingAt,
-          
-          subjects: bookData.containsKey('subjects') 
-             ? (bookData['subjects'] != null ? jsonEncode(bookData['subjects']) : null)
-             : (currentBook.subjects != null ? jsonEncode(currentBook.subjects) : null),
-             
+          coverUrl: bookData.containsKey('cover_url')
+              ? bookData['cover_url']
+              : currentBook.coverUrl,
+          readingStatus: bookData.containsKey('reading_status')
+              ? bookData['reading_status']
+              : currentBook.readingStatus,
+          finishedReadingAt: bookData.containsKey('finished_reading_at')
+              ? bookData['finished_reading_at']
+              : currentBook.finishedReadingAt,
+          startedReadingAt: bookData.containsKey('started_reading_at')
+              ? bookData['started_reading_at']
+              : currentBook.startedReadingAt,
+
+          subjects: bookData.containsKey('subjects')
+              ? (bookData['subjects'] != null
+                    ? jsonEncode(bookData['subjects'])
+                    : null)
+              : (currentBook.subjects != null
+                    ? jsonEncode(currentBook.subjects)
+                    : null),
+
           largeCoverUrl: null, // Not in Book model
           shelfPosition: null, // Not in Book model
-          userRating: bookData.containsKey('user_rating') ? bookData['user_rating'] : currentBook.userRating,
+          userRating: bookData.containsKey('user_rating')
+              ? bookData['user_rating']
+              : currentBook.userRating,
           createdAt: null, // Not in Book model
           updatedAt: null, // Not in Book model
-          owned: bookData.containsKey('owned') ? bookData['owned'] as bool : currentBook.owned,
+          owned: bookData.containsKey('owned')
+              ? bookData['owned'] as bool
+              : currentBook.owned,
         );
 
         final result = await FfiService().updateBook(id, updatedFrbBook);
@@ -221,7 +263,7 @@ class ApiService {
           data: {
             'id': result.id,
             'title': result.title,
-            'message': 'Book updated successfully'
+            'message': 'Book updated successfully',
           },
         );
       } catch (e) {
@@ -247,7 +289,7 @@ class ApiService {
         );
       } catch (e) {
         debugPrint('FFI deleteBook error: $e');
-         return Response(
+        return Response(
           requestOptions: RequestOptions(path: '/api/books/$id'),
           statusCode: 500,
           statusMessage: e.toString(),
@@ -261,7 +303,9 @@ class ApiService {
   Future<Response> createCopy(Map<String, dynamic> copyData) async {
     if (useFfi) {
       try {
-        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
         return await localDio.post('/api/copies', data: copyData);
       } catch (e) {
         debugPrint('❌ createCopy error: $e');
@@ -286,7 +330,10 @@ class ApiService {
         return Response(
           requestOptions: RequestOptions(path: '/api/loans'),
           statusCode: 201,
-          data: {'loan': {'id': loanId}, 'message': 'Loan created successfully'},
+          data: {
+            'loan': {'id': loanId},
+            'message': 'Loan created successfully',
+          },
         );
       } catch (e) {
         return Response(
@@ -308,19 +355,21 @@ class ApiService {
         );
 
         final data = loans
-            .map((l) => {
-                  'id': l.id,
-                  'copy_id': l.copyId,
-                  'contact_id': l.contactId,
-                  'library_id': l.libraryId,
-                  'loan_date': l.loanDate,
-                  'due_date': l.dueDate,
-                  'return_date': l.returnDate,
-                  'status': l.status,
-                  'notes': l.notes,
-                  'contact_name': l.contactName,
-                  'book_title': l.bookTitle,
-                })
+            .map(
+              (l) => {
+                'id': l.id,
+                'copy_id': l.copyId,
+                'contact_id': l.contactId,
+                'library_id': l.libraryId,
+                'loan_date': l.loanDate,
+                'due_date': l.dueDate,
+                'return_date': l.returnDate,
+                'status': l.status,
+                'notes': l.notes,
+                'contact_name': l.contactName,
+                'book_title': l.bookTitle,
+              },
+            )
             .toList();
 
         return Response(
@@ -364,13 +413,15 @@ class ApiService {
   }
 
   // Copy management methods
-  
+
   /// Get all copies of a specific book
   Future<Response> getBookCopies(int bookId) async {
     debugPrint('📦 getBookCopies: bookId=$bookId');
     if (useFfi) {
       try {
-        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
         return await localDio.get('/api/books/$bookId/copies');
       } catch (e) {
         debugPrint('❌ getBookCopies error: $e');
@@ -387,10 +438,12 @@ class ApiService {
   /// Update a copy
   Future<Response> updateCopy(int copyId, Map<String, dynamic> data) async {
     debugPrint('📦 updateCopy: copyId=$copyId, data=$data');
-    
+
     if (useFfi) {
       try {
-        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
         return await localDio.put('/api/copies/$copyId', data: data);
       } catch (e) {
         debugPrint('❌ updateCopy error: $e');
@@ -405,7 +458,10 @@ class ApiService {
     // In FFI mode, use FfiService and return mock Response
     if (useFfi) {
       try {
-        final contacts = await FfiService().getContacts(libraryId: libraryId, type: type);
+        final contacts = await FfiService().getContacts(
+          libraryId: libraryId,
+          type: type,
+        );
         final contactsJson = contacts.map((c) => c.toJson()).toList();
         return Response(
           requestOptions: RequestOptions(path: '/api/contacts'),
@@ -420,7 +476,7 @@ class ApiService {
         );
       }
     }
-    
+
     Map<String, dynamic> params = {};
     if (libraryId != null) params['library_id'] = libraryId;
     if (type != null) params['type'] = type;
@@ -432,9 +488,7 @@ class ApiService {
         return Response(
           requestOptions: RequestOptions(path: '/api/contacts'),
           statusCode: 200,
-          data: {
-            'contacts': contacts.map((c) => c.toJson()).toList(),
-          },
+          data: {'contacts': contacts.map((c) => c.toJson()).toList()},
         );
       } catch (e) {
         return Response(
@@ -454,9 +508,7 @@ class ApiService {
         return Response(
           requestOptions: RequestOptions(path: '/api/contacts/$id'),
           statusCode: 200,
-          data: {
-            'contact': contact.toJson(),
-          },
+          data: {'contact': contact.toJson()},
         );
       } catch (e) {
         return Response(
@@ -491,10 +543,10 @@ class ApiService {
           libraryOwnerId: contactData['library_owner_id'] ?? 1,
           isActive: contactData['is_active'] ?? true,
         );
-        
+
         // Actually persist to database via FFI
         final created = await FfiService().createContact(contact);
-        
+
         return Response(
           requestOptions: RequestOptions(path: '/api/contacts'),
           statusCode: 201,
@@ -539,9 +591,9 @@ class ApiService {
           libraryOwnerId: contactData['library_owner_id'] ?? 1,
           isActive: contactData['is_active'] ?? true,
         );
-        
+
         final updated = await FfiService().updateContact(contact);
-        
+
         return Response(
           requestOptions: RequestOptions(path: '/api/contacts/$id'),
           statusCode: 200,
@@ -671,12 +723,15 @@ class ApiService {
         requestOptions: RequestOptions(path: '/api/config'),
         statusCode: 200,
         data: {
-          'library_name': prefs.getString('ffi_library_name') ?? 'Ma Bibliothèque',
+          'library_name':
+              prefs.getString('ffi_library_name') ?? 'Ma Bibliothèque',
           'name': prefs.getString('ffi_library_name') ?? 'Ma Bibliothèque',
           'description': prefs.getString('ffi_library_description') ?? '',
-          'show_borrowed_books': prefs.getBool('ffi_show_borrowed_books') ?? true,
+          'show_borrowed_books':
+              prefs.getBool('ffi_show_borrowed_books') ?? true,
           'share_location': prefs.getBool('ffi_share_location') ?? false,
-          'profile_type': prefs.getString('ffi_profile_type') ?? 'individual_reader',
+          'profile_type':
+              prefs.getString('ffi_profile_type') ?? 'individual_reader',
           'latitude': prefs.getDouble('ffi_latitude'),
           'longitude': prefs.getDouble('ffi_longitude'),
           'tags': (prefs.getStringList('ffi_tags') ?? []),
@@ -694,30 +749,51 @@ class ApiService {
         final books = await FfiService().getBooks();
         final prefs = await SharedPreferences.getInstance();
         final totalBooks = books.length;
-        final booksRead = books.where((b) => b.readingStatus == 'finished').length;
-        final booksReading = books.where((b) => b.readingStatus == 'reading').length;
-        
+        final booksRead = books
+            .where((b) => b.readingStatus == 'finished')
+            .length;
+        final booksReading = books
+            .where((b) => b.readingStatus == 'reading')
+            .length;
+
         // Read goals from SharedPreferences
         final readingGoalYearly = prefs.getInt('ffi_reading_goal_yearly') ?? 12;
-        final readingGoalMonthly = prefs.getInt('ffi_reading_goal_monthly') ?? 0;
-        
+        final readingGoalMonthly =
+            prefs.getInt('ffi_reading_goal_monthly') ?? 0;
+
         // Calculate collector progress (thresholds: 10, 50, 100)
         int collectorLevel = 0;
         int collectorNext = 10;
-        if (totalBooks >= 100) { collectorLevel = 3; collectorNext = 100; }
-        else if (totalBooks >= 50) { collectorLevel = 2; collectorNext = 100; }
-        else if (totalBooks >= 10) { collectorLevel = 1; collectorNext = 50; }
-        
+        if (totalBooks >= 100) {
+          collectorLevel = 3;
+          collectorNext = 100;
+        } else if (totalBooks >= 50) {
+          collectorLevel = 2;
+          collectorNext = 100;
+        } else if (totalBooks >= 10) {
+          collectorLevel = 1;
+          collectorNext = 50;
+        }
+
         // Calculate reader progress (thresholds: 5, 25, 50)
         int readerLevel = 0;
         int readerNext = 5;
-        if (booksRead >= 50) { readerLevel = 3; readerNext = 50; }
-        else if (booksRead >= 25) { readerLevel = 2; readerNext = 50; }
-        else if (booksRead >= 5) { readerLevel = 1; readerNext = 25; }
-        
-        double collectorProgress = collectorLevel >= 3 ? 1.0 : totalBooks / collectorNext;
+        if (booksRead >= 50) {
+          readerLevel = 3;
+          readerNext = 50;
+        } else if (booksRead >= 25) {
+          readerLevel = 2;
+          readerNext = 50;
+        } else if (booksRead >= 5) {
+          readerLevel = 1;
+          readerNext = 25;
+        }
+
+        double collectorProgress = collectorLevel >= 3
+            ? 1.0
+            : totalBooks / collectorNext;
         double readerProgress = readerLevel >= 3 ? 1.0 : booksRead / readerNext;
-        
+
         return Response(
           requestOptions: RequestOptions(path: '/api/user/status'),
           statusCode: 200,
@@ -735,8 +811,18 @@ class ApiService {
                 'current': booksRead,
                 'next_threshold': readerNext,
               },
-              'lender': {'level': 0, 'progress': 0.0, 'current': 0, 'next_threshold': 5},
-              'cataloguer': {'level': 0, 'progress': 0.0, 'current': 0, 'next_threshold': 10},
+              'lender': {
+                'level': 0,
+                'progress': 0.0,
+                'current': 0,
+                'next_threshold': 5,
+              },
+              'cataloguer': {
+                'level': 0,
+                'progress': 0.0,
+                'current': 0,
+                'next_threshold': 10,
+              },
             },
             'streak': {'current': 0, 'longest': 0},
             'recent_achievements': [],
@@ -761,14 +847,38 @@ class ApiService {
         statusCode: 200,
         data: {
           'tracks': {
-            'collector': {'level': 0, 'progress': 0.0, 'current': 0, 'next_threshold': 10},
-            'reader': {'level': 0, 'progress': 0.0, 'current': 0, 'next_threshold': 5},
-            'lender': {'level': 0, 'progress': 0.0, 'current': 0, 'next_threshold': 5},
-            'cataloguer': {'level': 0, 'progress': 0.0, 'current': 0, 'next_threshold': 10},
+            'collector': {
+              'level': 0,
+              'progress': 0.0,
+              'current': 0,
+              'next_threshold': 10,
+            },
+            'reader': {
+              'level': 0,
+              'progress': 0.0,
+              'current': 0,
+              'next_threshold': 5,
+            },
+            'lender': {
+              'level': 0,
+              'progress': 0.0,
+              'current': 0,
+              'next_threshold': 5,
+            },
+            'cataloguer': {
+              'level': 0,
+              'progress': 0.0,
+              'current': 0,
+              'next_threshold': 10,
+            },
           },
           'streak': {'current': 0, 'longest': 0},
           'recent_achievements': [],
-          'config': {'achievements_style': 'minimal', 'reading_goal_yearly': 12, 'reading_goal_progress': 0},
+          'config': {
+            'achievements_style': 'minimal',
+            'reading_goal_yearly': 12,
+            'reading_goal_progress': 0,
+          },
           'level': 'Member',
           'loans_count': 0,
           'edits_count': 0,
@@ -786,9 +896,12 @@ class ApiService {
     String? achievementsStyle,
   }) async {
     final data = <String, dynamic>{};
-    if (readingGoalYearly != null) data['reading_goal_yearly'] = readingGoalYearly;
-    if (readingGoalMonthly != null) data['reading_goal_monthly'] = readingGoalMonthly;
-    if (achievementsStyle != null) data['achievements_style'] = achievementsStyle;
+    if (readingGoalYearly != null)
+      data['reading_goal_yearly'] = readingGoalYearly;
+    if (readingGoalMonthly != null)
+      data['reading_goal_monthly'] = readingGoalMonthly;
+    if (achievementsStyle != null)
+      data['achievements_style'] = achievementsStyle;
 
     if (useFfi) {
       // In FFI mode, store in SharedPreferences
@@ -878,11 +991,13 @@ class ApiService {
     if (useFfi) {
       // Call local HTTP API to get peers
       try {
-        final localDio = Dio(BaseOptions(
-          baseUrl: 'http://localhost:${ApiService.httpPort}',
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
-        ));
+        final localDio = Dio(
+          BaseOptions(
+            baseUrl: 'http://localhost:${ApiService.httpPort}',
+            connectTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 5),
+          ),
+        );
         final response = await localDio.get('/api/peers');
         debugPrint('✅ getPeers: ${response.data}');
         return response;
@@ -918,10 +1033,13 @@ class ApiService {
       try {
         final myUrl = await _getMyUrl();
         final dio = Dio();
-        debugPrint('P2P Sync: Requesting sync from $peerUrl/api/peers/sync_by_url with my URL $myUrl');
-        return await dio.post('$peerUrl/api/peers/sync_by_url', data: {
-          'url': myUrl
-        });
+        debugPrint(
+          'P2P Sync: Requesting sync from $peerUrl/api/peers/sync_by_url with my URL $myUrl',
+        );
+        return await dio.post(
+          '$peerUrl/api/peers/sync_by_url',
+          data: {'url': myUrl},
+        );
       } catch (e) {
         debugPrint('P2P Sync Error: $e');
         return Response(
@@ -950,11 +1068,13 @@ class ApiService {
     // We use a fresh Dio instance to avoid using our backend's BaseURL/Auth tokens
     // which are not valid for the peer.
     try {
-      final cleanUrl = peerUrl.endsWith('/') ? peerUrl.substring(0, peerUrl.length - 1) : peerUrl;
+      final cleanUrl = peerUrl.endsWith('/')
+          ? peerUrl.substring(0, peerUrl.length - 1)
+          : peerUrl;
       final targetUrl = '$cleanUrl/api/books';
-      
+
       debugPrint('P2P: Fetching books from $targetUrl');
-      
+
       final dio = Dio();
       return await dio.get(targetUrl);
     } catch (e) {
@@ -990,7 +1110,8 @@ class ApiService {
         // In FFI/P2P mode, we calculate our dynamic IP URL
         final myUrl = await _getMyUrl();
 
-        if (myUrl.isEmpty) throw Exception("My library URL could not be determined");
+        if (myUrl.isEmpty)
+          throw Exception("My library URL could not be determined");
 
         // 2. Send request to peer
         // Use clean URL without trailing slash
@@ -998,12 +1119,16 @@ class ApiService {
             ? peerUrl.substring(0, peerUrl.length - 1)
             : peerUrl;
 
-        final remoteDio = Dio(BaseOptions(
-          baseUrl: cleanPeerUrl,
-          connectTimeout: const Duration(seconds: 5),
-        ));
+        final remoteDio = Dio(
+          BaseOptions(
+            baseUrl: cleanPeerUrl,
+            connectTimeout: const Duration(seconds: 5),
+          ),
+        );
 
-        debugPrint('📡 Sending P2P loan request to $cleanPeerUrl/api/peers/requests/incoming');
+        debugPrint(
+          '📡 Sending P2P loan request to $cleanPeerUrl/api/peers/requests/incoming',
+        );
         final remoteRes = await remoteDio.post(
           '/api/peers/requests/incoming',
           data: {
@@ -1016,15 +1141,22 @@ class ApiService {
 
         if (remoteRes.statusCode == 200) {
           // 3. Log outgoing request locally
-          final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
-          await localDio.post('/api/peers/requests/outgoing', data: {
-            'to_peer_url': cleanPeerUrl,
-            'book_isbn': isbn,
-            'book_title': title,
-          });
+          final localDio = Dio(
+            BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+          );
+          await localDio.post(
+            '/api/peers/requests/outgoing',
+            data: {
+              'to_peer_url': cleanPeerUrl,
+              'book_isbn': isbn,
+              'book_title': title,
+            },
+          );
           return remoteRes;
         } else {
-          throw Exception('Remote peer rejected request: ${remoteRes.statusCode}');
+          throw Exception(
+            'Remote peer rejected request: ${remoteRes.statusCode}',
+          );
         }
       } catch (e) {
         debugPrint('❌ requestBookByUrl error: $e');
@@ -1054,11 +1186,15 @@ class ApiService {
   }
 
   Future<Response> updateRequestStatus(String requestId, String status) async {
-    debugPrint('📝 updateRequestStatus: id=$requestId, status=$status, useFfi=$useFfi');
+    debugPrint(
+      '📝 updateRequestStatus: id=$requestId, status=$status, useFfi=$useFfi',
+    );
     if (useFfi) {
       // In FFI mode, call the local HTTP server directly
       try {
-        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
         final res = await localDio.put(
           '/api/peers/requests/$requestId',
           data: {'status': status},
@@ -1079,7 +1215,9 @@ class ApiService {
   Future<Response> deleteRequest(String requestId) async {
     if (useFfi) {
       try {
-        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
         return await localDio.delete('/api/peers/requests/$requestId');
       } catch (e) {
         debugPrint('❌ deleteRequest error: $e');
@@ -1092,7 +1230,9 @@ class ApiService {
   Future<Response> deleteOutgoingRequest(String requestId) async {
     if (useFfi) {
       try {
-        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
         return await localDio.delete('/api/peers/requests/outgoing/$requestId');
       } catch (e) {
         debugPrint('❌ deleteOutgoingRequest error: $e');
@@ -1107,11 +1247,13 @@ class ApiService {
     if (useFfi) {
       // In FFI mode, call the local HTTP API to get peers
       try {
-        final localDio = Dio(BaseOptions(
-          baseUrl: 'http://localhost:${ApiService.httpPort}',
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
-        ));
+        final localDio = Dio(
+          BaseOptions(
+            baseUrl: 'http://localhost:${ApiService.httpPort}',
+            connectTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 5),
+          ),
+        );
         final response = await localDio.get('/api/peers');
         if (response.statusCode == 200) {
           // Handle both formats: {data: [...]} or direct [...]
@@ -1123,19 +1265,25 @@ class ApiService {
           } else {
             allPeers = [];
           }
-          
+
           // Filter for peers where auto_approve is false (pending connections)
           final pendingPeers = allPeers
               .where((p) => p['auto_approve'] == false)
               .map((p) {
-                final Map<String, dynamic> peer = Map<String, dynamic>.from(p as Map);
+                final Map<String, dynamic> peer = Map<String, dynamic>.from(
+                  p as Map,
+                );
                 peer['direction'] = 'incoming'; // Mark as incoming for UI
                 return peer;
               })
               .toList();
-          debugPrint('📋 getPendingPeers: Found ${pendingPeers.length} pending from ${allPeers.length} total');
+          debugPrint(
+            '📋 getPendingPeers: Found ${pendingPeers.length} pending from ${allPeers.length} total',
+          );
           for (var p in pendingPeers) {
-            debugPrint('  📚 Peer: id=${p['id']}, name="${p['name']}", url=${p['url']}, auto_approve=${p['auto_approve']}');
+            debugPrint(
+              '  📚 Peer: id=${p['id']}, name="${p['name']}", url=${p['url']}, auto_approve=${p['auto_approve']}',
+            );
           }
           return Response(
             requestOptions: RequestOptions(path: '/api/peers'),
@@ -1160,12 +1308,17 @@ class ApiService {
     if (useFfi) {
       // Call local HTTP API to update peer status
       try {
-        final localDio = Dio(BaseOptions(
-          baseUrl: 'http://localhost:${ApiService.httpPort}',
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
-        ));
-        final response = await localDio.put('/api/peers/$id/status', data: {'status': status});
+        final localDio = Dio(
+          BaseOptions(
+            baseUrl: 'http://localhost:${ApiService.httpPort}',
+            connectTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 5),
+          ),
+        );
+        final response = await localDio.put(
+          '/api/peers/$id/status',
+          data: {'status': status},
+        );
         debugPrint('✅ updatePeerStatus: $status for peer $id');
         return response;
       } catch (e) {
@@ -1187,11 +1340,13 @@ class ApiService {
     if (useFfi) {
       // Call local HTTP API to delete peer
       try {
-        final localDio = Dio(BaseOptions(
-          baseUrl: 'http://localhost:${ApiService.httpPort}',
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
-        ));
+        final localDio = Dio(
+          BaseOptions(
+            baseUrl: 'http://localhost:${ApiService.httpPort}',
+            connectTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 5),
+          ),
+        );
         final response = await localDio.delete('/api/peers/$id');
         debugPrint('🗑️ deletePeer: peer $id deleted');
         return response;
@@ -1216,7 +1371,9 @@ class ApiService {
     // Use native MdnsService for local discovery (works on iOS/macOS via Bonjour)
     final peers = MdnsService.getPeersJson();
     final isActive = MdnsService.isActive;
-    debugPrint('🔍 ApiService: getLocalPeers() returning ${peers.length} peers');
+    debugPrint(
+      '🔍 ApiService: getLocalPeers() returning ${peers.length} peers',
+    );
     return Response(
       requestOptions: RequestOptions(path: '/api/discovery/local'),
       statusCode: 200,
@@ -1236,15 +1393,15 @@ class ApiService {
 
   /// Helper to get my own URL (IP address) for P2P handshake
   Future<String> _getMyUrl() async {
-     String myIp = '127.0.0.1';
-     try {
-       final info = NetworkInfo();
-       myIp = await info.getWifiIP() ?? '127.0.0.1';
-     } catch (e) {
-       debugPrint('Failed to get local IP: $e');
-     }
-     // Use the dynamically discovered port
-     return 'http://$myIp:${ApiService.httpPort}';
+    String myIp = '127.0.0.1';
+    try {
+      final info = NetworkInfo();
+      myIp = await info.getWifiIP() ?? '127.0.0.1';
+    } catch (e) {
+      debugPrint('Failed to get local IP: $e');
+    }
+    // Use the dynamically discovered port
+    return 'http://$myIp:${ApiService.httpPort}';
   }
 
   /// Connect to a locally discovered peer by URL
@@ -1254,45 +1411,53 @@ class ApiService {
         // 1. Get my own details
         String myName = 'BiblioGenius User';
         final myUrl = await _getMyUrl();
-        
+
         try {
-           final config = await getLibraryConfig();
-           if (config.data is Map) {
-               myName = config.data['library_name'] ?? config.data['name'] ?? myName;
-           }
+          final config = await getLibraryConfig();
+          if (config.data is Map) {
+            myName =
+                config.data['library_name'] ?? config.data['name'] ?? myName;
+          }
         } catch (e) {
-            debugPrint('Error getting own config for handshake: $e');
+          debugPrint('Error getting own config for handshake: $e');
         }
 
         // 2. Send handshake request to Peer
         final targetUrl = '$url/api/peers/incoming';
-        debugPrint('P2P Handshake: Sending my info ($myName, $myUrl) to $targetUrl');
-        
-        final dio = Dio(BaseOptions(
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
-        ));
-        
-        final response = await dio.post(targetUrl, data: {
-            'name': myName,
-            'url': myUrl
-        });
-        
-        debugPrint('P2P Handshake Success: ${response.statusCode} - ${response.data}');
-        
+        debugPrint(
+          'P2P Handshake: Sending my info ($myName, $myUrl) to $targetUrl',
+        );
+
+        final dio = Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
+          ),
+        );
+
+        final response = await dio.post(
+          targetUrl,
+          data: {'name': myName, 'url': myUrl},
+        );
+
+        debugPrint(
+          'P2P Handshake Success: ${response.statusCode} - ${response.data}',
+        );
+
         // 3. Save peer locally (FFI mode)
         try {
-          final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:${ApiService.httpPort}'));
-          await localDio.post('/api/peers/connect', data: {
-            'name': name,
-            'url': url,
-            'public_key': null,
-          });
+          final localDio = Dio(
+            BaseOptions(baseUrl: 'http://localhost:${ApiService.httpPort}'),
+          );
+          await localDio.post(
+            '/api/peers/connect',
+            data: {'name': name, 'url': url, 'public_key': null},
+          );
           debugPrint('✅ Peer saved locally: $name');
         } catch (e) {
-             debugPrint('❌ Failed to save peer locally: $e');
-             // Depending on implementation, we might want to throw or return partial success.
-             // Given the UI reloads peers, if it fails to save, it won't show up.
+          debugPrint('❌ Failed to save peer locally: $e');
+          // Depending on implementation, we might want to throw or return partial success.
+          // Given the UI reloads peers, if it fails to save, it won't show up.
         }
 
         return response;
@@ -1303,12 +1468,15 @@ class ApiService {
         debugPrint('P2P Connect Status: $statusCode');
         debugPrint('P2P Connect Response Body: $responseData');
         debugPrint('P2P Connect Error: ${e.message}');
-        
+
         // Return more informative error
         return Response(
           requestOptions: e.requestOptions,
           statusCode: statusCode ?? 502,
-          data: {'error': 'Connection failed: ${responseData ?? e.message}', 'status': statusCode},
+          data: {
+            'error': 'Connection failed: ${responseData ?? e.message}',
+            'status': statusCode,
+          },
         );
       } catch (e) {
         debugPrint('P2P Connect Error: $e');
@@ -1320,9 +1488,11 @@ class ApiService {
       }
     }
     // Use the existing peer connect mechanism
-    return await _dio.post('/api/peers/connect', data: {'name': name, 'url': url});
+    return await _dio.post(
+      '/api/peers/connect',
+      data: {'name': name, 'url': url},
+    );
   }
-
 
   Future<Response> updateLibraryConfig({
     required String name,
@@ -1338,14 +1508,18 @@ class ApiService {
     if (useFfi) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('ffi_library_name', name);
-      if (description != null) await prefs.setString('ffi_library_description', description);
-      if (profileType != null) await prefs.setString('ffi_profile_type', profileType);
+      if (description != null)
+        await prefs.setString('ffi_library_description', description);
+      if (profileType != null)
+        await prefs.setString('ffi_profile_type', profileType);
       if (tags != null) await prefs.setStringList('ffi_tags', tags);
       if (latitude != null) await prefs.setDouble('ffi_latitude', latitude);
       if (longitude != null) await prefs.setDouble('ffi_longitude', longitude);
-      if (shareLocation != null) await prefs.setBool('ffi_share_location', shareLocation);
-      if (showBorrowedBooks != null) await prefs.setBool('ffi_show_borrowed_books', showBorrowedBooks);
-      
+      if (shareLocation != null)
+        await prefs.setBool('ffi_share_location', shareLocation);
+      if (showBorrowedBooks != null)
+        await prefs.setBool('ffi_show_borrowed_books', showBorrowedBooks);
+
       return Response(
         requestOptions: RequestOptions(path: '/api/library/config'),
         statusCode: 200,
@@ -1390,14 +1564,19 @@ class ApiService {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('ffi_library_name', libraryName);
-        if (libraryDescription != null) await prefs.setString('ffi_library_description', libraryDescription);
+        if (libraryDescription != null)
+          await prefs.setString('ffi_library_description', libraryDescription);
         await prefs.setString('ffi_profile_type', profileType);
         if (latitude != null) await prefs.setDouble('ffi_latitude', latitude);
-        if (longitude != null) await prefs.setDouble('ffi_longitude', longitude);
-        if (shareLocation != null) await prefs.setBool('ffi_share_location', shareLocation);
-        
+        if (longitude != null)
+          await prefs.setDouble('ffi_longitude', longitude);
+        if (shareLocation != null)
+          await prefs.setBool('ffi_share_location', shareLocation);
+
         // Call local HTTP server to persist in database (creates library_config AND library entries)
-        final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
         return await localDio.post(
           '/api/setup',
           data: {
@@ -1428,7 +1607,6 @@ class ApiService {
       },
     );
   }
-
 
   Future<Response> resetApp() async {
     if (useFfi) {
@@ -1496,7 +1674,7 @@ class ApiService {
     if (useFfi) {
       return FfiService().getBooks(status: status, title: title, tag: tag);
     }
-    
+
     try {
       final queryParams = <String, dynamic>{};
       if (status != null) queryParams['status'] = status;
@@ -1524,7 +1702,7 @@ class ApiService {
     if (useFfi) {
       return FfiService().getBook(id);
     }
-    
+
     try {
       final response = await _dio.get('/api/books/$id');
       if (response.statusCode == 200) {
@@ -1609,7 +1787,8 @@ class ApiService {
     String? author,
     String? publisher,
     String? subject,
-    String? lang, // User's preferred language for relevance boost (e.g., "fr", "en")
+    String?
+    lang, // User's preferred language for relevance boost (e.g., "fr", "en")
   }) async {
     try {
       final queryParams = <String, dynamic>{};
@@ -1626,7 +1805,7 @@ class ApiService {
       // because OpenLibrary/Google Books API calls must go through Rust HTTP server
       final searchDio = Dio();
       searchDio.options.baseUrl = defaultBaseUrl;
-      
+
       final response = await searchDio.get(
         '/api/integrations/search_unified',
         queryParameters: queryParams,
@@ -1661,7 +1840,7 @@ class ApiService {
     if (useFfi) {
       return FfiService().getTags();
     }
-    
+
     try {
       final response = await _dio.get('/api/books/tags');
       if (response.statusCode == 200) {

@@ -102,7 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         print('Dashboard: Fetching books...');
         var books = await api.getBooks();
         print('Dashboard: Books fetched. Count: ${books.length}');
-        
+
         print('Dashboard: Fetching config...');
         final configRes = await api.getLibraryConfig();
         print('Dashboard: Config fetched. Status: ${configRes.statusCode}');
@@ -200,7 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       } catch (e) {
         debugPrint('Error fetching user status: $e');
       }
-        
+
       // Fetch quote separate from main data to allow localized refresh
       print('Dashboard: Fetching quote...');
       await _fetchQuote();
@@ -209,7 +209,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         print('Dashboard: Loading complete. Setting _isLoading = false');
         setState(() {
-           _isLoading = false;
+          _isLoading = false;
         });
       }
     } catch (e) {
@@ -231,21 +231,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       final allBooks = [..._recentBooks, ..._readingListBooks];
-      
+
       // Even if books are empty, we try to fetch a quote (service handles fallback)
       final quoteService = QuoteService();
       final quote = await quoteService.fetchRandomQuote(
         allBooks,
         locale: themeProvider.locale.languageCode,
       );
-      
+
       if (mounted) {
         setState(() {
           _dailyQuote = quote;
         });
       }
     } catch (e) {
-       debugPrint('Error fetching quote: $e');
+      debugPrint('Error fetching quote: $e');
     }
   }
 
@@ -256,7 +256,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isLibrarian = themeProvider.isLibrarian;
 
     debugPrint('DashboardScreen: build called');
-    debugPrint('DashboardScreen: isKid=$isKid, isLibrarian=$isLibrarian, isLoading=$_isLoading');
+    debugPrint(
+      'DashboardScreen: isKid=$isKid, isLibrarian=$isLibrarian, isLoading=$_isLoading',
+    );
     final width = MediaQuery.of(context).size.width;
     final isWide = width > 600;
 
@@ -419,9 +421,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       Icons.qr_code_scanner,
                                       Colors.orange,
                                       () async {
-                                        final isbn = await context.push<String>('/scan');
+                                        final isbn = await context.push<String>(
+                                          '/scan',
+                                        );
                                         if (isbn != null && context.mounted) {
-                                          context.push('/books/add', extra: {'isbn': isbn});
+                                          context.push(
+                                            '/books/add',
+                                            extra: {'isbn': isbn},
+                                          );
                                         }
                                       },
                                     ),
@@ -606,9 +613,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         context,
                                         'view_insights',
                                       ),
-                                      style: TextStyle(
-                                        color: Colors.black54,
-                                      ),
+                                      style: TextStyle(color: Colors.black54),
                                     ),
                                     style: TextButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(
@@ -647,10 +652,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // Theme-aware colors - dark wood for Sorbonne, soft pastel for light themes
     final bgColor = isDark ? const Color(0xFF2D1810) : const Color(0xFFF5F0E8);
-    final textColor = isDark ? const Color(0xFFC4A35A) : const Color(0xFF4A3728);
+    final textColor = isDark
+        ? const Color(0xFFC4A35A)
+        : const Color(0xFF4A3728);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -661,7 +668,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
-            border: isDark ? Border.all(color: const Color(0xFF5D3A1A), width: 1) : null,
+            border: isDark
+                ? Border.all(color: const Color(0xFF5D3A1A), width: 1)
+                : null,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
@@ -685,7 +694,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               // Content
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -763,7 +775,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: AppDesign.subtleShadow,
-          border: isSorbonne ? Border.all(color: const Color(0xFF5D3A1A)) : null,
+          border: isSorbonne
+              ? Border.all(color: const Color(0xFF5D3A1A))
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -774,18 +788,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   children: [
                     Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: accentColors,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.emoji_events,
-                    color: isSorbonne ? const Color(0xFFC4A35A) : Colors.white,
-                    size: 14,
-                  ),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: accentColors),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.emoji_events,
+                        color: isSorbonne
+                            ? const Color(0xFFC4A35A)
+                            : Colors.white,
+                        size: 14,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -932,16 +946,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     IconData icon, {
     bool isAccent = false,
   }) {
-    final isSorbonne = Provider.of<ThemeProvider>(context, listen: false).themeStyle == 'sorbonne';
-    final cardBg = isAccent ? Theme.of(context).primaryColor 
+    final isSorbonne =
+        Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
+        'sorbonne';
+    final cardBg = isAccent
+        ? Theme.of(context).primaryColor
         : (isSorbonne ? const Color(0xFF2D1810) : Colors.white);
-    final borderClr = isAccent ? Colors.transparent 
-        : (isSorbonne ? const Color(0xFF5D3A1A) : Colors.grey.withValues(alpha: 0.3));
-    final iconClr = isAccent ? Colors.white 
-        : (isSorbonne ? const Color(0xFFC4A35A) : Theme.of(context).primaryColor);
-    final valueClr = isAccent ? Colors.white 
+    final borderClr = isAccent
+        ? Colors.transparent
+        : (isSorbonne
+              ? const Color(0xFF5D3A1A)
+              : Colors.grey.withValues(alpha: 0.3));
+    final iconClr = isAccent
+        ? Colors.white
+        : (isSorbonne
+              ? const Color(0xFFC4A35A)
+              : Theme.of(context).primaryColor);
+    final valueClr = isAccent
+        ? Colors.white
         : (isSorbonne ? const Color(0xFFD4A855) : Colors.black87);
-    final labelClr = isAccent ? Colors.white70 
+    final labelClr = isAccent
+        ? Colors.white70
         : (isSorbonne ? const Color(0xFF8B7355) : Colors.black54);
 
     return Container(
@@ -963,11 +988,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: iconClr,
-            size: 24,
-          ),
+          Icon(icon, color: iconClr, size: 24),
           const SizedBox(height: 12),
           Text(
             value,
@@ -1005,11 +1026,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       icon = Icons.bolt;
     }
 
-    final isSorbonne = Provider.of<ThemeProvider>(context, listen: false).themeStyle == 'sorbonne';
+    final isSorbonne =
+        Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
+        'sorbonne';
     final accentColors = isSorbonne
         ? [const Color(0xFF8B4513), const Color(0xFF5D3A1A)]
         : [const Color(0xFF667eea), const Color(0xFF764ba2)];
-    final iconColor = isSorbonne ? const Color(0xFFC4A35A) : const Color(0xFF667eea);
+    final iconColor = isSorbonne
+        ? const Color(0xFFC4A35A)
+        : const Color(0xFF667eea);
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
@@ -1060,11 +1085,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Key? key,
     Key? testKey,
   }) {
-    final isSorbonne = Provider.of<ThemeProvider>(context, listen: false).themeStyle == 'sorbonne';
-    final btnBg = isPrimary ? Theme.of(context).primaryColor 
+    final isSorbonne =
+        Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
+        'sorbonne';
+    final btnBg = isPrimary
+        ? Theme.of(context).primaryColor
         : (isSorbonne ? const Color(0xFF2D1810) : Colors.white);
-    final btnFg = isPrimary ? Colors.white 
-        : (isSorbonne ? const Color(0xFFC4A35A) : Theme.of(context).primaryColor);
+    final btnFg = isPrimary
+        ? Colors.white
+        : (isSorbonne
+              ? const Color(0xFFC4A35A)
+              : Theme.of(context).primaryColor);
 
     Widget button = ScaleOnTap(
       child: ElevatedButton.icon(
@@ -1084,7 +1115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
-    
+
     if (testKey != null) {
       return KeyedSubtree(key: testKey, child: button);
     }

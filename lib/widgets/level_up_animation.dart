@@ -16,7 +16,7 @@ class LevelUpAnimation {
     IconData? trackIcon,
   }) {
     final overlay = Overlay.of(context);
-    
+
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => _LevelUpAnimationWidget(
@@ -27,7 +27,7 @@ class LevelUpAnimation {
         onComplete: () => entry.remove(),
       ),
     );
-    
+
     overlay.insert(entry);
   }
 }
@@ -48,27 +48,28 @@ class _LevelUpAnimationWidget extends StatefulWidget {
   });
 
   @override
-  State<_LevelUpAnimationWidget> createState() => _LevelUpAnimationWidgetState();
+  State<_LevelUpAnimationWidget> createState() =>
+      _LevelUpAnimationWidgetState();
 }
 
 class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
     with TickerProviderStateMixin {
   late AnimationController _mainController;
   late AnimationController _particleController;
-  
+
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _slideAnimation;
   late Animation<double> _progressAnimation;
   late Animation<double> _numberAnimation;
-  
+
   final List<_Particle> _particles = [];
   final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
-    
+
     _mainController = AnimationController(
       duration: const Duration(milliseconds: 2200),
       vsync: this,
@@ -82,17 +83,18 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
     // Fade in/out
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 10,
       ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 75),
       TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 75,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 15,
       ),
     ]).animate(_mainController);
@@ -100,54 +102,51 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
     // Scale bounce
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.5, end: 1.1)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: 0.5,
+          end: 1.1,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 35,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.1, end: 1.0),
-        weight: 15,
-      ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 50,
-      ),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.1, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 50),
     ]).animate(_mainController);
 
     // Text slide up
     _slideAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 50, end: 0)
-            .chain(CurveTween(curve: Curves.easeOutBack)),
+        tween: Tween<double>(
+          begin: 50,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 30,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(0),
-        weight: 70,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(0), weight: 70),
     ]).animate(_mainController);
 
     // Progress bar fill animation (starts empty, fills with flash)
     _progressAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.7, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween<double>(
+          begin: 0.7,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 40,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 60,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 60),
     ]).animate(_mainController);
 
     // Number counter animation
-    _numberAnimation = Tween<double>(
-      begin: (widget.newLevel - 1).toDouble(),
-      end: widget.newLevel.toDouble(),
-    ).animate(CurvedAnimation(
-      parent: _mainController,
-      curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
-    ));
+    _numberAnimation =
+        Tween<double>(
+          begin: (widget.newLevel - 1).toDouble(),
+          end: widget.newLevel.toDouble(),
+        ).animate(
+          CurvedAnimation(
+            parent: _mainController,
+            curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
+          ),
+        );
 
     // Generate rising particles
     _generateParticles();
@@ -158,13 +157,15 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
 
   void _generateParticles() {
     for (int i = 0; i < 20; i++) {
-      _particles.add(_Particle(
-        x: _random.nextDouble(),
-        startY: 1.0 + _random.nextDouble() * 0.2,
-        speed: _random.nextDouble() * 0.3 + 0.2,
-        size: _random.nextDouble() * 6 + 2,
-        delay: _random.nextDouble(),
-      ));
+      _particles.add(
+        _Particle(
+          x: _random.nextDouble(),
+          startY: 1.0 + _random.nextDouble() * 0.2,
+          speed: _random.nextDouble() * 0.3 + 0.2,
+          size: _random.nextDouble() * 6 + 2,
+          delay: _random.nextDouble(),
+        ),
+      );
     }
   }
 
@@ -178,7 +179,7 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return ListenableBuilder(
       listenable: Listenable.merge([_mainController, _particleController]),
       builder: (context, _) {
@@ -188,14 +189,16 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
             Positioned.fill(
               child: IgnorePointer(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.5 * _fadeAnimation.value),
+                  color: Colors.black.withValues(
+                    alpha: 0.5 * _fadeAnimation.value,
+                  ),
                 ),
               ),
             ),
-            
+
             // Rising golden particles
             ..._buildParticles(screenSize),
-            
+
             // Main content
             Center(
               child: IgnorePointer(
@@ -235,7 +238,7 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           // Animated progress bar with flash
                           Container(
                             width: 200,
@@ -256,14 +259,18 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
                                       gradient: LinearGradient(
                                         colors: [
                                           widget.trackColor,
-                                          widget.trackColor.withValues(alpha: 0.8),
+                                          widget.trackColor.withValues(
+                                            alpha: 0.8,
+                                          ),
                                           Colors.amber,
                                         ],
                                       ),
                                       boxShadow: _progressAnimation.value >= 1.0
                                           ? [
                                               BoxShadow(
-                                                color: Colors.amber.withValues(alpha: 0.8),
+                                                color: Colors.amber.withValues(
+                                                  alpha: 0.8,
+                                                ),
                                                 blurRadius: 10,
                                                 spreadRadius: 2,
                                               ),
@@ -293,7 +300,7 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           // Track info with animated level number
                           Row(
                             mainAxisSize: MainAxisSize.min,
@@ -315,10 +322,13 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
                             ],
                           ),
                           const SizedBox(height: 12),
-                          
+
                           // Level number with animation
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
@@ -329,7 +339,9 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: widget.trackColor.withValues(alpha: 0.5),
+                                  color: widget.trackColor.withValues(
+                                    alpha: 0.5,
+                                  ),
                                   blurRadius: 15,
                                   offset: const Offset(0, 5),
                                 ),
@@ -351,12 +363,15 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
                 ),
               ),
             ),
-            
+
             // Tap to dismiss
             Positioned.fill(
               child: GestureDetector(
                 onTap: () {
-                  _mainController.animateTo(1.0, duration: const Duration(milliseconds: 200));
+                  _mainController.animateTo(
+                    1.0,
+                    duration: const Duration(milliseconds: 200),
+                  );
                 },
                 behavior: HitTestBehavior.translucent,
               ),
@@ -369,12 +384,13 @@ class _LevelUpAnimationWidgetState extends State<_LevelUpAnimationWidget>
 
   List<Widget> _buildParticles(Size screenSize) {
     final time = _particleController.value;
-    
+
     return _particles.map((particle) {
       final adjustedTime = (time + particle.delay) % 1.0;
       final y = particle.startY - adjustedTime * particle.speed * 3;
-      final opacity = (1.0 - adjustedTime).clamp(0.0, 1.0) * _fadeAnimation.value;
-      
+      final opacity =
+          (1.0 - adjustedTime).clamp(0.0, 1.0) * _fadeAnimation.value;
+
       return Positioned(
         left: particle.x * screenSize.width,
         top: y * screenSize.height,

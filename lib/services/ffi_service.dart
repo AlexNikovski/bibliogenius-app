@@ -112,10 +112,7 @@ class FfiService {
   // ============ Contacts ============
 
   /// Get all contacts with optional filters
-  Future<List<Contact>> getContacts({
-    int? libraryId,
-    String? type,
-  }) async {
+  Future<List<Contact>> getContacts({int? libraryId, String? type}) async {
     try {
       final frbContacts = await frb.getAllContacts(
         libraryId: libraryId,
@@ -164,7 +161,7 @@ class FfiService {
         notes: contact.notes,
         isActive: contact.isActive,
       );
-      
+
       final created = await frb.createContact(contact: frbContact);
       return _frbContactToContact(created);
     } catch (e) {
@@ -187,7 +184,7 @@ class FfiService {
         notes: contact.notes,
         isActive: contact.isActive,
       );
-      
+
       final updated = await frb.updateContact(contact: frbContact);
       return _frbContactToContact(updated);
     } catch (e) {
@@ -220,7 +217,7 @@ class FfiService {
   }
 
   // ============ Books Write Operations ============
-  
+
   Future<frb.FrbBook> createBook(frb.FrbBook book) async {
     try {
       return await frb.createBook(book: book);
@@ -327,16 +324,22 @@ class FfiService {
       final peers = await frb.getLocalPeersFfi();
       debugPrint('🔍 mDNS: Found ${peers.length} peers');
       for (final p in peers) {
-        debugPrint('  📚 Peer: ${p.name} at ${p.addresses.firstOrNull}:${p.port}');
+        debugPrint(
+          '  📚 Peer: ${p.name} at ${p.addresses.firstOrNull}:${p.port}',
+        );
       }
-      return peers.map((p) => {
-        'name': p.name,
-        'host': p.host,
-        'port': p.port,
-        'addresses': p.addresses,
-        'library_id': p.libraryId,
-        'discovered_at': p.discoveredAt,
-      }).toList();
+      return peers
+          .map(
+            (p) => {
+              'name': p.name,
+              'host': p.host,
+              'port': p.port,
+              'addresses': p.addresses,
+              'library_id': p.libraryId,
+              'discovered_at': p.discoveredAt,
+            },
+          )
+          .toList();
     } catch (e) {
       debugPrint('FFI getLocalPeers error: $e');
       return [];
@@ -344,7 +347,11 @@ class FfiService {
   }
 
   /// Initialize mDNS service for local discovery
-  Future<bool> initMdns(String libraryName, int port, {String? libraryId}) async {
+  Future<bool> initMdns(
+    String libraryName,
+    int port, {
+    String? libraryId,
+  }) async {
     try {
       await frb.initMdnsFfi(
         libraryName: libraryName,

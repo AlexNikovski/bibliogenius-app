@@ -71,7 +71,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       }
     }
   }
-// ... existing methods ...
+  // ... existing methods ...
 
   bool get _hasAvailableCopies {
     if (_copies.isEmpty) return false;
@@ -79,8 +79,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   // ... existing build methods ...
-
-
 
   Future<void> _updateRating(int? newRating) async {
     final api = Provider.of<ApiService>(context, listen: false);
@@ -489,12 +487,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               label: Text(
                 _hasAvailableCopies
                     ? (TranslationService.translate(context, 'lend_book_btn') ??
-                        'Lend this book')
+                          'Lend this book')
                     : (TranslationService.translate(
-                          context,
-                          'no_copies_available',
-                        ) ??
-                        'No copies available'),
+                            context,
+                            'no_copies_available',
+                          ) ??
+                          'No copies available'),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.purple,

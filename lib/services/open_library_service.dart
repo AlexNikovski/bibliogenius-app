@@ -131,14 +131,14 @@ class OpenLibraryService {
           final label = item['label'] as String? ?? 'Unknown Title';
           final description = item['description'] as String?;
           final uri = item['uri'] as String?;
-          
+
           // Inventaire doesn't return author in search results directly
           // but description often contains author info
           String author = 'Unknown Author';
           if (description != null && description.contains(' by ')) {
             author = description.split(' by ').last.trim();
           }
-          
+
           // Inventaire uses Wikidata-style entity URIs
           String? coverUrl;
           if (uri != null) {

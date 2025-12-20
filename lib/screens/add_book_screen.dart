@@ -63,15 +63,15 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
   void _onIsbnChanged() {
     final isbn = _isbnController.text.replaceAll(RegExp(r'[^0-9X]'), '');
-    
+
     // Reset last lookup if ISBN changed significantly (not just adding digits)
     if (_lastLookedUpIsbn != null && !isbn.startsWith(_lastLookedUpIsbn!)) {
       _lastLookedUpIsbn = null;
     }
-    
+
     // Only lookup if valid length, not currently fetching, and not already looked up
-    if ((isbn.length == 10 || isbn.length == 13) && 
-        !_isFetchingDetails && 
+    if ((isbn.length == 10 || isbn.length == 13) &&
+        !_isFetchingDetails &&
         isbn != _lastLookedUpIsbn) {
       _fetchBookDetails(isbn);
     }
@@ -163,7 +163,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
       if (mounted) {
         // Mario Bros-style +1 animation! 🎮
         PlusOneAnimation.show(context);
-        
+
         // Small delay to let animation be visible before navigation
         await Future.delayed(const Duration(milliseconds: 400));
         if (mounted) {
@@ -192,10 +192,15 @@ class _AddBookScreenState extends State<AddBookScreen> {
         actions: [
           TextButton.icon(
             onPressed: () => context.push('/search/external'),
-            icon: Icon(Icons.search, color: Theme.of(context).appBarTheme.foregroundColor),
+            icon: Icon(
+              Icons.search,
+              color: Theme.of(context).appBarTheme.foregroundColor,
+            ),
             label: Text(
               TranslationService.translate(context, 'btn_search_online'),
-              style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
+              style: TextStyle(
+                color: Theme.of(context).appBarTheme.foregroundColor,
+              ),
             ),
           ),
           Padding(
@@ -215,7 +220,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
                     onPressed: _saveBook,
                     key: const Key('saveBookButton'),
                     child: Text(
-                      TranslationService.translate(context, 'save_book') ?? 'Save',
+                      TranslationService.translate(context, 'save_book') ??
+                          'Save',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -515,7 +521,10 @@ class _AddBookScreenState extends State<AddBookScreen> {
                       _fetchBookDetails(result);
                     }
                   },
-                  tooltip: TranslationService.translate(context, 'scan_isbn_title'),
+                  tooltip: TranslationService.translate(
+                    context,
+                    'scan_isbn_title',
+                  ),
                 ),
                 suffixIcon: _isFetchingDetails
                     ? const Padding(
@@ -749,7 +758,11 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
-  InputDecoration _buildInputDecoration({String? hint, Widget? suffixIcon, Widget? prefixIcon}) {
+  InputDecoration _buildInputDecoration({
+    String? hint,
+    Widget? suffixIcon,
+    Widget? prefixIcon,
+  }) {
     return InputDecoration(
       hintText: hint,
       suffixIcon: suffixIcon,

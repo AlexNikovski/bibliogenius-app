@@ -14,7 +14,7 @@ class GoalReachedAnimation {
     String? customMessage,
   }) {
     final overlay = Overlay.of(context);
-    
+
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => _GoalReachedWidget(
@@ -24,7 +24,7 @@ class GoalReachedAnimation {
         onComplete: () => entry.remove(),
       ),
     );
-    
+
     overlay.insert(entry);
   }
 }
@@ -50,18 +50,18 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
     with TickerProviderStateMixin {
   late AnimationController _mainController;
   late AnimationController _fireworksController;
-  
+
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _trophyBounceAnimation;
-  
+
   final List<_Firework> _fireworks = [];
   final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
-    
+
     _mainController = AnimationController(
       duration: const Duration(milliseconds: 3000),
       vsync: this,
@@ -75,17 +75,18 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
     // Fade in/out
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 10,
       ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 75),
       TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 75,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 15,
       ),
     ]).animate(_mainController);
@@ -93,40 +94,37 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
     // Scale
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.5, end: 1.15)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: 0.5,
+          end: 1.15,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 40,
       ),
       TweenSequenceItem(
         tween: Tween<double>(begin: 1.15, end: 1.0),
         weight: 10,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 50,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 50),
     ]).animate(_mainController);
 
     // Trophy bounce
     _trophyBounceAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween<double>(0), weight: 20),
       TweenSequenceItem(
-        tween: ConstantTween<double>(0),
+        tween: Tween<double>(
+          begin: 0,
+          end: -15,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 20,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0, end: -15)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 20,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: -15, end: 0)
-            .chain(CurveTween(curve: Curves.bounceOut)),
+        tween: Tween<double>(
+          begin: -15,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.bounceOut)),
         weight: 30,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(0),
-        weight: 30,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(0), weight: 30),
     ]).animate(_mainController);
 
     // Generate fireworks
@@ -160,15 +158,17 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
       // Each firework has multiple particles
       for (int j = 0; j < 12; j++) {
         final angle = (j / 12) * 2 * pi;
-        _fireworks.add(_Firework(
-          startX: x,
-          startY: y,
-          angle: angle,
-          distance: _random.nextDouble() * 80 + 40,
-          color: color,
-          delay: delay,
-          size: _random.nextDouble() * 6 + 3,
-        ));
+        _fireworks.add(
+          _Firework(
+            startX: x,
+            startY: y,
+            angle: angle,
+            distance: _random.nextDouble() * 80 + 40,
+            color: color,
+            delay: delay,
+            size: _random.nextDouble() * 6 + 3,
+          ),
+        );
       }
     }
   }
@@ -183,7 +183,7 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return ListenableBuilder(
       listenable: Listenable.merge([_mainController, _fireworksController]),
       builder: (context, _) {
@@ -193,14 +193,16 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
             Positioned.fill(
               child: IgnorePointer(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.5 * _fadeAnimation.value),
+                  color: Colors.black.withValues(
+                    alpha: 0.5 * _fadeAnimation.value,
+                  ),
                 ),
               ),
             ),
-            
+
             // Fireworks particles
             ..._buildFireworks(screenSize),
-            
+
             // Main content
             Center(
               child: IgnorePointer(
@@ -240,10 +242,13 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
                           ),
                         ),
                         const SizedBox(height: 30),
-                        
+
                         // "Goal Reached!" text
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -271,7 +276,7 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
                           ),
                         ),
                         const SizedBox(height: 20),
-                        
+
                         // Details
                         Text(
                           '${widget.booksRead} books ${widget.goalType == "yearly" ? "this year" : "this month"}',
@@ -287,12 +292,15 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
                 ),
               ),
             ),
-            
+
             // Tap to dismiss
             Positioned.fill(
               child: GestureDetector(
                 onTap: () {
-                  _mainController.animateTo(1.0, duration: const Duration(milliseconds: 200));
+                  _mainController.animateTo(
+                    1.0,
+                    duration: const Duration(milliseconds: 200),
+                  );
                 },
                 behavior: HitTestBehavior.translucent,
               ),
@@ -304,16 +312,19 @@ class _GoalReachedWidgetState extends State<_GoalReachedWidget>
   }
 
   List<Widget> _buildFireworks(Size screenSize) {
-    final mainProgress = _mainController.value.clamp(0.0, 0.6) / 0.6; // First 60%
+    final mainProgress =
+        _mainController.value.clamp(0.0, 0.6) / 0.6; // First 60%
     final fireworkProgress = _fireworksController.value;
-    
+
     return _fireworks.map((firework) {
       final adjustedProgress = ((fireworkProgress + firework.delay) % 1.0);
       final distance = firework.distance * adjustedProgress;
-      final x = firework.startX + cos(firework.angle) * distance / screenSize.width;
-      final y = firework.startY + sin(firework.angle) * distance / screenSize.height;
+      final x =
+          firework.startX + cos(firework.angle) * distance / screenSize.width;
+      final y =
+          firework.startY + sin(firework.angle) * distance / screenSize.height;
       final opacity = mainProgress * (1.0 - adjustedProgress);
-      
+
       return Positioned(
         left: x * screenSize.width,
         top: y * screenSize.height,

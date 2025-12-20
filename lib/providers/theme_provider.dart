@@ -36,7 +36,7 @@ class ThemeProvider with ChangeNotifier {
   ThemeData get themeData {
     // Initialize registry if needed
     ThemeRegistry.initialize();
-    
+
     // Get theme from registry, fallback to default
     final theme = ThemeRegistry.get(_themeStyle) ?? ThemeRegistry.defaultTheme;
     return theme.buildTheme(accentColor: _bannerColor);
@@ -201,7 +201,7 @@ class ThemeProvider with ChangeNotifier {
       try {
         // We only update the name here, keeping other fields as is usually requires fetching them first
         // But for this simplified call, we assume the caller handles full update or we just update local state
-        // In this architecture, usually screens call API then update Provider. 
+        // In this architecture, usually screens call API then update Provider.
         // We'll leave the API call to the caller (ProfileScreen/Dashboard) for now to avoid circular dependencies or incomplete data updates.
       } catch (e) {
         debugPrint('Error syncing library name: $e');

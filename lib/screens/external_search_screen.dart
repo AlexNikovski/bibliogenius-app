@@ -56,7 +56,7 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
       final api = Provider.of<ApiService>(context, listen: false);
       // Get user's language for relevance boosting
       final userLang = Localizations.localeOf(context).languageCode;
-      
+
       // Use unified search (Inventaire + OpenLibrary)
       final results = await api.searchBooks(
         title: _titleController.text,
@@ -105,7 +105,7 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
       if (mounted) {
         // Mario Bros-style +1 animation! 🎮
         PlusOneAnimation.show(context);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

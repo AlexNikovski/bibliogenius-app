@@ -24,8 +24,10 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
   // Slide data for cleaner code
   // Slide data - theme-aware for Sorbonne
   List<_SlideData> _getSlides(BuildContext context) {
-    final isSorbonne = Provider.of<ThemeProvider>(context, listen: false).themeStyle == 'sorbonne';
-    
+    final isSorbonne =
+        Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
+        'sorbonne';
+
     // Autumn gradient palette for Sorbonne
     final sorbonneGradients = [
       [const Color(0xFF6B4423), const Color(0xFF8B4513)], // Brown
@@ -33,16 +35,16 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
       [const Color(0xFF704214), const Color(0xFFA0522D)], // Sepia/Sienna
       [const Color(0xFF8B6914), const Color(0xFFD2691E)], // Bronze/Chocolate
     ];
-    
+
     final defaultGradients = [
       [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
       [const Color(0xFF10B981), const Color(0xFF059669)],
       [const Color(0xFFF59E0B), const Color(0xFFD97706)],
       [const Color(0xFFEC4899), const Color(0xFFDB2777)],
     ];
-    
+
     final gradients = isSorbonne ? sorbonneGradients : defaultGradients;
-    
+
     return [
       _SlideData(
         icon: Icons.auto_stories,
@@ -164,7 +166,8 @@ class _OnboardingTourScreenState extends State<OnboardingTourScreen>
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
                   itemCount: _totalPages,
-                  itemBuilder: (context, index) => _buildSlide(_getSlides(context)[index]),
+                  itemBuilder: (context, index) =>
+                      _buildSlide(_getSlides(context)[index]),
                 ),
               ),
               _buildFooter(),

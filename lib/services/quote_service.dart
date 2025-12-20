@@ -17,7 +17,6 @@ import '../models/quote.dart';
 class QuoteService {
   static const String _cacheKeyPrefix = 'quote_cache_v2_';
 
-
   // Fallback multilingual quotes (always available offline)
   static final Map<String, List<Quote>> _fallbackQuotes = {
     'en': [
@@ -201,6 +200,7 @@ class QuoteService {
     }
     return null;
   }
+
   Future<void> _cacheQuote(Quote quote, String locale) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -219,8 +219,6 @@ class QuoteService {
       debugPrint('QuoteService: Cache write error: $e');
     }
   }
-
-
 
   /// Fetches the "Quote of the Day" from Wikiquote for the given [locale].
   /// Returns a [Quote] object or null if fetching/parsing fails.
@@ -318,7 +316,7 @@ class QuoteService {
     // German: Often "Quote text ... separator Author, Source"
     // Source often follows a comma after Author or newline
     // We try to split by last known separator
-    
+
     // Common separators across languages
     final separators = ['\n-', '—', '–', '~']; // Em dash, En dash, Tilde
 
@@ -329,48 +327,49 @@ class QuoteService {
         if (lastIndex != -1 &&
             lastIndex > 5 &&
             lastIndex < processed.length - 2) {
-          
           // Check if it looks like an author separator
           // (e.g. not just a hyphen in the middle of a sentence)
           // We assume author part is relatively short compared to quote?
           // Or just take the last part.
-          
-          final potentialAuthorPart = processed.substring(lastIndex + sep.length).trim();
-          
+
+          final potentialAuthorPart = processed
+              .substring(lastIndex + sep.length)
+              .trim();
+
           // If the part after separator is too long, it might be part of the text.
           // Authors usually aren't 200 chars long.
           if (potentialAuthorPart.length < 100) {
-             processed = processed.substring(0, lastIndex).trim();
-             author = potentialAuthorPart;
-             break;
+            processed = processed.substring(0, lastIndex).trim();
+            author = potentialAuthorPart;
+            break;
           }
         }
       }
     }
-    
+
     // If we extracted an author, clean it further (remove source citations if possible)
     if (author.isNotEmpty) {
-       // Often author is followed by comma and source (especially DE)
-       // e.g. "Friedrich Schiller, An die Freude"
-       if (author.contains(',') && locale == 'de') {
-          author = author.split(',').first.trim();
-       }
-       // Remove newlines in author if any
-       if (author.contains('\n')) {
-         author = author.split('\n').first.trim();
-       }
+      // Often author is followed by comma and source (especially DE)
+      // e.g. "Friedrich Schiller, An die Freude"
+      if (author.contains(',') && locale == 'de') {
+        author = author.split(',').first.trim();
+      }
+      // Remove newlines in author if any
+      if (author.contains('\n')) {
+        author = author.split('\n').first.trim();
+      }
     } else {
       // Fallback: Check if the last line looks like an author
-       final lines = processed.split('\n');
-       if (lines.length > 1) {
-         final lastLine = lines.last.trim();
-         // Heuristic: Author lines are usually short and don't end in punctuation like . or !
-         // unless it's an initial.
-         if (lastLine.length < 50 && !lastLine.endsWith('.')) {
-            author = lastLine;
-            processed = lines.sublist(0, lines.length - 1).join('\n').trim();
-         }
-       }
+      final lines = processed.split('\n');
+      if (lines.length > 1) {
+        final lastLine = lines.last.trim();
+        // Heuristic: Author lines are usually short and don't end in punctuation like . or !
+        // unless it's an initial.
+        if (lastLine.length < 50 && !lastLine.endsWith('.')) {
+          author = lastLine;
+          processed = lines.sublist(0, lines.length - 1).join('\n').trim();
+        }
+      }
     }
 
     // 2. Final cleanup of quote text
@@ -378,26 +377,24 @@ class QuoteService {
     // (This happens if the parser includes previous/next links text)
     // Basic heuristic: specific known garbage strings
     final garbagePrefixes = [
-      'Citation au hasard', 
-      'modifier', 
-      'Frase del día', 
-      'Zitat des Tages'
+      'Citation au hasard',
+      'modifier',
+      'Frase del día',
+      'Zitat des Tages',
     ];
     for (var garbage in garbagePrefixes) {
       if (processed.startsWith(garbage)) {
         processed = processed.substring(garbage.length).trim();
       }
-       // Also check if garbage is attached to recent newlines
+      // Also check if garbage is attached to recent newlines
       processed = processed.replaceAll(garbage, '').trim();
     }
-    
+
     // Remove leading/trailing quotes
     processed = processed.replaceAll(RegExp(r'^["«„“]+|["»“]+$'), '').trim();
 
     return (processed, author);
   }
-
-
 
   Quote _getRandomFallback(String locale) {
     final quotes = _fallbackQuotes[locale] ?? _fallbackQuotes['en']!;

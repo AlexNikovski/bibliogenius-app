@@ -92,53 +92,70 @@ class _LoginScreenState extends State<LoginScreen>
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(TranslationService.translate(context, 'two_factor_auth') ?? 'Two-Factor Authentication'),
+          title: Text(
+            TranslationService.translate(context, 'two_factor_auth') ??
+                'Two-Factor Authentication',
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-               Text(TranslationService.translate(context, 'enter_mfa_code') ?? 'Enter the 6-digit code from your authenticator app.'),
-               const SizedBox(height: 16),
-               TextField(
-                 controller: codeController,
-                 keyboardType: TextInputType.number,
-                 maxLength: 6,
-                 autofocus: true,
-                 decoration: InputDecoration(
-                   labelText: 'Code',
-                   errorText: errorText,
-                   border: const OutlineInputBorder(),
-                 ),
-               ),
+              Text(
+                TranslationService.translate(context, 'enter_mfa_code') ??
+                    'Enter the 6-digit code from your authenticator app.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: codeController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Code',
+                  errorText: errorText,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context), // Cancel login
-              child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
+              child: Text(
+                TranslationService.translate(context, 'cancel') ?? 'Cancel',
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
                 setState(() => errorText = null);
                 final code = codeController.text.trim();
                 if (code.length != 6) {
-                   setState(() => errorText = 'Invalid code length');
-                   return;
+                  setState(() => errorText = 'Invalid code length');
+                  return;
                 }
-                
-                final apiService = Provider.of<ApiService>(context, listen: false);
+
+                final apiService = Provider.of<ApiService>(
+                  context,
+                  listen: false,
+                );
                 try {
-                  final response = await apiService.loginMfa(username, password, code);
+                  final response = await apiService.loginMfa(
+                    username,
+                    password,
+                    code,
+                  );
                   if (response.statusCode == 200) {
-                     Navigator.pop(context); // Close dialog
-                     _onLoginSuccess(response.data['token'], username);
+                    Navigator.pop(context); // Close dialog
+                    _onLoginSuccess(response.data['token'], username);
                   } else {
-                     setState(() => errorText = 'Invalid code');
+                    setState(() => errorText = 'Invalid code');
                   }
                 } catch (e) {
-                   setState(() => errorText = 'Verification failed');
+                  setState(() => errorText = 'Verification failed');
                 }
               },
-              child: Text(TranslationService.translate(context, 'verify') ?? 'Verify'),
+              child: Text(
+                TranslationService.translate(context, 'verify') ?? 'Verify',
+              ),
             ),
           ],
         ),
@@ -173,17 +190,22 @@ class _LoginScreenState extends State<LoginScreen>
         });
       }
     } catch (e) {
-      if (e is DioException && e.response?.statusCode == 403 && e.response?.data['error'] == 'mfa_required') {
-          // MFA Required
-          if (mounted) {
-             setState(() => _isLoading = false); // Stop loading indicator on main screen
-             _showMfaDialog(_usernameController.text, _passwordController.text);
-             return; 
-          }
+      if (e is DioException &&
+          e.response?.statusCode == 403 &&
+          e.response?.data['error'] == 'mfa_required') {
+        // MFA Required
+        if (mounted) {
+          setState(
+            () => _isLoading = false,
+          ); // Stop loading indicator on main screen
+          _showMfaDialog(_usernameController.text, _passwordController.text);
+          return;
+        }
       }
-      
+
       setState(() {
-        _errorMessage = 'Login failed: ${e is DioException ? e.message : e.toString()}';
+        _errorMessage =
+            'Login failed: ${e is DioException ? e.message : e.toString()}';
       });
     } finally {
       if (mounted) {

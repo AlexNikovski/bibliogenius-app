@@ -15,7 +15,7 @@ class BookCompleteCelebration {
     String? subtitle,
   }) {
     final overlay = Overlay.of(context);
-    
+
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => _BookCompleteCelebrationWidget(
@@ -25,7 +25,7 @@ class BookCompleteCelebration {
         onComplete: () => entry.remove(),
       ),
     );
-    
+
     overlay.insert(entry);
   }
 }
@@ -44,27 +44,29 @@ class _BookCompleteCelebrationWidget extends StatefulWidget {
   });
 
   @override
-  State<_BookCompleteCelebrationWidget> createState() => _BookCompleteCelebrationWidgetState();
+  State<_BookCompleteCelebrationWidget> createState() =>
+      _BookCompleteCelebrationWidgetState();
 }
 
-class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebrationWidget>
+class _BookCompleteCelebrationWidgetState
+    extends State<_BookCompleteCelebrationWidget>
     with TickerProviderStateMixin {
   late AnimationController _mainController;
   late AnimationController _starsController;
-  
+
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _bookCloseAnimation;
   late Animation<double> _xpAnimation;
   late Animation<double> _xpSlideAnimation;
-  
+
   final List<_Star> _stars = [];
   final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
-    
+
     _mainController = AnimationController(
       duration: const Duration(milliseconds: 2800),
       vsync: this,
@@ -78,17 +80,18 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
     // Fade in/out
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 10,
       ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 75),
       TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 75,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 15,
       ),
     ]).animate(_mainController);
@@ -96,57 +99,48 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
     // Scale animation
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.8, end: 1.1)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: 0.8,
+          end: 1.1,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 30,
       ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.1, end: 1.0),
-        weight: 15,
-      ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 55,
-      ),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.1, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 55),
     ]).animate(_mainController);
 
     // Book closing animation (3D perspective effect)
     _bookCloseAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 30,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 70,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 70),
     ]).animate(_mainController);
 
     // XP counter animation
-    _xpAnimation = Tween<double>(
-      begin: 0,
-      end: widget.xpEarned.toDouble(),
-    ).animate(CurvedAnimation(
-      parent: _mainController,
-      curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
-    ));
+    _xpAnimation = Tween<double>(begin: 0, end: widget.xpEarned.toDouble())
+        .animate(
+          CurvedAnimation(
+            parent: _mainController,
+            curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
+          ),
+        );
 
     // XP text slide up
     _xpSlideAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween<double>(0), weight: 25),
       TweenSequenceItem(
-        tween: ConstantTween<double>(0),
-        weight: 25,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 30, end: 0)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: 30,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 30,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(0),
-        weight: 45,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(0), weight: 45),
     ]).animate(_mainController);
 
     // Generate stars
@@ -159,13 +153,15 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
   void _generateStars() {
     for (int i = 0; i < 12; i++) {
       final angle = (i / 12) * 2 * pi;
-      _stars.add(_Star(
-        angle: angle,
-        distance: _random.nextDouble() * 40 + 80,
-        size: _random.nextDouble() * 12 + 8,
-        delay: _random.nextDouble() * 0.3,
-        rotationSpeed: (_random.nextDouble() - 0.5) * 2,
-      ));
+      _stars.add(
+        _Star(
+          angle: angle,
+          distance: _random.nextDouble() * 40 + 80,
+          size: _random.nextDouble() * 12 + 8,
+          delay: _random.nextDouble() * 0.3,
+          rotationSpeed: (_random.nextDouble() - 0.5) * 2,
+        ),
+      );
     }
   }
 
@@ -187,11 +183,13 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
             Positioned.fill(
               child: IgnorePointer(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.6 * _fadeAnimation.value),
+                  color: Colors.black.withValues(
+                    alpha: 0.6 * _fadeAnimation.value,
+                  ),
                 ),
               ),
             ),
-            
+
             // Main content
             Center(
               child: IgnorePointer(
@@ -211,18 +209,21 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
                             children: [
                               // Animated stars
                               ..._buildStars(),
-                              
+
                               // Book icon with closing effect
                               _buildBook(),
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
+
                         // "Book Complete!" text
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -249,9 +250,9 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Book title
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -267,14 +268,17 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
+
                         // XP earned with animation
                         Transform.translate(
                           offset: Offset(0, _xpSlideAnimation.value),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
@@ -322,12 +326,15 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
                 ),
               ),
             ),
-            
+
             // Tap to dismiss
             Positioned.fill(
               child: GestureDetector(
                 onTap: () {
-                  _mainController.animateTo(1.0, duration: const Duration(milliseconds: 200));
+                  _mainController.animateTo(
+                    1.0,
+                    duration: const Duration(milliseconds: 200),
+                  );
                 },
                 behavior: HitTestBehavior.translucent,
               ),
@@ -340,7 +347,7 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
 
   Widget _buildBook() {
     final closeProgress = _bookCloseAnimation.value;
-    
+
     return Container(
       width: 100,
       height: 130,
@@ -364,10 +371,7 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.green.shade700,
-                  Colors.green.shade500,
-                ],
+                colors: [Colors.green.shade700, Colors.green.shade500],
               ),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.green.shade800, width: 2),
@@ -386,10 +390,7 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.green.shade600,
-                    Colors.green.shade400,
-                  ],
+                  colors: [Colors.green.shade600, Colors.green.shade400],
                 ),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.green.shade700, width: 2),
@@ -410,8 +411,10 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
 
   List<Widget> _buildStars() {
     final time = _starsController.value;
-    final mainProgress = _mainController.value.clamp(0.0, 0.5) * 2; // First half of main animation
-    
+    final mainProgress =
+        _mainController.value.clamp(0.0, 0.5) *
+        2; // First half of main animation
+
     return _stars.map((star) {
       final adjustedTime = (time + star.delay) % 1.0;
       final twinkle = (sin(adjustedTime * 2 * pi) + 1) / 2;
@@ -419,7 +422,7 @@ class _BookCompleteCelebrationWidgetState extends State<_BookCompleteCelebration
       final x = cos(star.angle) * distance;
       final y = sin(star.angle) * distance;
       final rotation = star.rotationSpeed * time * 2 * pi;
-      
+
       return Positioned(
         left: 125 + x - star.size / 2,
         top: 125 + y - star.size / 2,

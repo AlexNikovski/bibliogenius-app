@@ -29,7 +29,7 @@ class WelcomeBanner extends StatelessWidget {
     final displayName = libraryName ?? userName ?? 'BiblioGenius';
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isSorbonne = themeProvider.themeStyle == 'sorbonne';
-    
+
     // Theme-aware colors
     final gradientColors = isSorbonne
         ? [const Color(0xFF1A0F0A), const Color(0xFF2D1810)] // Dark wood

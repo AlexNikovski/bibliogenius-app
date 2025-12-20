@@ -300,9 +300,9 @@ class _HelpScreenState extends State<HelpScreen> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Tests Section
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,

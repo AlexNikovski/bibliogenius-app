@@ -48,7 +48,10 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
               if (result == true && mounted) {
                 // Refresh contact details
                 try {
-                  final apiService = Provider.of<ApiService>(context, listen: false);
+                  final apiService = Provider.of<ApiService>(
+                    context,
+                    listen: false,
+                  );
                   final response = await apiService.getContact(_contact.id!);
                   if (response.statusCode == 200 && response.data != null) {
                     setState(() {
@@ -154,7 +157,10 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
           if (_contact.firstName != null && _contact.firstName!.isNotEmpty)
             _buildInfoCard(
               context,
-              TranslationService.translate(context, 'contact_first_name_label') ??
+              TranslationService.translate(
+                    context,
+                    'contact_first_name_label',
+                  ) ??
                   'First Name',
               _contact.firstName!,
             ),

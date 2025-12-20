@@ -24,7 +24,9 @@ class BookCoverCard extends StatelessWidget {
   ];
 
   Color _getColorFromId(BuildContext context, int id) {
-    final isSorbonne = Provider.of<ThemeProvider>(context, listen: false).themeStyle == 'sorbonne';
+    final isSorbonne =
+        Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
+        'sorbonne';
     if (isSorbonne) {
       return _autumnColors[id % _autumnColors.length];
     }

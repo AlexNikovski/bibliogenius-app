@@ -23,7 +23,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _streetAddressController = TextEditingController();
+  final TextEditingController _streetAddressController =
+      TextEditingController();
   final TextEditingController _postalCodeController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _countryController = TextEditingController();
@@ -40,7 +41,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
       _firstNameController.text = widget.contact!.firstName ?? '';
       _emailController.text = widget.contact!.email ?? '';
       _phoneController.text = widget.contact!.phone ?? '';
-      _streetAddressController.text = widget.contact!.streetAddress ?? widget.contact!.address ?? '';
+      _streetAddressController.text =
+          widget.contact!.streetAddress ?? widget.contact!.address ?? '';
       _postalCodeController.text = widget.contact!.postalCode ?? '';
       _cityController.text = widget.contact!.city ?? '';
       _countryController.text = widget.contact!.country ?? '';
@@ -68,7 +70,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
     // Added name validation as per instruction
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(TranslationService.translate(context, 'contact_name_required'))),
+        SnackBar(
+          content: Text(
+            TranslationService.translate(context, 'contact_name_required'),
+          ),
+        ),
       );
       return;
     }
@@ -84,14 +90,28 @@ class _AddContactScreenState extends State<AddContactScreen> {
       final contactData = {
         'type': _type,
         'name': _nameController.text,
-        'first_name': _firstNameController.text.isNotEmpty ? _firstNameController.text : null,
-        'email': _emailController.text.isNotEmpty ? _emailController.text : null,
-        'phone': _phoneController.text.isNotEmpty ? _phoneController.text : null,
-        'street_address': _streetAddressController.text.isNotEmpty ? _streetAddressController.text : null,
-        'postal_code': _postalCodeController.text.isNotEmpty ? _postalCodeController.text : null,
+        'first_name': _firstNameController.text.isNotEmpty
+            ? _firstNameController.text
+            : null,
+        'email': _emailController.text.isNotEmpty
+            ? _emailController.text
+            : null,
+        'phone': _phoneController.text.isNotEmpty
+            ? _phoneController.text
+            : null,
+        'street_address': _streetAddressController.text.isNotEmpty
+            ? _streetAddressController.text
+            : null,
+        'postal_code': _postalCodeController.text.isNotEmpty
+            ? _postalCodeController.text
+            : null,
         'city': _cityController.text.isNotEmpty ? _cityController.text : null,
-        'country': _countryController.text.isNotEmpty ? _countryController.text : null,
-        'notes': _notesController.text.isNotEmpty ? _notesController.text : null,
+        'country': _countryController.text.isNotEmpty
+            ? _countryController.text
+            : null,
+        'notes': _notesController.text.isNotEmpty
+            ? _notesController.text
+            : null,
         'user_id': userId,
         'library_owner_id': libraryId,
         'is_active': true,
@@ -108,7 +128,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
           SnackBar(
             content: Text(
               TranslationService.translate(
-                context, 
+                context,
                 widget.contact != null ? 'contact_updated' : 'contact_created',
               ),
             ),
@@ -148,16 +168,28 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.teal, // Use a contrasting color or theme primary
+                      color: Colors
+                          .teal, // Use a contrasting color or theme primary
                     ),
                   )
                 : TextButton(
                     onPressed: _saveContact,
                     child: Text(
                       widget.contact != null
-                          ? (TranslationService.translate(context, 'update_contact') ?? 'Update')
-                          : (TranslationService.translate(context, 'save_contact') ?? 'Save'),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ? (TranslationService.translate(
+                                  context,
+                                  'update_contact',
+                                ) ??
+                                'Update')
+                          : (TranslationService.translate(
+                                  context,
+                                  'save_contact',
+                                ) ??
+                                'Save'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
           ),
@@ -273,10 +305,12 @@ class _AddContactScreenState extends State<AddContactScreen> {
             TextFormField(
               controller: _streetAddressController,
               decoration: InputDecoration(
-                labelText: TranslationService.translate(
-                  context,
-                  'street_address_label',
-                ) ?? 'Street Address',
+                labelText:
+                    TranslationService.translate(
+                      context,
+                      'street_address_label',
+                    ) ??
+                    'Street Address',
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -290,10 +324,12 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   child: TextFormField(
                     controller: _postalCodeController,
                     decoration: InputDecoration(
-                      labelText: TranslationService.translate(
-                        context,
-                        'postal_code_label',
-                      ) ?? 'Postal Code',
+                      labelText:
+                          TranslationService.translate(
+                            context,
+                            'postal_code_label',
+                          ) ??
+                          'Postal Code',
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -304,10 +340,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   child: TextFormField(
                     controller: _cityController,
                     decoration: InputDecoration(
-                      labelText: TranslationService.translate(
-                        context,
-                        'city_label',
-                      ) ?? 'City',
+                      labelText:
+                          TranslationService.translate(context, 'city_label') ??
+                          'City',
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -319,10 +354,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
             TextFormField(
               controller: _countryController,
               decoration: InputDecoration(
-                labelText: TranslationService.translate(
-                  context,
-                  'country_label',
-                ) ?? 'Country',
+                labelText:
+                    TranslationService.translate(context, 'country_label') ??
+                    'Country',
                 border: const OutlineInputBorder(),
               ),
             ),

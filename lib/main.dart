@@ -46,7 +46,6 @@ import 'widgets/scaffold_with_nav.dart';
 
 import 'package:flutter/gestures.dart';
 
-
 // FFI imports for native platforms
 import 'src/rust/frb_generated.dart';
 import 'src/rust/api/frb.dart' as frb;
@@ -54,14 +53,14 @@ import 'src/rust/api/frb.dart' as frb;
 class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+  };
 }
 
 void main([List<String>? args]) async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Custom error widget to display errors visibly for debugging
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return MaterialApp(
@@ -76,7 +75,11 @@ void main([List<String>? args]) async {
               children: [
                 const Text(
                   '⚠️ Error',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -86,7 +89,11 @@ void main([List<String>? args]) async {
                 const SizedBox(height: 16),
                 Text(
                   details.stack?.toString() ?? 'No stack trace',
-                  style: const TextStyle(fontSize: 10, color: Colors.black54, fontFamily: 'monospace'),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.black54,
+                    fontFamily: 'monospace',
+                  ),
                 ),
               ],
             ),
@@ -95,7 +102,7 @@ void main([List<String>? args]) async {
       ),
     );
   };
-  
+
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
@@ -130,20 +137,20 @@ void main([List<String>? args]) async {
         await RustLib.init();
       }
       debugPrint('FFI: RustLib.init() succeeded');
-      
+
       // Get database path
       debugPrint('FFI: Getting application documents directory...');
       final appDocDir = await getApplicationDocumentsDirectory();
       final dbPath = '${appDocDir.path}/bibliogenius.db';
       debugPrint('FFI: Database path: $dbPath');
-      
+
       // Initialize Rust backend with database
       debugPrint('FFI: Calling initBackend...');
       final result = await frb.initBackend(dbPath: dbPath);
       debugPrint('FFI Backend initialized: $result');
       useFfi = true;
       debugPrint('FFI: useFfi set to TRUE');
-      
+
       // Start HTTP server for P2P capabilities
       int httpPort = 8000;
       try {
@@ -156,12 +163,12 @@ void main([List<String>? args]) async {
       } catch (e) {
         debugPrint('FFI: Failed to start HTTP server: $e');
       }
-      
+
       // Auto-initialize mDNS for local network discovery (Native Bonjour)
       // This makes the app discoverable on the local WiFi network
       try {
-        final libraryName = themeProvider.libraryName.isNotEmpty 
-            ? themeProvider.libraryName 
+        final libraryName = themeProvider.libraryName.isNotEmpty
+            ? themeProvider.libraryName
             : 'BiblioGenius Library';
         await MdnsService.startAnnouncing(libraryName, httpPort);
         await MdnsService.startDiscovery();
@@ -177,21 +184,14 @@ void main([List<String>? args]) async {
 
   // Settings already loaded earlier, no need to call again
 
-  runApp(MyApp(
-    themeProvider: themeProvider,
-    useFfi: useFfi,
-  ));
+  runApp(MyApp(themeProvider: themeProvider, useFfi: useFfi));
 }
 
 class MyApp extends StatelessWidget {
   final ThemeProvider themeProvider;
   final bool useFfi;
 
-  const MyApp({
-    super.key,
-    required this.themeProvider,
-    required this.useFfi,
-  });
+  const MyApp({super.key, required this.themeProvider, required this.useFfi});
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +211,11 @@ class MyApp extends StatelessWidget {
       debugPrint('Using Default Backend URL: $baseUrl');
     }
 
-    final apiService = ApiService(authService, baseUrl: baseUrl, useFfi: useFfi);
+    final apiService = ApiService(
+      authService,
+      baseUrl: baseUrl,
+      useFfi: useFfi,
+    );
 
     Widget app = MultiProvider(
       providers: [
@@ -254,9 +258,9 @@ class _AppRouterState extends State<AppRouter> {
         // 1. Setup check
         if (!isSetup && !isSetupRoute) return '/setup';
         if (isSetup && isSetupRoute) {
-             // If setup is done but user tries to go to setup, redirect.
-             // We'll let the next checks decide where.
-             return '/dashboard'; 
+          // If setup is done but user tries to go to setup, redirect.
+          // We'll let the next checks decide where.
+          return '/dashboard';
         }
 
         // 2. Auth check
@@ -265,8 +269,8 @@ class _AppRouterState extends State<AppRouter> {
 
         if (!isLoggedIn) {
           if (isLoginRoute) return null; // Allow access to login
-          if (isOnboardingRoute) return null; // Allow onboarding? Maybe. 
-          // Usually onboarding is post-setup, pre-login or post-login? 
+          if (isOnboardingRoute) return null; // Allow onboarding? Maybe.
+          // Usually onboarding is post-setup, pre-login or post-login?
           // Current logic: `if (isSetup && isSetupRoute)` -> onboarding.
           // Let's assume onBoarding is accessible or part of the flow.
           // Re-reading original logic: it redirected to onboarding if setup was JUST done.
@@ -281,10 +285,10 @@ class _AppRouterState extends State<AppRouter> {
 
         // 4. Onboarding check (only if logged in or allowed)
         if (isLoggedIn && state.uri.path == '/dashboard') {
-             // Check if user has seen tour only if going to dashboard root? 
-             // Original logic checked it when redirecting FROM setup.
-             final hasSeenTour = await WizardService.hasSeenOnboardingTour();
-             if (!hasSeenTour) return '/onboarding';
+          // Check if user has seen tour only if going to dashboard root?
+          // Original logic checked it when redirecting FROM setup.
+          final hasSeenTour = await WizardService.hasSeenOnboardingTour();
+          if (!hasSeenTour) return '/onboarding';
         }
 
         return null;
@@ -403,10 +407,7 @@ class _AppRouterState extends State<AppRouter> {
               path: '/scan',
               builder: (context, state) => const ScanScreen(),
             ),
-            GoRoute(
-              path: '/p2p',
-              redirect: (context, state) => '/network',
-            ),
+            GoRoute(path: '/p2p', redirect: (context, state) => '/network'),
             GoRoute(
               path: '/requests',
               builder: (context, state) => const BorrowRequestsScreen(),
@@ -417,7 +418,8 @@ class _AppRouterState extends State<AppRouter> {
             ),
             GoRoute(
               path: '/peers',
-              builder: (context, state) => const NetworkScreen(), // Fallback to network
+              builder: (context, state) =>
+                  const NetworkScreen(), // Fallback to network
               routes: [
                 GoRoute(
                   path: ':id/books',

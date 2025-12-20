@@ -28,51 +28,61 @@ void main() {
   });
 
   group('ApiService Search', () {
-    test('searchBooks returns list of books on 200', () async {
-      const route = '/api/integrations/search_unified';
-      final query = 'test';
-      final mockResponse = [
-        {
-          'id': 1,
-          'title': 'Test Book',
-          'author': 'Test Author',
-          'isbn': '1234567890',
-        },
-        {
-          'id': 2,
-          'title': 'Another Book',
-          'author': 'Another Author',
-          'isbn': '0987654321',
-        },
-      ];
+    test(
+      'searchBooks returns list of books on 200',
+      () async {
+        const route = '/api/integrations/search_unified';
+        final query = 'test';
+        final mockResponse = [
+          {
+            'id': 1,
+            'title': 'Test Book',
+            'author': 'Test Author',
+            'isbn': '1234567890',
+          },
+          {
+            'id': 2,
+            'title': 'Another Book',
+            'author': 'Another Author',
+            'isbn': '0987654321',
+          },
+        ];
 
-      dioAdapter.onGet(
-        route,
-        (server) => server.reply(200, mockResponse),
-        queryParameters: {'q': query},
-      );
+        dioAdapter.onGet(
+          route,
+          (server) => server.reply(200, mockResponse),
+          queryParameters: {'q': query},
+        );
 
-      final response = await apiService.searchBooks(query: query);
+        final response = await apiService.searchBooks(query: query);
 
-      expect(response, isA<List>());
-      expect(response.length, 2);
-      expect(response[0]['title'], 'Test Book');
-    }, skip: 'searchBooks creates internal Dio instance - requires running server');
+        expect(response, isA<List>());
+        expect(response.length, 2);
+        expect(response[0]['title'], 'Test Book');
+      },
+      skip:
+          'searchBooks creates internal Dio instance - requires running server',
+    );
 
-    test('searchBooks handles empty results', () async {
-      const route = '/api/integrations/search_unified';
-      final query = 'nonexistent';
-      final mockResponse = [];
+    test(
+      'searchBooks handles empty results',
+      () async {
+        const route = '/api/integrations/search_unified';
+        final query = 'nonexistent';
+        final mockResponse = [];
 
-      dioAdapter.onGet(
-        route,
-        (server) => server.reply(200, mockResponse),
-        queryParameters: {'q': query},
-      );
+        dioAdapter.onGet(
+          route,
+          (server) => server.reply(200, mockResponse),
+          queryParameters: {'q': query},
+        );
 
-      final response = await apiService.searchBooks(query: query);
+        final response = await apiService.searchBooks(query: query);
 
-      expect(response, isEmpty);
-    }, skip: 'searchBooks creates internal Dio instance - requires running server');
+        expect(response, isEmpty);
+      },
+      skip:
+          'searchBooks creates internal Dio instance - requires running server',
+    );
   });
 }

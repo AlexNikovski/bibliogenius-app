@@ -48,7 +48,9 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
         automaticallyImplyLeading: false,
       ),
       body: Container(
-        decoration: BoxDecoration(gradient: AppDesign.pageGradientForTheme(themeStyle)),
+        decoration: BoxDecoration(
+          gradient: AppDesign.pageGradientForTheme(themeStyle),
+        ),
         child: FutureBuilder<List<Tag>>(
           future: _tagsFuture,
           builder: (context, snapshot) {
@@ -176,29 +178,34 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
   }
 
   Widget _buildShelfCard(BuildContext context, Tag tag, int index) {
-    final themeStyle = Provider.of<ThemeProvider>(context, listen: false).themeStyle;
+    final themeStyle = Provider.of<ThemeProvider>(
+      context,
+      listen: false,
+    ).themeStyle;
     final isSorbonne = themeStyle == 'sorbonne';
-    
+
     // Autumn palette for Sorbonne, colorful for others
-    final colors = isSorbonne ? [
-      const Color(0xFF8B4513), // Saddle brown
-      const Color(0xFFCD853F), // Peru/tan
-      const Color(0xFFD2691E), // Chocolate
-      const Color(0xFFA0522D), // Sienna
-      const Color(0xFF6B4423), // Dark brown
-      const Color(0xFFCC7722), // Ochre
-      const Color(0xFF8B6914), // Bronze
-      const Color(0xFF704214), // Sepia
-    ] : [
-      const Color(0xFF667eea), // Indigo
-      const Color(0xFF764ba2), // Purple
-      const Color(0xFFf093fb), // Pink
-      const Color(0xFF4facfe), // Blue
-      const Color(0xFF43e97b), // Green
-      const Color(0xFFfa709a), // Rose
-      const Color(0xFFfee140), // Yellow
-      const Color(0xFFf5576c), // Red
-    ];
+    final colors = isSorbonne
+        ? [
+            const Color(0xFF8B4513), // Saddle brown
+            const Color(0xFFCD853F), // Peru/tan
+            const Color(0xFFD2691E), // Chocolate
+            const Color(0xFFA0522D), // Sienna
+            const Color(0xFF6B4423), // Dark brown
+            const Color(0xFFCC7722), // Ochre
+            const Color(0xFF8B6914), // Bronze
+            const Color(0xFF704214), // Sepia
+          ]
+        : [
+            const Color(0xFF667eea), // Indigo
+            const Color(0xFF764ba2), // Purple
+            const Color(0xFFf093fb), // Pink
+            const Color(0xFF4facfe), // Blue
+            const Color(0xFF43e97b), // Green
+            const Color(0xFFfa709a), // Rose
+            const Color(0xFFfee140), // Yellow
+            const Color(0xFFf5576c), // Red
+          ];
 
     final color = colors[index % colors.length];
     final gradient = LinearGradient(

@@ -55,13 +55,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Sync library name
         final name = configRes.data['library_name'] ?? configRes.data['name'];
         if (name != null) {
-          Provider.of<ThemeProvider>(context, listen: false).setLibraryName(name);
+          Provider.of<ThemeProvider>(
+            context,
+            listen: false,
+          ).setLibraryName(name);
         }
-        
+
         // Sync profile type
         final profileType = configRes.data['profile_type'];
         if (profileType != null) {
-             Provider.of<ThemeProvider>(context, listen: false).setProfileType(profileType);
+          Provider.of<ThemeProvider>(
+            context,
+            listen: false,
+          ).setProfileType(profileType);
         }
 
         setState(() {
@@ -183,22 +189,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context: context,
         builder: (dialogContext) => StatefulBuilder(
           builder: (context, setState) => AlertDialog(
-            title: Text(TranslationService.translate(context, 'setup_2fa') ?? 'Setup 2FA'),
+            title: Text(
+              TranslationService.translate(context, 'setup_2fa') ?? 'Setup 2FA',
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(TranslationService.translate(context, 'scan_qr_code') ?? 'Scan this QR code with your authenticator app:'),
+                  Text(
+                    TranslationService.translate(context, 'scan_qr_code') ??
+                        'Scan this QR code with your authenticator app:',
+                  ),
                   const SizedBox(height: 16),
                   if (qrCode != null)
                     Image.memory(base64Decode(qrCode), height: 200, width: 200),
                   const SizedBox(height: 16),
-                  SelectableText('${TranslationService.translate(context, 'secret_key') ?? 'Secret Key'}: $secret'),
+                  SelectableText(
+                    '${TranslationService.translate(context, 'secret_key') ?? 'Secret Key'}: $secret',
+                  ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: codeController,
                     decoration: InputDecoration(
-                      labelText: TranslationService.translate(context, 'verification_code') ?? 'Verification Code',
+                      labelText:
+                          TranslationService.translate(
+                            context,
+                            'verification_code',
+                          ) ??
+                          'Verification Code',
                       errorText: verifyError,
                       border: const OutlineInputBorder(),
                     ),
@@ -210,14 +228,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
+                child: Text(
+                  TranslationService.translate(context, 'cancel') ?? 'Cancel',
+                ),
               ),
               ElevatedButton(
                 onPressed: () async {
                   setState(() => verifyError = null);
                   final code = codeController.text.trim();
                   if (code.length != 6) {
-                    setState(() => verifyError = TranslationService.translate(context, 'invalid_code') ?? 'Invalid code');
+                    setState(
+                      () => verifyError =
+                          TranslationService.translate(
+                            context,
+                            'invalid_code',
+                          ) ??
+                          'Invalid code',
+                    );
                     return;
                   }
 
@@ -227,23 +254,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.pop(context); // Close dialog
                       _fetchStatus(); // Refresh status
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(TranslationService.translate(context, 'mfa_enabled_success') ?? 'MFA Enabled Successfully')),
+                        SnackBar(
+                          content: Text(
+                            TranslationService.translate(
+                                  context,
+                                  'mfa_enabled_success',
+                                ) ??
+                                'MFA Enabled Successfully',
+                          ),
+                        ),
                       );
                     }
                   } catch (e) {
-                    setState(() => verifyError = TranslationService.translate(context, 'verification_failed') ?? 'Verification failed');
+                    setState(
+                      () => verifyError =
+                          TranslationService.translate(
+                            context,
+                            'verification_failed',
+                          ) ??
+                          'Verification failed',
+                    );
                   }
                 },
-                child: Text(TranslationService.translate(context, 'verify') ?? 'Verify'),
+                child: Text(
+                  TranslationService.translate(context, 'verify') ?? 'Verify',
+                ),
               ),
             ],
           ),
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error initializing MFA: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error initializing MFA: $e')));
     }
   }
 
@@ -489,98 +533,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         normalizedType = 'librarian';
                       }
                       // Ensure value is one of the valid options
-                      if (!['individual', 'librarian', 'kid'].contains(normalizedType)) {
+                      if (![
+                        'individual',
+                        'librarian',
+                        'kid',
+                      ].contains(normalizedType)) {
                         normalizedType = 'individual';
                       }
-                      
+
                       return SizedBox(
                         width: 130,
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: normalizedType,
                             isExpanded: true,
-                          items: [
-                            DropdownMenuItem(
-                              value: 'individual',
-                              child: Text(
-                                TranslationService.translate(context, 'profile_individual'),
+                            items: [
+                              DropdownMenuItem(
+                                value: 'individual',
+                                child: Text(
+                                  TranslationService.translate(
+                                    context,
+                                    'profile_individual',
+                                  ),
+                                ),
                               ),
-                            ),
-                            DropdownMenuItem(
-                              value: 'librarian',
-                              child: Text(
-                                TranslationService.translate(context, 'profile_librarian'),
+                              DropdownMenuItem(
+                                value: 'librarian',
+                                child: Text(
+                                  TranslationService.translate(
+                                    context,
+                                    'profile_librarian',
+                                  ),
+                                ),
                               ),
-                            ),
-                            DropdownMenuItem(
-                              value: 'kid',
-                              child: Text(
-                                TranslationService.translate(context, 'profile_kid'),
+                              DropdownMenuItem(
+                                value: 'kid',
+                                child: Text(
+                                  TranslationService.translate(
+                                    context,
+                                    'profile_kid',
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
-                          onChanged: (value) async {
-                            if (value == null) return;
-                            try {
-                              final api = Provider.of<ApiService>(
-                                context,
-                                listen: false,
-                              );
-                              
-                              // 1. Update Provider (local state + persistence)
-                              await Provider.of<ThemeProvider>(
-                                context,
-                                listen: false,
-                              ).setProfileType(value, apiService: api);
-
-                              // 2. Update Library Config on Backend (so it persists remotely)
-                              if (_config != null) {
-                                await api.updateLibraryConfig(
-                                  name: _config!['library_name'] ?? _config!['name'] ?? 'My Library',
-                                  description: _config?['description'],
-                                  profileType: value,
-                                  tags: _config?['tags'] != null
-                                      ? List<String>.from(_config!['tags'])
-                                      : [],
-                                  latitude: _config?['latitude'],
-                                  longitude: _config?['longitude'],
-                                  showBorrowedBooks: _config?['show_borrowed_books'],
-                                  shareLocation: _config?['share_location'],
+                            ],
+                            onChanged: (value) async {
+                              if (value == null) return;
+                              try {
+                                final api = Provider.of<ApiService>(
+                                  context,
+                                  listen: false,
                                 );
-                              }
 
-                              _fetchStatus(); // Refresh to get updated config
-                              
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      TranslationService.translate(
-                                        context,
-                                        'profile_updated',
+                                // 1. Update Provider (local state + persistence)
+                                await Provider.of<ThemeProvider>(
+                                  context,
+                                  listen: false,
+                                ).setProfileType(value, apiService: api);
+
+                                // 2. Update Library Config on Backend (so it persists remotely)
+                                if (_config != null) {
+                                  await api.updateLibraryConfig(
+                                    name:
+                                        _config!['library_name'] ??
+                                        _config!['name'] ??
+                                        'My Library',
+                                    description: _config?['description'],
+                                    profileType: value,
+                                    tags: _config?['tags'] != null
+                                        ? List<String>.from(_config!['tags'])
+                                        : [],
+                                    latitude: _config?['latitude'],
+                                    longitude: _config?['longitude'],
+                                    showBorrowedBooks:
+                                        _config?['show_borrowed_books'],
+                                    shareLocation: _config?['share_location'],
+                                  );
+                                }
+
+                                _fetchStatus(); // Refresh to get updated config
+
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        TranslationService.translate(
+                                          context,
+                                          'profile_updated',
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '${TranslationService.translate(context, 'error_updating_profile')}: $e',
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '${TranslationService.translate(context, 'error_updating_profile')}: $e',
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
                               }
-                            }
-                          },
+                            },
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
                 // TODO: Re-enable when borrowed books list is needed (currently using filters instead)
                 // if (_config?['profile_type'] == 'individual')
                 //   SwitchListTile(
@@ -619,7 +680,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           // Security Settings (MFA)
           Text(
-            TranslationService.translate(context, 'security_settings') ?? 'Security Settings',
+            TranslationService.translate(context, 'security_settings') ??
+                'Security Settings',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 16),
@@ -628,13 +690,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.security),
-                  title: Text(TranslationService.translate(context, 'two_factor_auth') ?? 'Two-Factor Authentication'),
+                  title: Text(
+                    TranslationService.translate(context, 'two_factor_auth') ??
+                        'Two-Factor Authentication',
+                  ),
                   subtitle: Text(
-                    (_userInfo?['mfa_enabled'] == true) 
-                        ? (TranslationService.translate(context, 'mfa_enabled') ?? 'Enabled')
-                        : (TranslationService.translate(context, 'mfa_disabled') ?? 'Disabled'),
+                    (_userInfo?['mfa_enabled'] == true)
+                        ? (TranslationService.translate(
+                                context,
+                                'mfa_enabled',
+                              ) ??
+                              'Enabled')
+                        : (TranslationService.translate(
+                                context,
+                                'mfa_disabled',
+                              ) ??
+                              'Disabled'),
                     style: TextStyle(
-                      color: (_userInfo?['mfa_enabled'] == true) ? Colors.green : Colors.grey,
+                      color: (_userInfo?['mfa_enabled'] == true)
+                          ? Colors.green
+                          : Colors.grey,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -642,7 +717,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? null // TODO: Add disable button
                       : ElevatedButton(
                           onPressed: _setupMfa,
-                          child: Text(TranslationService.translate(context, 'enable') ?? 'Enable'),
+                          child: Text(
+                            TranslationService.translate(context, 'enable') ??
+                                'Enable',
+                          ),
                         ),
                 ),
               ],
@@ -917,7 +995,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final yearlyGoal = _userStatus?['config']?['reading_goal_yearly'] ?? 12;
     final monthlyGoal = _userStatus?['config']?['reading_goal_monthly'] ?? 0;
     final booksRead = _userStatus?['config']?['reading_goal_progress'] ?? 0;
-    final yearlyProgress = yearlyGoal > 0 ? (booksRead / yearlyGoal).clamp(0.0, 1.0) : 0.0;
+    final yearlyProgress = yearlyGoal > 0
+        ? (booksRead / yearlyGoal).clamp(0.0, 1.0)
+        : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -927,18 +1007,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 16),
-        
+
         // Yearly Goal Card
         _buildGoalCard(
           icon: Icons.calendar_today,
           color: Colors.teal,
           title: TranslationService.translate(context, 'yearly_goal'),
-          subtitle: '$yearlyGoal ${TranslationService.translate(context, 'books_per_year')}',
+          subtitle:
+              '$yearlyGoal ${TranslationService.translate(context, 'books_per_year')}',
           progress: yearlyProgress,
           current: booksRead,
           onEdit: () => _showEditGoalDialog(yearlyGoal, isMonthly: false),
         ),
-        
+
         // TODO: Monthly goals per month (backlog)
         // Example: "Goal for December 2024: 3 books"
       ],
@@ -959,10 +1040,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.1),
-            color.withValues(alpha: 0.05),
-          ],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -999,7 +1077,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(
                           color: isOptional ? Colors.grey : color,
                           fontSize: 13,
-                          fontStyle: isOptional ? FontStyle.italic : FontStyle.normal,
+                          fontStyle: isOptional
+                              ? FontStyle.italic
+                              : FontStyle.normal,
                         ),
                       ),
                     ],
@@ -1007,7 +1087,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               IconButton(
-                icon: Icon(isOptional ? Icons.add_circle_outline : Icons.edit, color: color),
+                icon: Icon(
+                  isOptional ? Icons.add_circle_outline : Icons.edit,
+                  color: color,
+                ),
                 onPressed: onEdit,
               ),
             ],
@@ -1048,10 +1131,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.celebration, color: Colors.green, size: 16),
+                    const Icon(
+                      Icons.celebration,
+                      color: Colors.green,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
-                      TranslationService.translate(context, 'goal_reached_congrats'),
+                      TranslationService.translate(
+                        context,
+                        'goal_reached_congrats',
+                      ),
                       style: const TextStyle(
                         color: Colors.green,
                         fontWeight: FontWeight.bold,
@@ -1067,20 +1157,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-
-  Future<void> _showEditGoalDialog(int currentGoal, {required bool isMonthly}) async {
-    double sliderValue = currentGoal > 0 ? currentGoal.toDouble() : (isMonthly ? 2.0 : 12.0);
+  Future<void> _showEditGoalDialog(
+    int currentGoal, {
+    required bool isMonthly,
+  }) async {
+    double sliderValue = currentGoal > 0
+        ? currentGoal.toDouble()
+        : (isMonthly ? 2.0 : 12.0);
     final color = isMonthly ? Colors.orange : Colors.teal;
     final maxValue = isMonthly ? 20.0 : 100.0;
-    
+
     await showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(TranslationService.translate(
-            context, 
-            isMonthly ? 'edit_monthly_goal' : 'edit_yearly_goal',
-          )),
+          title: Text(
+            TranslationService.translate(
+              context,
+              isMonthly ? 'edit_monthly_goal' : 'edit_yearly_goal',
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1098,7 +1194,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 max: maxValue,
                 divisions: maxValue.toInt() - (isMonthly ? 0 : 1),
                 activeColor: color,
-                label: '${sliderValue.toInt()} ${TranslationService.translate(context, 'books')}',
+                label:
+                    '${sliderValue.toInt()} ${TranslationService.translate(context, 'books')}',
                 onChanged: (value) {
                   setState(() => sliderValue = value);
                 },
@@ -1107,8 +1204,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(isMonthly ? '0 (${TranslationService.translate(context, 'disabled')})' : '1 ${TranslationService.translate(context, 'book')}'),
-                  Text('${maxValue.toInt()} ${TranslationService.translate(context, 'books')}'),
+                  Text(
+                    isMonthly
+                        ? '0 (${TranslationService.translate(context, 'disabled')})'
+                        : '1 ${TranslationService.translate(context, 'book')}',
+                  ),
+                  Text(
+                    '${maxValue.toInt()} ${TranslationService.translate(context, 'books')}',
+                  ),
                 ],
               ),
             ],
@@ -1121,7 +1224,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             FilledButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-                await _updateReadingGoal(sliderValue.toInt(), isMonthly: isMonthly);
+                await _updateReadingGoal(
+                  sliderValue.toInt(),
+                  isMonthly: isMonthly,
+                );
               },
               style: FilledButton.styleFrom(backgroundColor: color),
               child: Text(TranslationService.translate(context, 'save')),
@@ -1132,7 +1238,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _updateReadingGoal(int newGoal, {required bool isMonthly}) async {
+  Future<void> _updateReadingGoal(
+    int newGoal, {
+    required bool isMonthly,
+  }) async {
     try {
       final api = Provider.of<ApiService>(context, listen: false);
       if (isMonthly) {
@@ -1144,7 +1253,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(TranslationService.translate(context, 'goal_updated')),
+            content: Text(
+              TranslationService.translate(context, 'goal_updated'),
+            ),
             backgroundColor: isMonthly ? Colors.orange : Colors.teal,
           ),
         );
@@ -1153,7 +1264,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${TranslationService.translate(context, 'error_updating')}: $e'),
+            content: Text(
+              '${TranslationService.translate(context, 'error_updating')}: $e',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -1161,13 +1274,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
   Widget _buildMcpIntegrationSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          TranslationService.translate(context, 'integrations') ?? 'Integrations',
+          TranslationService.translate(context, 'integrations') ??
+              'Integrations',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 16),
@@ -1185,7 +1298,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.deepPurple.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.extension, color: Colors.deepPurple),
+                      child: const Icon(
+                        Icons.extension,
+                        color: Colors.deepPurple,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -1193,15 +1309,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            TranslationService.translate(context, 'mcp_integration') ?? 'Claude Desktop (MCP)',
+                            TranslationService.translate(
+                                  context,
+                                  'mcp_integration',
+                                ) ??
+                                'Claude Desktop (MCP)',
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                           Text(
-                            TranslationService.translate(context, 'mcp_description') ?? 
+                            TranslationService.translate(
+                                  context,
+                                  'mcp_description',
+                                ) ??
                                 'Connect your library to Claude AI for intelligent book discussions',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -1215,7 +1337,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onPressed: () => _copyMcpConfig(),
                     icon: const Icon(Icons.copy),
                     label: Text(
-                      TranslationService.translate(context, 'copy_mcp_config') ?? 'Copy Config for Claude Desktop',
+                      TranslationService.translate(
+                            context,
+                            'copy_mcp_config',
+                          ) ??
+                          'Copy Config for Claude Desktop',
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
@@ -1225,7 +1351,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  TranslationService.translate(context, 'mcp_instructions') ?? 
+                  TranslationService.translate(context, 'mcp_instructions') ??
                       'Paste this configuration into your Claude Desktop settings file (claude_desktop_config.json)',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.grey[500],
@@ -1243,22 +1369,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _copyMcpConfig() async {
     final apiService = Provider.of<ApiService>(context, listen: false);
-    
+
     try {
       // Fetch config from backend with dynamic paths
       final response = await apiService.getMcpConfig();
-      
+
       if (response.statusCode == 200 && response.data != null) {
         // Use the config_json directly from the response
         final configJson = response.data['config_json'] as String? ?? '{}';
-        
+
         await Clipboard.setData(ClipboardData(text: configJson));
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                TranslationService.translate(context, 'mcp_config_copied') ?? 
+                TranslationService.translate(context, 'mcp_config_copied') ??
                     'MCP configuration copied to clipboard!',
               ),
               backgroundColor: Colors.green,
@@ -1281,142 +1407,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
   Widget _buildProfileTypeSummary() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
-       final profileType = themeProvider.profileType;
+        final profileType = themeProvider.profileType;
 
-    // Define features and restrictions for each profile type
-    Map<String, List<String>> advantages = {};
-    Map<String, List<String>> restrictions = {};
+        // Define features and restrictions for each profile type
+        Map<String, List<String>> advantages = {};
+        Map<String, List<String>> restrictions = {};
 
-    switch (profileType) {
-      case 'individual':
-      case 'individual_reader':
-        advantages = {
-          'profile_advantage_borrow': ['✓'],
-          'profile_advantage_lend': ['✓'],
-          'profile_advantage_wishlist': ['✓'],
-        };
-        restrictions = {};
-        break;
-      case 'professional':
-      case 'librarian':
-        advantages = {
-          'profile_advantage_lending': ['✓'],
-          'profile_advantage_contacts': ['✓'],
-          'profile_advantage_statistics': ['✓'],
-        };
-        restrictions = {
-          'profile_restriction_no_borrow': ['✗'],
-        };
-        break;
-      case 'kid':
-        advantages = {
-          'profile_advantage_simple_ui': ['✓'],
-          'profile_advantage_borrow': ['✓'],
-          'profile_advantage_lend': ['✓'],
-          'profile_advantage_wishlist': ['✓'],
-        };
-        restrictions = {
-          // No specific restrictions for now, just simplified UI
-        };
-        break;
-    }
+        switch (profileType) {
+          case 'individual':
+          case 'individual_reader':
+            advantages = {
+              'profile_advantage_borrow': ['✓'],
+              'profile_advantage_lend': ['✓'],
+              'profile_advantage_wishlist': ['✓'],
+            };
+            restrictions = {};
+            break;
+          case 'professional':
+          case 'librarian':
+            advantages = {
+              'profile_advantage_lending': ['✓'],
+              'profile_advantage_contacts': ['✓'],
+              'profile_advantage_statistics': ['✓'],
+            };
+            restrictions = {
+              'profile_restriction_no_borrow': ['✗'],
+            };
+            break;
+          case 'kid':
+            advantages = {
+              'profile_advantage_simple_ui': ['✓'],
+              'profile_advantage_borrow': ['✓'],
+              'profile_advantage_lend': ['✓'],
+              'profile_advantage_wishlist': ['✓'],
+            };
+            restrictions = {
+              // No specific restrictions for now, just simplified UI
+            };
+            break;
+        }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.info_outline,
-                size: 18,
-                color: Theme.of(context).colorScheme.primary,
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    TranslationService.translate(context, 'profile_summary'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    TranslationService.translate(context, profileType),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                TranslationService.translate(context, 'profile_summary'),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
+              const SizedBox(height: 12),
+              // Advantages
+              if (advantages.isNotEmpty) ...[
+                ...advantages.keys.map(
+                  (key) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: Colors.green,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            TranslationService.translate(context, key),
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                TranslationService.translate(context, profileType),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.secondary,
+              ],
+              // Restrictions
+              if (restrictions.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                ...restrictions.keys.map(
+                  (key) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.remove_circle,
+                          size: 16,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            TranslationService.translate(context, key),
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
-          const SizedBox(height: 12),
-          // Advantages
-          if (advantages.isNotEmpty) ...[
-            ...advantages.keys.map(
-              (key) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.check_circle,
-                      size: 16,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        TranslationService.translate(context, key),
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          // Restrictions
-          if (restrictions.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ...restrictions.keys.map(
-              (key) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.remove_circle,
-                      size: 16,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        TranslationService.translate(context, key),
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
+        );
       },
     );
   }
@@ -1625,9 +1752,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Expanded(
                                 child: Text(
                                   TranslationService.translate(
-                                    context,
-                                    'theme_${theme.id}',
-                                  ) ?? theme.displayName,
+                                        context,
+                                        'theme_${theme.id}',
+                                      ) ??
+                                      theme.displayName,
                                 ),
                               ),
                             ],
@@ -1641,102 +1769,126 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 8),
-                Text(
-                  TranslationService.translate(
-                    context,
-                    Provider.of<ThemeProvider>(context).profileType,
-                  ) ??
-                  (Provider.of<ThemeProvider>(context).profileType == 'individual'
-                      ? 'Particulier'
-                      : 'Bibliothèque'),
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: Text(
-                    TranslationService.translate(context, 'profile_type_label') ??
-                        'Type de profil',
-                  ),
-                  trailing: Builder(
-                    builder: (context) {
-                      // Normalize profile type to match dropdown items
-                      String normalizedType = Provider.of<ThemeProvider>(context).profileType;
-                      if (normalizedType == 'individual_reader') {
-                        normalizedType = 'individual';
-                      } else if (normalizedType == 'professional' || normalizedType == 'library') {
-                        normalizedType = 'librarian';
-                      }
-                      // Ensure value is one of the valid options
-                      if (!['individual', 'librarian', 'kid'].contains(normalizedType)) {
-                        normalizedType = 'individual';
-                      }
-                      
-                      return SizedBox(
-                        width: 130,
-                        child: DropdownButton<String>(
-                          value: normalizedType,
-                          isExpanded: true,
-                          underline: const SizedBox(),
-                          items: [
-                            DropdownMenuItem(
-                              value: 'individual',
-                              child: Text(
-                                TranslationService.translate(context, 'profile_individual'),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: 'librarian',
-                              child: Text(
-                                TranslationService.translate(context, 'profile_librarian'),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: 'kid',
-                              child: Text(
-                                TranslationService.translate(context, 'profile_kid'),
-                              ),
-                            ),
-                          ],
-                    onChanged: (value) async {
-                      if (value != null) {
-                        final themeProvider = Provider.of<ThemeProvider>(
-                          context,
-                          listen: false,
-                        );
-                        final apiService = Provider.of<ApiService>(
-                          context,
-                          listen: false,
-                        );
-                        
-                        // Update user profile and local provider state
-                        await themeProvider.setProfileType(
-                          value,
-                          apiService: apiService,
-                        );
-                        
-                        // Also update library config to ensure persistence and consistency
-                        // This handles the ffi_profile_type in FFI mode
-                        try {
-                          await apiService.updateLibraryConfig(
-                            name: _config?['name'] ?? 'Ma Bibliothèque',
-                            profileType: value,
-                          );
-                        } catch (e) {
-                          debugPrint('Error syncing library config profile type: $e');
-                        }
+                    Text(
+                      TranslationService.translate(
+                            context,
+                            Provider.of<ThemeProvider>(context).profileType,
+                          ) ??
+                          (Provider.of<ThemeProvider>(context).profileType ==
+                                  'individual'
+                              ? 'Particulier'
+                              : 'Bibliothèque'),
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 24),
+                    ListTile(
+                      leading: const Icon(Icons.person_outline),
+                      title: Text(
+                        TranslationService.translate(
+                              context,
+                              'profile_type_label',
+                            ) ??
+                            'Type de profil',
+                      ),
+                      trailing: Builder(
+                        builder: (context) {
+                          // Normalize profile type to match dropdown items
+                          String normalizedType = Provider.of<ThemeProvider>(
+                            context,
+                          ).profileType;
+                          if (normalizedType == 'individual_reader') {
+                            normalizedType = 'individual';
+                          } else if (normalizedType == 'professional' ||
+                              normalizedType == 'library') {
+                            normalizedType = 'librarian';
+                          }
+                          // Ensure value is one of the valid options
+                          if (![
+                            'individual',
+                            'librarian',
+                            'kid',
+                          ].contains(normalizedType)) {
+                            normalizedType = 'individual';
+                          }
 
-                        _fetchStatus();
-                      }
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    ),
+                          return SizedBox(
+                            width: 130,
+                            child: DropdownButton<String>(
+                              value: normalizedType,
+                              isExpanded: true,
+                              underline: const SizedBox(),
+                              items: [
+                                DropdownMenuItem(
+                                  value: 'individual',
+                                  child: Text(
+                                    TranslationService.translate(
+                                      context,
+                                      'profile_individual',
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'librarian',
+                                  child: Text(
+                                    TranslationService.translate(
+                                      context,
+                                      'profile_librarian',
+                                    ),
+                                  ),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'kid',
+                                  child: Text(
+                                    TranslationService.translate(
+                                      context,
+                                      'profile_kid',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) async {
+                                if (value != null) {
+                                  final themeProvider =
+                                      Provider.of<ThemeProvider>(
+                                        context,
+                                        listen: false,
+                                      );
+                                  final apiService = Provider.of<ApiService>(
+                                    context,
+                                    listen: false,
+                                  );
+
+                                  // Update user profile and local provider state
+                                  await themeProvider.setProfileType(
+                                    value,
+                                    apiService: apiService,
+                                  );
+
+                                  // Also update library config to ensure persistence and consistency
+                                  // This handles the ffi_profile_type in FFI mode
+                                  try {
+                                    await apiService.updateLibraryConfig(
+                                      name:
+                                          _config?['name'] ?? 'Ma Bibliothèque',
+                                      profileType: value,
+                                    );
+                                  } catch (e) {
+                                    debugPrint(
+                                      'Error syncing library config profile type: $e',
+                                    );
+                                  }
+
+                                  _fetchStatus();
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),

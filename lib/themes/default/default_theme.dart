@@ -22,8 +22,9 @@ class DefaultTheme extends AppTheme {
   ThemeData buildTheme({Color? accentColor}) {
     final bannerColor = accentColor ?? const Color(0xFF6366F1);
     final brightness = ThemeData.estimateBrightnessForColor(bannerColor);
-    final foregroundColor =
-        brightness == Brightness.dark ? Colors.white : Colors.black;
+    final foregroundColor = brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black;
 
     // POC Theme Colors
     const bgBody = Color(0xFFFDFBF7); // Warm cream

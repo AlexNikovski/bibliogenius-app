@@ -55,13 +55,21 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
           _outgoingRequests = outRes.data;
           _connectionRequests = connRes.data['requests'] ?? [];
         });
-        debugPrint('📋 _fetchRequests: ${_connectionRequests.length} connection requests');
-        debugPrint('📋 _fetchRequests: ${_incomingRequests.length} incoming requests');
+        debugPrint(
+          '📋 _fetchRequests: ${_connectionRequests.length} connection requests',
+        );
+        debugPrint(
+          '📋 _fetchRequests: ${_incomingRequests.length} incoming requests',
+        );
         for (var r in _incomingRequests) {
-          debugPrint('  📖 Incoming Request: ${r['book_title']} from ${r['peer_name']} status=${r['status']}');
+          debugPrint(
+            '  📖 Incoming Request: ${r['book_title']} from ${r['peer_name']} status=${r['status']}',
+          );
         }
         for (var r in _connectionRequests) {
-          debugPrint('  📚 Connection: id=${r['id']}, name="${r['name']}", url=${r['url']}');
+          debugPrint(
+            '  📚 Connection: id=${r['id']}, name="${r['name']}", url=${r['url']}',
+          );
         }
       }
     } catch (e) {
@@ -92,19 +100,25 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
         // Handle 409 Conflict specifically (no available copies)
         if (e.response?.statusCode == 409) {
           final errorData = e.response?.data;
-          if (errorData is Map && errorData['error']?.toString().contains('copies') == true) {
-            errorMessage = TranslationService.translate(context, 'error_no_available_copies');
+          if (errorData is Map &&
+              errorData['error']?.toString().contains('copies') == true) {
+            errorMessage = TranslationService.translate(
+              context,
+              'error_no_available_copies',
+            );
           } else {
-            errorMessage = errorData?['error']?.toString() ?? 'Conflict: resource unavailable';
+            errorMessage =
+                errorData?['error']?.toString() ??
+                'Conflict: resource unavailable';
           }
         } else {
-          errorMessage = e.response?.data?['error']?.toString() ?? e.message ?? 'Unknown error';
+          errorMessage =
+              e.response?.data?['error']?.toString() ??
+              e.message ??
+              'Unknown error';
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -120,7 +134,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     }
   }
 
-  Future<void> _updatePeerStatus(Map<String, dynamic> peer, String status) async {
+  Future<void> _updatePeerStatus(
+    Map<String, dynamic> peer,
+    String status,
+  ) async {
     final api = Provider.of<ApiService>(context, listen: false);
     try {
       await api.updatePeerStatus(peer['id'], status);
@@ -136,11 +153,14 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
 
         // Navigate to peer's library after accepting
         if (status == 'active') {
-          context.push('/peers/${peer['id']}/books', extra: {
-            'id': peer['id'],
-            'name': peer['name'] ?? 'Unknown',
-            'url': peer['url'] ?? '',
-          });
+          context.push(
+            '/peers/${peer['id']}/books',
+            extra: {
+              'id': peer['id'],
+              'name': peer['name'] ?? 'Unknown',
+              'url': peer['url'] ?? '',
+            },
+          );
         }
       }
     } catch (e) {
@@ -316,12 +336,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
             padding: const EdgeInsets.all(16.0),
             child: Text(
               TranslationService.translate(context, 'incoming_connections'),
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
           ...incoming.map((req) => _buildConnectionTile(req, isIncoming: true)),
@@ -331,12 +349,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
             padding: const EdgeInsets.all(16.0),
             child: Text(
               TranslationService.translate(context, 'outgoing_connections'),
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
           ...outgoing.map(
@@ -363,7 +379,9 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
         color: isDark ? Colors.white.withAlpha(13) : Colors.grey.withAlpha(13),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withAlpha(26) : Colors.grey.withAlpha(26),
+          color: isDark
+              ? Colors.white.withAlpha(26)
+              : Colors.grey.withAlpha(26),
           width: 1,
         ),
       ),
@@ -380,12 +398,14 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
             ),
             child: Icon(
               isIncoming ? Icons.link : Icons.send_rounded,
-              color: isIncoming ? const Color(0xFFD4A855) : const Color(0xFFA0724A),
+              color: isIncoming
+                  ? const Color(0xFFD4A855)
+                  : const Color(0xFFA0724A),
               size: 24,
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Library Info (Between Icon and Buttons)
           Expanded(
             child: Column(
@@ -406,17 +426,14 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
                 const SizedBox(height: 4),
                 Text(
                   req['url'] ?? '',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: subColor,
-                  ),
+                  style: TextStyle(fontSize: 12, color: subColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          
+
           const SizedBox(width: 12),
 
           // Actions
@@ -429,7 +446,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -445,7 +465,10 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red,
                     side: const BorderSide(color: Colors.red, width: 1.5),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -464,12 +487,18 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFF8B6914).withAlpha(26),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF8B6914).withAlpha(51)),
+                border: Border.all(
+                  color: const Color(0xFF8B6914).withAlpha(51),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.check_circle_outline, size: 14, color: Color(0xFFD4A855)),
+                  const Icon(
+                    Icons.check_circle_outline,
+                    size: 14,
+                    color: Color(0xFFD4A855),
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     TranslationService.translate(context, 'status_sent'),
@@ -511,7 +540,7 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
     final bool isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subColor = isDark ? Colors.white70 : Colors.black54;
-    
+
     return Column(
       children: [
         ListTile(

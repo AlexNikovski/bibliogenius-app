@@ -22,6 +22,12 @@ jobs:
     - name: Create .env file
       run: cp .env.example .env
 
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsecret-1-dev libjsoncpp-dev libsqlite3-dev
+
     - name: Get dependencies
       run: flutter pub get
 

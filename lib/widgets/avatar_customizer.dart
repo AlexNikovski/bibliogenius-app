@@ -103,15 +103,24 @@ class _AvatarCustomizerState extends State<AvatarCustomizer> {
                     _updateConfig(preset.copyWith(seed: _config.seed));
                   } else {
                     // Set default mouth to smile for human-like styles
-                    final isHumanStyle = ['man', 'woman', 'boy', 'girl', 'grandfather', 'grandmother', 'avataaars'].contains(value);
-                    _updateConfig(_config.copyWith(
-                      style: value,
-                      mouth: isHumanStyle ? 'smile' : null,
-                    ));
+                    final isHumanStyle = [
+                      'man',
+                      'woman',
+                      'boy',
+                      'girl',
+                      'grandfather',
+                      'grandmother',
+                      'avataaars',
+                    ].contains(value);
+                    _updateConfig(
+                      _config.copyWith(
+                        style: value,
+                        mouth: isHumanStyle ? 'smile' : null,
+                      ),
+                    );
                   }
                 },
               ),
-
 
               // Genie is a static mascot image - no customization options
               if (isHuman) ...[

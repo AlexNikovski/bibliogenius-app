@@ -65,7 +65,7 @@ class _PeerBookListScreenState extends State<PeerBookListScreen> {
     try {
       final res = await api.getPeerBooksByUrl(widget.peerUrl);
       debugPrint('📚 PeerBookList: Got response: ${res.statusCode}');
-      
+
       // Handle both response formats: [...] or {books: [...]}
       List<dynamic> data;
       if (res.data is List) {
@@ -75,7 +75,9 @@ class _PeerBookListScreenState extends State<PeerBookListScreen> {
       } else if (res.data is Map && res.data['data'] != null) {
         data = res.data['data'] as List<dynamic>;
       } else {
-        debugPrint('⚠️ PeerBookList: Unknown response format: ${res.data.runtimeType}');
+        debugPrint(
+          '⚠️ PeerBookList: Unknown response format: ${res.data.runtimeType}',
+        );
         data = [];
       }
 
@@ -138,21 +140,28 @@ class _PeerBookListScreenState extends State<PeerBookListScreen> {
     }
   }
 
-
   Future<void> _requestBorrow(Book book) async {
     final api = Provider.of<ApiService>(context, listen: false);
     try {
       await api.requestBookByUrl(widget.peerUrl, book.isbn ?? "", book.title);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(TranslationService.translate(context, 'borrow_request_sent'))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              TranslationService.translate(context, 'borrow_request_sent'),
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("${TranslationService.translate(context, 'error_sending_request')}: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "${TranslationService.translate(context, 'error_sending_request')}: $e",
+            ),
+          ),
+        );
       }
     }
   }
@@ -379,7 +388,9 @@ class _PeerBookListScreenState extends State<PeerBookListScreen> {
                     _requestBorrow(book);
                   },
                   icon: const Icon(Icons.bookmark_add),
-                  label: Text(TranslationService.translate(context, 'request_to_borrow')),
+                  label: Text(
+                    TranslationService.translate(context, 'request_to_borrow'),
+                  ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     textStyle: const TextStyle(

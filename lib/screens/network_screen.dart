@@ -32,7 +32,7 @@ class _NetworkScreenState extends State<NetworkScreen>
     with SingleTickerProviderStateMixin {
   /// Feature flag to disable P2P features (mDNS, peers, QR) for alpha stability
   // Using AppConstants.enableP2PFeatures instead
-  
+
   late TabController _tabController;
 
   // Unified list state
@@ -54,7 +54,10 @@ class _NetworkScreenState extends State<NetworkScreen>
   void initState() {
     super.initState();
     // When P2P disabled, only show contacts tab (no Share/Scan tabs)
-    _tabController = TabController(length: AppConstants.enableP2PFeatures ? 3 : 1, vsync: this);
+    _tabController = TabController(
+      length: AppConstants.enableP2PFeatures ? 3 : 1,
+      vsync: this,
+    );
     _loadAllMembers();
     _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted && _tabController.index == 0) _loadAllMembers(silent: true);
@@ -87,9 +90,11 @@ class _NetworkScreenState extends State<NetworkScreen>
             .map((json) => Contact.fromJson(json))
             .map((c) => NetworkMember.fromContact(c))
             .toList();
-        
-        contacts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-        
+
+        contacts.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+
         if (mounted) {
           setState(() {
             _members = contacts;
@@ -148,31 +153,33 @@ class _NetworkScreenState extends State<NetworkScreen>
         final localRes = await api.getLocalPeers();
         if (localRes.statusCode == 200) {
           final List<dynamic> localJson = localRes.data['peers'] ?? [];
-          
+
           // Build a set of NAMES from connected peers for fast lookup (IPs may differ!)
           final connectedPeerNames = peersJson
               .map((p) => (p['name'] as String?)?.toLowerCase())
               .whereType<String>()
               .toSet();
-          
+
           // Filter out own library by name AND already-connected peers by NAME
-          localPeers = localJson
-              .cast<Map<String, dynamic>>()
-              .where((peer) {
-                final peerName = peer['name'] as String?;
-                // Filter out own library
-                if (peerName != null && myLibraryName != null && peerName == myLibraryName) {
-                  debugPrint('🔇 Filtering out own library from mDNS: $peerName');
-                  return false;
-                }
-                // Filter out peers already connected (by name, since IPs can differ)
-                if (peerName != null && connectedPeerNames.contains(peerName.toLowerCase())) {
-                  debugPrint('🔇 Filtering out already-connected peer from mDNS: $peerName');
-                  return false;
-                }
-                return true;
-              })
-              .toList();
+          localPeers = localJson.cast<Map<String, dynamic>>().where((peer) {
+            final peerName = peer['name'] as String?;
+            // Filter out own library
+            if (peerName != null &&
+                myLibraryName != null &&
+                peerName == myLibraryName) {
+              debugPrint('🔇 Filtering out own library from mDNS: $peerName');
+              return false;
+            }
+            // Filter out peers already connected (by name, since IPs can differ)
+            if (peerName != null &&
+                connectedPeerNames.contains(peerName.toLowerCase())) {
+              debugPrint(
+                '🔇 Filtering out already-connected peer from mDNS: $peerName',
+              );
+              return false;
+            }
+            return true;
+          }).toList();
           mdnsActive = localRes.data['mdns_active'] ?? false;
         }
       } catch (e) {
@@ -348,7 +355,10 @@ class _NetworkScreenState extends State<NetworkScreen>
       );
 
       if (_localIp != null && _libraryName != null) {
-        final data = {"name": _libraryName, "url": "http://$_localIp:${ApiService.httpPort}"};
+        final data = {
+          "name": _libraryName,
+          "url": "http://$_localIp:${ApiService.httpPort}",
+        };
         _qrData = jsonEncode(data);
       }
     } catch (e) {
@@ -566,34 +576,45 @@ class _NetworkScreenState extends State<NetworkScreen>
           ],
         ],
         // Only show TabBar when P2P features enabled
-        bottom: AppConstants.enableP2PFeatures ? TabBar(
-          controller: _tabController,
-          indicatorColor: Theme.of(context).buttonTheme.colorScheme?.onPrimary,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: [
-            Tab(
-              icon: const Icon(Icons.list),
-              text: TranslationService.translate(context, 'tab_list'),
-            ),
-            Tab(
-              icon: const Icon(Icons.qr_code_scanner),
-              text: TranslationService.translate(context, 'tab_scan_code'),
-            ),
-            Tab(
-              icon: const Icon(Icons.qr_code),
-              text: TranslationService.translate(context, 'tab_share_code'),
-            ),
-          ],
-        ) : null,
+        bottom: AppConstants.enableP2PFeatures
+            ? TabBar(
+                controller: _tabController,
+                indicatorColor: Theme.of(
+                  context,
+                ).buttonTheme.colorScheme?.onPrimary,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: [
+                  Tab(
+                    icon: const Icon(Icons.list),
+                    text: TranslationService.translate(context, 'tab_list'),
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.qr_code_scanner),
+                    text: TranslationService.translate(
+                      context,
+                      'tab_scan_code',
+                    ),
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.qr_code),
+                    text: TranslationService.translate(
+                      context,
+                      'tab_share_code',
+                    ),
+                  ),
+                ],
+              )
+            : null,
       ),
-      body: AppConstants.enableP2PFeatures 
-        ? TabBarView(
-            controller: _tabController,
-            children: [_buildMemberList(), _buildScanTab(), _buildShareTab()],
-          )
-        : _buildMemberList(),
-      floatingActionButton: (!AppConstants.enableP2PFeatures || _tabController.index == 0)
+      body: AppConstants.enableP2PFeatures
+          ? TabBarView(
+              controller: _tabController,
+              children: [_buildMemberList(), _buildScanTab(), _buildShareTab()],
+            )
+          : _buildMemberList(),
+      floatingActionButton:
+          (!AppConstants.enableP2PFeatures || _tabController.index == 0)
           ? FloatingActionButton(
               onPressed: () async {
                 await context.push('/contacts/add');
@@ -728,7 +749,10 @@ class _NetworkScreenState extends State<NetworkScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.teal.withValues(alpha: 0.1), Colors.cyan.withValues(alpha: 0.05)],
+          colors: [
+            Colors.teal.withValues(alpha: 0.1),
+            Colors.cyan.withValues(alpha: 0.05),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -746,7 +770,10 @@ class _NetworkScreenState extends State<NetworkScreen>
         ),
         subtitle: Text(
           _localPeers.isEmpty
-              ? TranslationService.translate(context, 'no_local_libraries_found')
+              ? TranslationService.translate(
+                  context,
+                  'no_local_libraries_found',
+                )
               : '${_localPeers.length} ${TranslationService.translate(context, 'libraries_found')}',
           style: TextStyle(color: Colors.grey[600], fontSize: 12),
         ),
@@ -756,7 +783,10 @@ class _NetworkScreenState extends State<NetworkScreen>
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    TranslationService.translate(context, 'local_discovery_help'),
+                    TranslationService.translate(
+                      context,
+                      'local_discovery_help',
+                    ),
                     style: TextStyle(color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
@@ -770,7 +800,8 @@ class _NetworkScreenState extends State<NetworkScreen>
   /// Build a tile for a locally discovered peer
   Widget _buildLocalPeerTile(Map<String, dynamic> peer) {
     final name = peer['name'] ?? 'Unknown Library';
-    final addresses = (peer['addresses'] as List<dynamic>?)?.cast<String>() ?? [];
+    final addresses =
+        (peer['addresses'] as List<dynamic>?)?.cast<String>() ?? [];
     final port = peer['port'] ?? 8000;
     final address = addresses.isNotEmpty ? addresses.first : '?';
     final url = 'http://$address:$port';
@@ -800,13 +831,17 @@ class _NetworkScreenState extends State<NetworkScreen>
             decoration: BoxDecoration(
               color: isConnected
                   ? Colors.green.withAlpha(26)
-                  : (isPending ? Colors.orange.withAlpha(26) : Colors.teal.withAlpha(26)),
+                  : (isPending
+                        ? Colors.orange.withAlpha(26)
+                        : Colors.teal.withAlpha(26)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               isConnected
                   ? Icons.cloud_done_rounded
-                  : (isPending ? Icons.hourglass_top_rounded : Icons.library_books),
+                  : (isPending
+                        ? Icons.hourglass_top_rounded
+                        : Icons.library_books),
               color: isConnected
                   ? Colors.green
                   : (isPending ? Colors.orange : Colors.teal),
@@ -851,12 +886,8 @@ class _NetworkScreenState extends State<NetworkScreen>
             onPressed: () {
               debugPrint('📚 Browse mDNS peer: name=$name, url=$url');
               context.push(
-                '/peers/0/books',  // Use 0 as ID since this is direct mDNS access
-                extra: {
-                  'id': 0,
-                  'name': name,
-                  'url': url,
-                },
+                '/peers/0/books', // Use 0 as ID since this is direct mDNS access
+                extra: {'id': 0, 'name': name, 'url': url},
               );
             },
             icon: const Icon(Icons.auto_stories_rounded, size: 14),
@@ -877,85 +908,94 @@ class _NetworkScreenState extends State<NetworkScreen>
   }
 
   /// Connect to a locally discovered peer (sends connection request)
-Future<void> _connectToLocalPeer(String name, String url) async {
-  final api = Provider.of<ApiService>(context, listen: false);
-  
-  // Show loading dialog (non-blocking)
-  unawaited(showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => Center(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(ctx).cardColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(TranslationService.translate(ctx, 'sending_request')),
-          ],
+  Future<void> _connectToLocalPeer(String name, String url) async {
+    final api = Provider.of<ApiService>(context, listen: false);
+
+    // Show loading dialog (non-blocking)
+    unawaited(
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).cardColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(TranslationService.translate(ctx, 'sending_request')),
+              ],
+            ),
+          ),
         ),
       ),
-    ),
-  ));
+    );
 
-  // Small delay to ensure dialog is rendered
-  await Future.delayed(const Duration(milliseconds: 50));
+    // Small delay to ensure dialog is rendered
+    await Future.delayed(const Duration(milliseconds: 50));
 
-  try {
-    final response = await api.connectLocalPeer(name, url);
-    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop();
-      
-      // Check if the request was successful
-      if (response.statusCode == 200 || response.statusCode == 201) {
+    try {
+      final response = await api.connectLocalPeer(name, url);
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+
+        // Check if the request was successful
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                TranslationService.translate(
+                  context,
+                  'connection_request_sent',
+                ).replaceAll('{name}', name),
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: TranslationService.translate(context, 'view_requests'),
+                textColor: Colors.white,
+                onPressed: () {
+                  // Navigate to Requests screen
+                  context.go('/requests');
+                },
+              ),
+            ),
+          );
+          // Refresh the network list
+          _loadAllMembers();
+        } else {
+          // Request failed at the remote end
+          final error = response.data?['error'] ?? 'Unknown error';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${TranslationService.translate(context, 'connection_failed')}: $error',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              TranslationService.translate(context, 'connection_request_sent')
-                  .replaceAll('{name}', name),
+              '${TranslationService.translate(context, 'connection_failed')}: $e',
             ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: TranslationService.translate(context, 'view_requests'),
-              textColor: Colors.white,
-              onPressed: () {
-                // Navigate to Requests screen
-                context.go('/requests');
-              },
-            ),
-          ),
-        );
-        // Refresh the network list
-        _loadAllMembers();
-      } else {
-        // Request failed at the remote end
-        final error = response.data?['error'] ?? 'Unknown error';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${TranslationService.translate(context, 'connection_failed')}: $error'),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.red,
           ),
         );
       }
     }
-  } catch (e) {
-    if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${TranslationService.translate(context, 'connection_failed')}: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
-}
+
   Widget _buildMemberCard(NetworkMember member) {
     final isNetwork = member.source == NetworkMemberSource.network;
     final isPending = member.isPending;
@@ -997,7 +1037,9 @@ Future<void> _connectToLocalPeer(String name, String url) async {
                 ),
               ],
         border: Border.all(
-          color: isDark ? Colors.white.withAlpha(26) : Colors.grey.withAlpha(26),
+          color: isDark
+              ? Colors.white.withAlpha(26)
+              : Colors.grey.withAlpha(26),
           width: 1,
         ),
       ),
@@ -1030,17 +1072,17 @@ Future<void> _connectToLocalPeer(String name, String url) async {
                 const SizedBox(height: 2),
                 Text(
                   member.secondaryInfo,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (!isPending && isNetwork) ...[
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.withAlpha(26),
                       borderRadius: BorderRadius.circular(6),
@@ -1059,7 +1101,10 @@ Future<void> _connectToLocalPeer(String name, String url) async {
                 if (isPending) ...[
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.withAlpha(26),
                       borderRadius: BorderRadius.circular(6),
@@ -1086,7 +1131,10 @@ Future<void> _connectToLocalPeer(String name, String url) async {
                 backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -1145,7 +1193,9 @@ Future<void> _connectToLocalPeer(String name, String url) async {
   }
 
   void _onMemberTap(NetworkMember member) {
-    debugPrint('👆 _onMemberTap: ${member.name}, source=${member.source}, url=${member.url}, status=${member.status}');
+    debugPrint(
+      '👆 _onMemberTap: ${member.name}, source=${member.source}, url=${member.url}, status=${member.status}',
+    );
     if (member.source == NetworkMemberSource.network) {
       if (member.isPending) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1167,7 +1217,9 @@ Future<void> _connectToLocalPeer(String name, String url) async {
           return;
         }
         // Navigate to peer's book list
-        debugPrint('📚 Navigating to peer books: id=${member.id}, name=${member.name}, url=${member.url}');
+        debugPrint(
+          '📚 Navigating to peer books: id=${member.id}, name=${member.name}, url=${member.url}',
+        );
         context.push(
           '/peers/${member.id}/books',
           extra: {'id': member.id, 'name': member.name, 'url': member.url},

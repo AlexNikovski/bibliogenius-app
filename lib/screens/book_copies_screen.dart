@@ -76,7 +76,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
   Future<void> _addCopy() async {
     final isVintageTheme =
         Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
-            'sorbonne';
+        'sorbonne';
 
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
@@ -99,9 +99,9 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
         _fetchCopies();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -110,8 +110,8 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
   Future<void> _deleteCopy(int copyId) async {
     final isVintageTheme =
         Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
-            'sorbonne';
-            
+        'sorbonne';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) =>
@@ -126,45 +126,45 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
         _fetchCopies();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
   }
-  
+
   void _editCopy(Copy copy) async {
-      final isVintageTheme =
+    final isVintageTheme =
         Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
-            'sorbonne';
-            
-      final result = await showModalBottomSheet<Map<String, dynamic>>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => isVintageTheme
-            ? _VintageAddCopySheet(existingCopy: copy)
-            : _StandardAddCopySheet(bookId: widget.bookId, existingCopy: copy),
-      );
-      
-      if (result != null) {
-        if (!mounted) return;
-        final apiService = Provider.of<ApiService>(context, listen: false);
-        try {
-          await apiService.updateCopy(copy.id!, {
-             'book_id': widget.bookId,
-             ...result,
-          });
-          _fetchCopies();
-        } catch (e) {
-            if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error updating copy: $e')),
-                );
-            }
+        'sorbonne';
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => isVintageTheme
+          ? _VintageAddCopySheet(existingCopy: copy)
+          : _StandardAddCopySheet(bookId: widget.bookId, existingCopy: copy),
+    );
+
+    if (result != null) {
+      if (!mounted) return;
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      try {
+        await apiService.updateCopy(copy.id!, {
+          'book_id': widget.bookId,
+          ...result,
+        });
+        _fetchCopies();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error updating copy: $e')));
         }
       }
+    }
   }
 
   @override
@@ -179,10 +179,12 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
       appBar: AppBar(
         title: Text(widget.bookTitle),
         elevation: 0,
-        backgroundColor:
-            isVintageTheme ? Colors.transparent : Theme.of(context).primaryColor,
-        foregroundColor:
-            isVintageTheme ? const Color(0xFFFFD700) : Colors.white,
+        backgroundColor: isVintageTheme
+            ? Colors.transparent
+            : Theme.of(context).primaryColor,
+        foregroundColor: isVintageTheme
+            ? const Color(0xFFFFD700)
+            : Colors.white,
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -215,12 +217,12 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
           child: _isLoading
               ? _buildLoadingState(isVintageTheme)
               : _copies.isEmpty
-                  ? (isVintageTheme
-                      ? _buildVintageEmptyState()
-                      : _buildStandardEmptyState())
-                  : (isVintageTheme
-                      ? _buildVintageBookshelf()
-                      : _buildStandardList()),
+              ? (isVintageTheme
+                    ? _buildVintageEmptyState()
+                    : _buildStandardEmptyState())
+              : (isVintageTheme
+                    ? _buildVintageBookshelf()
+                    : _buildStandardList()),
         ),
       ),
     );
@@ -232,9 +234,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
           ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const CircularProgressIndicator(
-                  color: Color(0xFFD4A855),
-                ),
+                const CircularProgressIndicator(color: Color(0xFFD4A855)),
                 const SizedBox(height: 16),
                 Text(
                   'Consulting the archives...',
@@ -249,10 +249,10 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
           : const CircularProgressIndicator(),
     );
   }
-  
+
   Widget _buildVintageFab() {
-     return Container(
-        decoration: BoxDecoration(
+    return Container(
+      decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.5),
@@ -275,7 +275,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
           ),
         ),
       ),
-     );
+    );
   }
 
   Widget _buildStandardList() {
@@ -304,17 +304,17 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Chip(
-                      label: Text(
-                        copy.status,
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Chip(
+                    label: Text(
+                      copy.status,
+                      style: const TextStyle(fontSize: 10),
                     ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
                   ),
+                ),
                 if (copy.notes != null && copy.notes!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -375,16 +375,16 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
         const SizedBox(height: 16),
         Text(
           'No copies found',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.grey,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey),
         ),
         const SizedBox(height: 8),
         Text(
           'Add a copy to start tracking this book',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
         ),
       ],
     );
@@ -392,9 +392,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
 
   Widget _buildVintageBookshelf() {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1A0F0A),
-      ),
+      decoration: const BoxDecoration(color: Color(0xFF1A0F0A)),
       child: Stack(
         children: [
           // Background texture
@@ -449,11 +447,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
             fontSize: 20,
             color: Color(0xFFD4AF37),
             shadows: [
-              Shadow(
-                blurRadius: 2,
-                color: Colors.black,
-                offset: Offset(1, 1),
-              )
+              Shadow(blurRadius: 2, color: Colors.black, offset: Offset(1, 1)),
             ],
           ),
         ),
@@ -643,10 +637,7 @@ class _Book3DState extends State<_Book3D> {
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
-                        colors: [
-                          _bookColors[1],
-                          _bookColors[0],
-                        ],
+                        colors: [_bookColors[1], _bookColors[0]],
                       ),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(3),
@@ -663,7 +654,11 @@ class _Book3DState extends State<_Book3D> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(width: 15, height: 2, color: const Color(0xFFD4AF37)),
+                        Container(
+                          width: 15,
+                          height: 2,
+                          color: const Color(0xFFD4AF37),
+                        ),
                         const SizedBox(height: 8),
                         RotatedBox(
                           quarterTurns: 3,
@@ -678,7 +673,11 @@ class _Book3DState extends State<_Book3D> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Container(width: 15, height: 2, color: const Color(0xFFD4AF37)),
+                        Container(
+                          width: 15,
+                          height: 2,
+                          color: const Color(0xFFD4AF37),
+                        ),
                       ],
                     ),
                   ),
@@ -720,18 +719,21 @@ class _Book3DState extends State<_Book3D> {
                       children: [
                         // Leather texture
                         Positioned.fill(
-                          child: CustomPaint(
-                            painter: _LeatherTexturePainter(),
-                          ),
+                          child: CustomPaint(painter: _LeatherTexturePainter()),
                         ),
 
                         // Gold frame decoration
                         Positioned(
-                          top: 8, left: 8, right: 8, bottom: 8,
+                          top: 8,
+                          left: 8,
+                          right: 8,
+                          bottom: 8,
                           child: Container(
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                                color: const Color(
+                                  0xFFD4AF37,
+                                ).withValues(alpha: 0.3),
                                 width: 1,
                               ),
                               borderRadius: BorderRadius.circular(2),
@@ -748,13 +750,17 @@ class _Book3DState extends State<_Book3D> {
                               color: _bookColors[1].withValues(alpha: 0.5),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
+                                color: const Color(
+                                  0xFFD4AF37,
+                                ).withValues(alpha: 0.5),
                                 width: 2,
                               ),
                             ),
                             child: Icon(
                               Icons.auto_stories,
-                              color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                              color: const Color(
+                                0xFFD4AF37,
+                              ).withValues(alpha: 0.8),
                               size: 20,
                             ),
                           ),
@@ -785,35 +791,53 @@ class _Book3DState extends State<_Book3D> {
                             top: 12,
                             right: 12,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.orange.withValues(alpha: 0.9),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text('TEMP', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                              child: const Text(
+                                'TEMP',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
-                          
-                         // Pages effect
-                         Positioned(
-                           top: 3, bottom: 3, right: 0,
-                           child: Container(
-                             width: 3,
-                             decoration: BoxDecoration(
-                               gradient: LinearGradient(
-                                 colors: [
-                                   const Color(0xFFC4A35A).withValues(alpha: 0.8),
-                                   const Color(0xFFB8860B).withValues(alpha: 0.8),
-                                   const Color(0xFFC4A35A).withValues(alpha: 0.8),
-                                 ],
-                               ),
-                               borderRadius: const BorderRadius.only(
-                                 topRight: Radius.circular(2),
-                                 bottomRight: Radius.circular(2),
-                               ),
-                             ),
-                           ),
-                         ),
+
+                        // Pages effect
+                        Positioned(
+                          top: 3,
+                          bottom: 3,
+                          right: 0,
+                          child: Container(
+                            width: 3,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(
+                                    0xFFC4A35A,
+                                  ).withValues(alpha: 0.8),
+                                  const Color(
+                                    0xFFB8860B,
+                                  ).withValues(alpha: 0.8),
+                                  const Color(
+                                    0xFFC4A35A,
+                                  ).withValues(alpha: 0.8),
+                                ],
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(2),
+                                bottomRight: Radius.circular(2),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -860,14 +884,8 @@ class _ShelfBoard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(child: CustomPaint(painter: _WoodGrainPainter())),
-          Positioned(
-            left: 20, top: 4, bottom: 4,
-            child: _ShelfBracket(),
-          ),
-          Positioned(
-            right: 20, top: 4, bottom: 4,
-            child: _ShelfBracket(),
-          ),
+          Positioned(left: 20, top: 4, bottom: 4, child: _ShelfBracket()),
+          Positioned(right: 20, top: 4, bottom: 4, child: _ShelfBracket()),
         ],
       ),
     );
@@ -900,7 +918,10 @@ class _OrnamentalDivider extends StatelessWidget {
             height: 1,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.transparent, const Color(0xFFD4AF37).withValues(alpha: 0.5)],
+                colors: [
+                  Colors.transparent,
+                  const Color(0xFFD4AF37).withValues(alpha: 0.5),
+                ],
               ),
             ),
           ),
@@ -914,7 +935,10 @@ class _OrnamentalDivider extends StatelessWidget {
             height: 1,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [const Color(0xFFD4AF37).withValues(alpha: 0.5), Colors.transparent],
+                colors: [
+                  const Color(0xFFD4AF37).withValues(alpha: 0.5),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
@@ -945,9 +969,14 @@ class _VintageButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF8B4513), Color(0xFF6B3410)]),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF8B4513), Color(0xFF6B3410)],
+            ),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5), width: 2),
+            border: Border.all(
+              color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
+              width: 2,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.4),
@@ -996,23 +1025,36 @@ class _VintageDeleteDialog extends StatelessWidget {
             width: 2,
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 20),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.6),
+              blurRadius: 20,
+            ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Color(0xFFD4AF37), size: 48),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFFD4AF37),
+              size: 48,
+            ),
             const SizedBox(height: 16),
             Text(
               TranslationService.translate(context, 'delete_copy_title'),
-              style: const TextStyle(color: Color(0xFFC4A35A), fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Color(0xFFC4A35A),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               TranslationService.translate(context, 'delete_copy_confirm'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: const Color(0xFFC4A35A).withValues(alpha: 0.8)),
+              style: TextStyle(
+                color: const Color(0xFFC4A35A).withValues(alpha: 0.8),
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -1022,12 +1064,17 @@ class _VintageDeleteDialog extends StatelessWidget {
                   onPressed: () => Navigator.of(context).pop(false),
                   child: Text(
                     TranslationService.translate(context, 'cancel'),
-                    style: TextStyle(color: const Color(0xFFC4A35A).withValues(alpha: 0.7)),
+                    style: TextStyle(
+                      color: const Color(0xFFC4A35A).withValues(alpha: 0.7),
+                    ),
                   ),
                 ),
                 _VintageButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  label: TranslationService.translate(context, 'delete_copy_btn'),
+                  label: TranslationService.translate(
+                    context,
+                    'delete_copy_btn',
+                  ),
                   icon: Icons.delete,
                 ),
               ],
@@ -1040,26 +1087,28 @@ class _VintageDeleteDialog extends StatelessWidget {
 }
 
 class _StandardDeleteDialog extends StatelessWidget {
-    @override
-    Widget build(BuildContext context) {
-        return AlertDialog(
-            title: Text(TranslationService.translate(context, 'delete_copy_title')),
-            content: Text(TranslationService.translate(context, 'delete_copy_confirm')),
-            actions: [
-                TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(TranslationService.translate(context, 'cancel')),
-                ),
-                TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(
-                        TranslationService.translate(context, 'delete_copy_btn'), 
-                        style: const TextStyle(color: Colors.red),
-                    ),
-                ),
-            ],
-        );
-    }
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(TranslationService.translate(context, 'delete_copy_title')),
+      content: Text(
+        TranslationService.translate(context, 'delete_copy_confirm'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(TranslationService.translate(context, 'cancel')),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(
+            TranslationService.translate(context, 'delete_copy_btn'),
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _VintageAddCopySheet extends StatefulWidget {
@@ -1080,8 +1129,12 @@ class _VintageAddCopySheetState extends State<_VintageAddCopySheet> {
   @override
   void initState() {
     super.initState();
-    _notesController = TextEditingController(text: widget.existingCopy?.notes ?? '');
-    _dateController = TextEditingController(text: widget.existingCopy?.acquisitionDate ?? '');
+    _notesController = TextEditingController(
+      text: widget.existingCopy?.notes ?? '',
+    );
+    _dateController = TextEditingController(
+      text: widget.existingCopy?.acquisitionDate ?? '',
+    );
     _selectedStatus = widget.existingCopy?.status ?? 'available';
     _isTemporary = widget.existingCopy?.isTemporary ?? false;
   }
@@ -1122,7 +1175,8 @@ class _VintageAddCopySheetState extends State<_VintageAddCopySheet> {
             children: [
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   decoration: BoxDecoration(
                     color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2),
@@ -1134,16 +1188,24 @@ class _VintageAddCopySheetState extends State<_VintageAddCopySheet> {
                 isEditing
                     ? TranslationService.translate(context, 'edit_copy_title')
                     : TranslationService.translate(context, 'add_copy_title'),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               _OrnamentalDivider(),
               const SizedBox(height: 24),
               // Status
-               Text(
+              Text(
                 TranslationService.translate(context, 'copy_status'),
-                style: const TextStyle(color: Color(0xFFC4A35A), fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Color(0xFFC4A35A),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               _VintageStatusSelector(
@@ -1151,11 +1213,14 @@ class _VintageAddCopySheetState extends State<_VintageAddCopySheet> {
                 onChanged: (status) => setState(() => _selectedStatus = status),
               ),
               const SizedBox(height: 24),
-              
+
               // Date
               _VintageTextField(
                 controller: _dateController,
-                label: TranslationService.translate(context, 'acquisition_date'),
+                label: TranslationService.translate(
+                  context,
+                  'acquisition_date',
+                ),
                 hint: 'YYYY-MM-DD',
                 icon: Icons.calendar_today,
                 readOnly: true,
@@ -1166,58 +1231,103 @@ class _VintageAddCopySheetState extends State<_VintageAddCopySheet> {
                     firstDate: DateTime(1900),
                     lastDate: DateTime.now(),
                     builder: (context, child) => Theme(
-                        data: ThemeData.dark().copyWith(
-                          colorScheme: const ColorScheme.dark(primary: Color(0xFFD4AF37), surface: Color(0xFF3D2314)),
+                      data: ThemeData.dark().copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: Color(0xFFD4AF37),
+                          surface: Color(0xFF3D2314),
                         ),
-                        child: child!,
+                      ),
+                      child: child!,
                     ),
                   );
                   if (date != null) {
-                    _dateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    _dateController.text =
+                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
                   }
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Temporary
               Container(
-                 padding: const EdgeInsets.all(12),
-                 decoration: BoxDecoration(
-                   border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-                   borderRadius: BorderRadius.circular(12),
-                 ),
-                 child: Row(
-                   children: [
-                     const Icon(Icons.schedule, color: Color(0xFFD4AF37)),
-                     const SizedBox(width: 12),
-                     Expanded(child: Text(TranslationService.translate(context, 'is_temporary_copy'), style: const TextStyle(color: Color(0xFFC4A35A)))),
-                     Switch(value: _isTemporary, onChanged: (v) => setState(() => _isTemporary = v), activeThumbColor: const Color(0xFFD4AF37)),
-                   ],
-                 ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.schedule, color: Color(0xFFD4AF37)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        TranslationService.translate(
+                          context,
+                          'is_temporary_copy',
+                        ),
+                        style: const TextStyle(color: Color(0xFFC4A35A)),
+                      ),
+                    ),
+                    Switch(
+                      value: _isTemporary,
+                      onChanged: (v) => setState(() => _isTemporary = v),
+                      activeThumbColor: const Color(0xFFD4AF37),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
-              
+
               // Notes
-              _VintageTextField(controller: _notesController, label: TranslationService.translate(context, 'notes_label'), icon: Icons.notes, maxLines: 3),
+              _VintageTextField(
+                controller: _notesController,
+                label: TranslationService.translate(context, 'notes_label'),
+                icon: Icons.notes,
+                maxLines: 3,
+              ),
               const SizedBox(height: 32),
-              
+
               // Buttons
               Row(
                 children: [
-                  Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: Text(TranslationService.translate(context, 'cancel'), style: TextStyle(color: const Color(0xFFC4A35A).withValues(alpha: 0.7))))),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        TranslationService.translate(context, 'cancel'),
+                        style: TextStyle(
+                          color: const Color(0xFFC4A35A).withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  Expanded(flex: 2, child: _VintageButton(
-                    onPressed: () {
-                         Navigator.of(context).pop({
-                            'acquisition_date': _dateController.text.isEmpty ? null : _dateController.text,
-                            'notes': _notesController.text.isEmpty ? null : _notesController.text,
-                            'status': _selectedStatus,
-                            'is_temporary': _isTemporary,
-                          });
-                    },
-                    label: isEditing ? TranslationService.translate(context, 'save') : TranslationService.translate(context, 'add_peer_btn'),
-                    icon: isEditing ? Icons.save : Icons.add,
-                  )),
+                  Expanded(
+                    flex: 2,
+                    child: _VintageButton(
+                      onPressed: () {
+                        Navigator.of(context).pop({
+                          'acquisition_date': _dateController.text.isEmpty
+                              ? null
+                              : _dateController.text,
+                          'notes': _notesController.text.isEmpty
+                              ? null
+                              : _notesController.text,
+                          'status': _selectedStatus,
+                          'is_temporary': _isTemporary,
+                        });
+                      },
+                      label: isEditing
+                          ? TranslationService.translate(context, 'save')
+                          : TranslationService.translate(
+                              context,
+                              'add_peer_btn',
+                            ),
+                      icon: isEditing ? Icons.save : Icons.add,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -1229,120 +1339,128 @@ class _VintageAddCopySheetState extends State<_VintageAddCopySheet> {
 }
 
 class _StandardAddCopySheet extends StatefulWidget {
-    final int bookId;
-    final Copy? existingCopy;
-    const _StandardAddCopySheet({
-        required this.bookId,
-        this.existingCopy,
-    });
-    
-    @override
-    State<_StandardAddCopySheet> createState() => _StandardAddCopySheetState();
+  final int bookId;
+  final Copy? existingCopy;
+  const _StandardAddCopySheet({required this.bookId, this.existingCopy});
+
+  @override
+  State<_StandardAddCopySheet> createState() => _StandardAddCopySheetState();
 }
 
 class _StandardAddCopySheetState extends State<_StandardAddCopySheet> {
-    late TextEditingController _notesController;
-    late TextEditingController _dateController;
-    String _selectedStatus = 'available';
-    bool _isTemporary = false;
-    
-    @override
-    void initState() {
-        super.initState();
-        _notesController = TextEditingController(text: widget.existingCopy?.notes ?? '');
-        _dateController = TextEditingController(text: widget.existingCopy?.acquisitionDate ?? '');
-        _selectedStatus = widget.existingCopy?.status ?? 'available';
-        _isTemporary = widget.existingCopy?.isTemporary ?? false;
-    }
-    
-    @override
-    void dispose() {
-        _notesController.dispose();
-        _dateController.dispose();
-        super.dispose();
-    }
-    
-    @override
-    Widget build(BuildContext context) {
-         return Padding(
-            padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 16,
+  late TextEditingController _notesController;
+  late TextEditingController _dateController;
+  String _selectedStatus = 'available';
+  bool _isTemporary = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesController = TextEditingController(
+      text: widget.existingCopy?.notes ?? '',
+    );
+    _dateController = TextEditingController(
+      text: widget.existingCopy?.acquisitionDate ?? '',
+    );
+    _selectedStatus = widget.existingCopy?.status ?? 'available';
+    _isTemporary = widget.existingCopy?.isTemporary ?? false;
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _dateController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.existingCopy == null ? 'Add Copy' : 'Edit Copy',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            child: SingleChildScrollView(
-                child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                        Text(
-                            widget.existingCopy == null ? 'Add Copy' : 'Edit Copy',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                            initialValue: _selectedStatus,
-                            decoration: const InputDecoration(labelText: 'Status'),
-                            items: const [
-                                DropdownMenuItem(value: 'available', child: Text('Available')),
-                                DropdownMenuItem(value: 'borrowed', child: Text('Borrowed')),
-                                DropdownMenuItem(value: 'lost', child: Text('Lost')),
-                                DropdownMenuItem(value: 'damaged', child: Text('Damaged')),
-                            ],
-                            onChanged: (v) => setState(() => _selectedStatus = v!),
-                        ),
-                        const SizedBox(height: 16),
-                         TextFormField(
-                            controller: _dateController,
-                            decoration: const InputDecoration(
-                                labelText: 'Acquisition Date',
-                                suffixIcon: Icon(Icons.calendar_today),
-                            ),
-                            readOnly: true,
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime(1900),
-                                lastDate: DateTime.now(),
-                              );
-                              if (date != null) {
-                                  _dateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-                              }
-                            },
-                        ),
-                        const SizedBox(height: 16),
-                        SwitchListTile(
-                            title: const Text('Temporary Copy'),
-                            value: _isTemporary,
-                            onChanged: (v) => setState(() => _isTemporary = v),
-                        ),
-                         const SizedBox(height: 16),
-                         TextFormField(
-                             controller: _notesController,
-                             decoration: const InputDecoration(labelText: 'Notes'),
-                             maxLines: 3,
-                         ),
-                         const SizedBox(height: 24),
-                         ElevatedButton(
-                             onPressed: () {
-                                 // Return map of data
-                                 Navigator.pop(context, {
-                                    'acquisition_date': _dateController.text.isEmpty ? null : _dateController.text,
-                                    'notes': _notesController.text.isEmpty ? null : _notesController.text,
-                                    'status': _selectedStatus,
-                                    'is_temporary': _isTemporary,
-                                 });
-                             },
-                             child: Text(widget.existingCopy == null ? 'Add Copy' : 'Save Changes'),
-                         ),
-                         const SizedBox(height: 16),
-                    ],
-                ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedStatus,
+              decoration: const InputDecoration(labelText: 'Status'),
+              items: const [
+                DropdownMenuItem(value: 'available', child: Text('Available')),
+                DropdownMenuItem(value: 'borrowed', child: Text('Borrowed')),
+                DropdownMenuItem(value: 'lost', child: Text('Lost')),
+                DropdownMenuItem(value: 'damaged', child: Text('Damaged')),
+              ],
+              onChanged: (v) => setState(() => _selectedStatus = v!),
             ),
-         );
-    }
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _dateController,
+              decoration: const InputDecoration(
+                labelText: 'Acquisition Date',
+                suffixIcon: Icon(Icons.calendar_today),
+              ),
+              readOnly: true,
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(1900),
+                  lastDate: DateTime.now(),
+                );
+                if (date != null) {
+                  _dateController.text =
+                      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Temporary Copy'),
+              value: _isTemporary,
+              onChanged: (v) => setState(() => _isTemporary = v),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _notesController,
+              decoration: const InputDecoration(labelText: 'Notes'),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                // Return map of data
+                Navigator.pop(context, {
+                  'acquisition_date': _dateController.text.isEmpty
+                      ? null
+                      : _dateController.text,
+                  'notes': _notesController.text.isEmpty
+                      ? null
+                      : _notesController.text,
+                  'status': _selectedStatus,
+                  'is_temporary': _isTemporary,
+                });
+              },
+              child: Text(
+                widget.existingCopy == null ? 'Add Copy' : 'Save Changes',
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _VintageTextField extends StatelessWidget {
@@ -1376,7 +1494,9 @@ class _VintageTextField extends StatelessWidget {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(color: Color(0xFFD4AF37)),
-        hintStyle: TextStyle(color: const Color(0xFFC4A35A).withValues(alpha: 0.3)),
+        hintStyle: TextStyle(
+          color: const Color(0xFFC4A35A).withValues(alpha: 0.3),
+        ),
         prefixIcon: Padding(
           padding: EdgeInsets.only(bottom: maxLines > 1 ? 48.0 : 0),
           child: Icon(icon, color: const Color(0xFFD4AF37)),
@@ -1408,10 +1528,30 @@ class _VintageStatusSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statuses = [
-      ('available', Icons.check_circle, Colors.green, TranslationService.translate(context, 'status_available')),
-      ('borrowed', Icons.swap_horiz, const Color(0xFFD4A855), TranslationService.translate(context, 'status_borrowed')),
-      ('lost', Icons.error_outline, Colors.red, TranslationService.translate(context, 'status_lost')),
-      ('damaged', Icons.warning_amber, Colors.amber, TranslationService.translate(context, 'status_damaged')),
+      (
+        'available',
+        Icons.check_circle,
+        Colors.green,
+        TranslationService.translate(context, 'status_available'),
+      ),
+      (
+        'borrowed',
+        Icons.swap_horiz,
+        const Color(0xFFD4A855),
+        TranslationService.translate(context, 'status_borrowed'),
+      ),
+      (
+        'lost',
+        Icons.error_outline,
+        Colors.red,
+        TranslationService.translate(context, 'status_lost'),
+      ),
+      (
+        'damaged',
+        Icons.warning_amber,
+        Colors.amber,
+        TranslationService.translate(context, 'status_damaged'),
+      ),
     ];
 
     return Wrap(
@@ -1427,14 +1567,21 @@ class _VintageStatusSelector extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF3D2314) : const Color(0xFF2D1810),
+              color: isSelected
+                  ? const Color(0xFF3D2314)
+                  : const Color(0xFF2D1810),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? color : const Color(0xFF5D3A1A),
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: isSelected
-                  ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8)]
+                  ? [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                      ),
+                    ]
                   : null,
             ),
             child: Row(
@@ -1445,8 +1592,12 @@ class _VintageStatusSelector extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? color : const Color(0xFFC4A35A).withValues(alpha: 0.7),
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: isSelected
+                        ? color
+                        : const Color(0xFFC4A35A).withValues(alpha: 0.7),
                   ),
                 ),
               ],

@@ -150,7 +150,8 @@ class TranslationService {
       'connected_to': 'Connected to',
       'connection_failed': 'Failed to connect',
       'sending_request': 'Sending request...',
-      'connection_request_sent': 'Connection request sent to {name}. Waiting for approval.',
+      'connection_request_sent':
+          'Connection request sent to {name}. Waiting for approval.',
       'view_requests': 'View Requests',
       'network_libraries_title': 'Network Libraries',
       'manual_connection_title': 'Debug: Manual Connection',
@@ -289,12 +290,14 @@ class TranslationService {
       'saving': 'Saving...',
       'error_saving_book': 'Error saving book',
       'book_not_found': 'Book not found in database',
-      'error_fetching_isbn': 'Error looking up ISBN. Please enter details manually.',
+      'error_fetching_isbn':
+          'Error looking up ISBN. Please enter details manually.',
       'book_details_found': 'Book details found!',
       'copies_title': 'Copies of',
       'copy_number': 'Copy #',
       'no_copies': 'No copies found',
-      'copies_explanation': 'Copies let you track multiple physical copies of the same book. Useful for libraries with several copies that can be loaned to different people.',
+      'copies_explanation':
+          'Copies let you track multiple physical copies of the same book. Useful for libraries with several copies that can be loaned to different people.',
       'add_copy_title': 'Add Copy',
       'is_temporary_copy': 'Temporary copy',
       'copy_status': 'Status',
@@ -333,8 +336,7 @@ class TranslationService {
       'tags': 'Shelves',
       'shelves': 'Shelves',
       'no_shelves_title': 'No Shelves Yet',
-      'no_shelves_hint':
-          'Add shelves to your books to organize them.',
+      'no_shelves_hint': 'Add shelves to your books to organize them.',
       'go_to_library': 'Go to Library',
       'add_tag_hint': 'Add a shelf...',
       'started_reading_label': 'Started Reading',
@@ -679,7 +681,8 @@ class TranslationService {
       'local_network_title': 'Local Network',
       'no_local_libraries_found': 'No libraries found on your network',
       'libraries_found': 'libraries found',
-      'local_discovery_help': 'Make sure other BiblioGenius users are connected to the same WiFi network.',
+      'local_discovery_help':
+          'Make sure other BiblioGenius users are connected to the same WiFi network.',
       // Gamification V3
       'your_progress': 'Your Progress',
       'track_collector': 'Collector',
@@ -772,10 +775,12 @@ class TranslationService {
       // Integrations / MCP
       'integrations': 'Integrations',
       'mcp_integration': 'AI Assistants (MCP)',
-      'mcp_description': 'Connect your library to Claude, Cursor, Continue, and other AI assistants',
+      'mcp_description':
+          'Connect your library to Claude, Cursor, Continue, and other AI assistants',
       'copy_mcp_config': 'Copy MCP Config',
       'mcp_config_copied': 'MCP configuration copied to clipboard!',
-      'mcp_instructions': 'Paste this configuration into your AI assistant\'s settings file (e.g. claude_desktop_config.json for Claude Desktop)'
+      'mcp_instructions':
+          'Paste this configuration into your AI assistant\'s settings file (e.g. claude_desktop_config.json for Claude Desktop)',
     },
     'fr': {
       'app_title': 'BiblioGenius',
@@ -802,7 +807,8 @@ class TranslationService {
       'enable': 'Activer',
       'disable': 'Désactiver',
       'mfa_setup_title': 'Configurer l\'authentification à deux facteurs',
-      'mfa_scan_qr': 'Scannez ce QR code avec votre application d\'authentification',
+      'mfa_scan_qr':
+          'Scannez ce QR code avec votre application d\'authentification',
       'mfa_manual_key': 'Ou entrez cette clé manuellement',
       'mfa_enter_code': 'Entrez le code à 6 chiffres de votre application',
       'mfa_verify': 'Vérifier',
@@ -812,10 +818,12 @@ class TranslationService {
       // Intégrations / MCP
       'integrations': 'Intégrations',
       'mcp_integration': 'Assistants IA (MCP)',
-      'mcp_description': 'Connectez votre bibliothèque à Claude, Cursor, Continue et autres assistants IA',
+      'mcp_description':
+          'Connectez votre bibliothèque à Claude, Cursor, Continue et autres assistants IA',
       'copy_mcp_config': 'Copier la config MCP',
       'mcp_config_copied': 'Configuration MCP copiée dans le presse-papier !',
-      'mcp_instructions': 'Collez cette configuration dans le fichier de paramètres de votre assistant IA (ex: claude_desktop_config.json pour Claude Desktop)',
+      'mcp_instructions':
+          'Collez cette configuration dans le fichier de paramètres de votre assistant IA (ex: claude_desktop_config.json pour Claude Desktop)',
       'loans': 'Prêts',
       'edits': 'Modifications',
       'next_level_progress': 'Progression',
@@ -924,7 +932,8 @@ class TranslationService {
       'connected_to': 'Connecté à',
       'connection_failed': 'Échec de la connexion',
       'sending_request': 'Envoi de la demande...',
-      'connection_request_sent': 'Demande de connexion envoyée à {name}. En attente d\'approbation.',
+      'connection_request_sent':
+          'Demande de connexion envoyée à {name}. En attente d\'approbation.',
       'view_requests': 'Voir les demandes',
       'network_libraries_title': 'Bibliothèques du réseau',
       'manual_connection_title': 'Debug : Connexion Manuelle',
@@ -974,7 +983,8 @@ class TranslationService {
       'availability_wanted': 'Souhaité',
       // Owned checkbox
       'own_this_book': 'Je possède ce livre',
-      'own_this_book_hint': 'Décochez pour les livres de votre liste de souhaits',
+      'own_this_book_hint':
+          'Décochez pour les livres de votre liste de souhaits',
       'contact_type_label': 'Type',
       'contact_type_borrower': 'Emprunteur',
       'contact_type_lender': 'Prêteur',
@@ -1039,7 +1049,8 @@ class TranslationService {
       'copies_title': 'Exemplaires de',
       'copy_number': 'Exemplaire #',
       'no_copies': 'Aucun exemplaire',
-      'copies_explanation': 'Les exemplaires permettent de gérer plusieurs copies physiques du même livre. Utile pour les bibliothèques qui prêtent plusieurs copies à différents emprunteurs.',
+      'copies_explanation':
+          'Les exemplaires permettent de gérer plusieurs copies physiques du même livre. Utile pour les bibliothèques qui prêtent plusieurs copies à différents emprunteurs.',
       'add_copy_title': 'Ajouter un exemplaire',
       'is_temporary_copy': 'Exemplaire temporaire',
       'copy_status': 'Statut',
@@ -1080,7 +1091,8 @@ class TranslationService {
       'saving': 'Enregistrement...',
       'error_saving_book': 'Erreur lors de l\'enregistrement du livre',
       'book_not_found': 'Livre non trouvé dans la base de données',
-      'error_fetching_isbn': 'Erreur lors de la recherche de l\'ISBN. Veuillez saisir les détails manuellement.',
+      'error_fetching_isbn':
+          'Erreur lors de la recherche de l\'ISBN. Veuillez saisir les détails manuellement.',
       'book_details_found': 'Détails du livre trouvés !',
       'tags': 'Étagères',
       'shelves': 'Étagères',
@@ -1453,9 +1465,11 @@ class TranslationService {
       'error_updating': 'Erreur lors de la mise à jour',
       // mDNS Local Network Discovery
       'local_network_title': 'Réseau local',
-      'no_local_libraries_found': 'Aucune bibliothèque trouvée sur votre réseau',
+      'no_local_libraries_found':
+          'Aucune bibliothèque trouvée sur votre réseau',
       'libraries_found': 'bibliothèques trouvées',
-      'local_discovery_help': 'Assurez-vous que d\'autres utilisateurs BiblioGenius sont connectés au même réseau WiFi.',
+      'local_discovery_help':
+          'Assurez-vous que d\'autres utilisateurs BiblioGenius sont connectés au même réseau WiFi.',
       // Feedback / Bug Report
       'nav_report_bug': 'Signaler un bug',
       'feedback_title': 'Signaler un problème',
@@ -1611,7 +1625,8 @@ class TranslationService {
       'connected_to': 'Conectado a',
       'connection_failed': 'Error al conectar',
       'sending_request': 'Enviando solicitud...',
-      'connection_request_sent': 'Solicitud de conexión enviada a {name}. Esperando aprobación.',
+      'connection_request_sent':
+          'Solicitud de conexión enviada a {name}. Esperando aprobación.',
       'view_requests': 'Ver solicitudes',
       'network_libraries_title': 'Bibliotecas de la red',
       'manual_connection_title': 'Depuración: Conexión Manual',
@@ -1720,7 +1735,8 @@ class TranslationService {
       'copies_title': 'Copias de',
       'copy_number': 'Copia #',
       'no_copies': 'No se encontraron copias',
-      'copies_explanation': 'Las copias permiten rastrear múltiples ejemplares físicos del mismo libro. Útil para bibliotecas con varias copias que se prestan a diferentes personas.',
+      'copies_explanation':
+          'Las copias permiten rastrear múltiples ejemplares físicos del mismo libro. Útil para bibliotecas con varias copias que se prestan a diferentes personas.',
       'add_copy_title': 'Añadir copia',
       'is_temporary_copy': 'Copia temporal',
       'copy_status': 'Estado',
@@ -2044,7 +2060,8 @@ class TranslationService {
       'connected_to': 'Verbunden mit',
       'connection_failed': 'Verbindung fehlgeschlagen',
       'sending_request': 'Anfrage wird gesendet...',
-      'connection_request_sent': 'Verbindungsanfrage an {name} gesendet. Warte auf Genehmigung.',
+      'connection_request_sent':
+          'Verbindungsanfrage an {name} gesendet. Warte auf Genehmigung.',
       'view_requests': 'Anfragen anzeigen',
       'network_libraries_title': 'Netzwerkbibliotheken',
       'network_search_title': 'Ein Buch ausleihen',
@@ -2243,7 +2260,8 @@ class TranslationService {
       'copies_title': 'Exemplare von',
       'copy_number': 'Exemplar Nr. ',
       'no_copies': 'Keine Exemplare gefunden',
-      'copies_explanation': 'Exemplare ermöglichen die Verfolgung mehrerer physischer Kopien desselben Buches. Nützlich für Bibliotheken mit mehreren Exemplaren, die an verschiedene Personen verliehen werden.',
+      'copies_explanation':
+          'Exemplare ermöglichen die Verfolgung mehrerer physischer Kopien desselben Buches. Nützlich für Bibliotheken mit mehreren Exemplaren, die an verschiedene Personen verliehen werden.',
       'add_copy_title': 'Exemplar hinzufügen',
       'is_temporary_copy': 'Temporäres Exemplar',
       'copy_status': 'Status',

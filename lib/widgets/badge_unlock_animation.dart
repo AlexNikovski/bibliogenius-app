@@ -17,7 +17,7 @@ class BadgeUnlockAnimation {
     String? subtitle,
   }) {
     final overlay = Overlay.of(context);
-    
+
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => _BadgeUnlockAnimationWidget(
@@ -28,7 +28,7 @@ class BadgeUnlockAnimation {
         onComplete: () => entry.remove(),
       ),
     );
-    
+
     overlay.insert(entry);
   }
 }
@@ -49,26 +49,28 @@ class _BadgeUnlockAnimationWidget extends StatefulWidget {
   });
 
   @override
-  State<_BadgeUnlockAnimationWidget> createState() => _BadgeUnlockAnimationWidgetState();
+  State<_BadgeUnlockAnimationWidget> createState() =>
+      _BadgeUnlockAnimationWidgetState();
 }
 
-class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget>
+class _BadgeUnlockAnimationWidgetState
+    extends State<_BadgeUnlockAnimationWidget>
     with TickerProviderStateMixin {
   late AnimationController _mainController;
   late AnimationController _confettiController;
   late AnimationController _pulseController;
-  
+
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
-  
+
   final List<_ConfettiParticle> _confetti = [];
   final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
-    
+
     // Main animation controller (badge reveal)
     _mainController = AnimationController(
       duration: const Duration(milliseconds: 2500),
@@ -90,17 +92,18 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
     // Fade in overlay
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 15,
       ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 70),
       TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 70,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 15,
       ),
     ]).animate(_mainController);
@@ -108,23 +111,27 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
     // Badge scale - bouncy entrance
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.2)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.2,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 40,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.2, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 1.2,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 20,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 40,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 40),
     ]).animate(_mainController);
 
     // Glow effect
-    _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(_pulseController);
+    _glowAnimation = Tween<double>(
+      begin: 0.3,
+      end: 0.8,
+    ).animate(_pulseController);
 
     // Generate confetti particles
     _generateConfetti();
@@ -144,17 +151,21 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
     ];
 
     for (int i = 0; i < 50; i++) {
-      _confetti.add(_ConfettiParticle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble() * 0.3 - 0.3, // Start above screen
-        velocityX: (_random.nextDouble() - 0.5) * 0.3,
-        velocityY: _random.nextDouble() * 0.5 + 0.3,
-        rotation: _random.nextDouble() * 2 * pi,
-        rotationSpeed: (_random.nextDouble() - 0.5) * 0.2,
-        size: _random.nextDouble() * 10 + 5,
-        color: colors[_random.nextInt(colors.length)],
-        shape: _random.nextBool() ? _ConfettiShape.rectangle : _ConfettiShape.circle,
-      ));
+      _confetti.add(
+        _ConfettiParticle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble() * 0.3 - 0.3, // Start above screen
+          velocityX: (_random.nextDouble() - 0.5) * 0.3,
+          velocityY: _random.nextDouble() * 0.5 + 0.3,
+          rotation: _random.nextDouble() * 2 * pi,
+          rotationSpeed: (_random.nextDouble() - 0.5) * 0.2,
+          size: _random.nextDouble() * 10 + 5,
+          color: colors[_random.nextInt(colors.length)],
+          shape: _random.nextBool()
+              ? _ConfettiShape.rectangle
+              : _ConfettiShape.circle,
+        ),
+      );
     }
   }
 
@@ -169,7 +180,11 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_mainController, _confettiController, _pulseController]),
+      animation: Listenable.merge([
+        _mainController,
+        _confettiController,
+        _pulseController,
+      ]),
       builder: (context, _) {
         return Stack(
           children: [
@@ -177,14 +192,16 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
             Positioned.fill(
               child: IgnorePointer(
                 child: Container(
-                  color: Colors.black.withValues(alpha: 0.7 * _fadeAnimation.value),
+                  color: Colors.black.withValues(
+                    alpha: 0.7 * _fadeAnimation.value,
+                  ),
                 ),
               ),
             ),
-            
+
             // Confetti
             ..._buildConfetti(),
-            
+
             // Badge and text
             Center(
               child: IgnorePointer(
@@ -201,7 +218,9 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: widget.badgeColor.withValues(alpha: _glowAnimation.value),
+                                color: widget.badgeColor.withValues(
+                                  alpha: _glowAnimation.value,
+                                ),
                                 blurRadius: 60,
                                 spreadRadius: 20,
                               ),
@@ -221,7 +240,10 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
                         const SizedBox(height: 24),
                         // "New Badge Unlocked!" text
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -257,10 +279,7 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
                             shadows: [
-                              Shadow(
-                                color: widget.badgeColor,
-                                blurRadius: 20,
-                              ),
+                              Shadow(color: widget.badgeColor, blurRadius: 20),
                             ],
                           ),
                         ),
@@ -270,12 +289,15 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
                 ),
               ),
             ),
-            
+
             // Tap to dismiss
             Positioned.fill(
               child: GestureDetector(
                 onTap: () {
-                  _mainController.animateTo(1.0, duration: const Duration(milliseconds: 300));
+                  _mainController.animateTo(
+                    1.0,
+                    duration: const Duration(milliseconds: 300),
+                  );
                 },
                 behavior: HitTestBehavior.translucent,
               ),
@@ -289,13 +311,14 @@ class _BadgeUnlockAnimationWidgetState extends State<_BadgeUnlockAnimationWidget
   List<Widget> _buildConfetti() {
     final screenSize = MediaQuery.of(context).size;
     final progress = _confettiController.value;
-    
+
     return _confetti.map((particle) {
       final x = particle.x + particle.velocityX * progress;
       final y = particle.y + particle.velocityY * progress * 2;
-      final rotation = particle.rotation + particle.rotationSpeed * progress * 10;
+      final rotation =
+          particle.rotation + particle.rotationSpeed * progress * 10;
       final opacity = (1.0 - progress).clamp(0.0, 1.0);
-      
+
       return Positioned(
         left: x * screenSize.width,
         top: y * screenSize.height,
@@ -342,10 +365,7 @@ class AnimatedBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: animation,
-      builder: builder,
-    );
+    return ListenableBuilder(listenable: animation, builder: builder);
   }
 }
 

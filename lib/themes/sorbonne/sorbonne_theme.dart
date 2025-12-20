@@ -14,7 +14,6 @@ import '../base/theme_interface.dart';
 
 /// The Sorbonne theme definition
 
-
 /// Color palette for Sorbonne theme (Deep Vintage Library)
 class SorbonneColors {
   SorbonneColors._();
@@ -67,77 +66,73 @@ class SorbonneTheme extends AppTheme {
 
   @override
   ThemeWidgets? get customWidgets => ThemeWidgets(
-        shelfDecoration: _shelfDecoration,
-        cardDecoration: _darkLeatherCardDecoration,
-        backgroundDecoration: _backgroundDecoration,
-        lightOverlay: _candleLightOverlay,
-      );
+    shelfDecoration: _shelfDecoration,
+    cardDecoration: _darkLeatherCardDecoration,
+    backgroundDecoration: _backgroundDecoration,
+    lightOverlay: _candleLightOverlay,
+  );
 
   /// Wood shelf decoration with 3D-like effect (Darker)
   static BoxDecoration get _shelfDecoration => BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            SorbonneColors.lighterWood,
-            SorbonneColors.warmWood,
-            SorbonneColors.darkWood,
-          ],
-          stops: [0.0, 0.4, 1.0],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: SorbonneColors.shadowDeep.withValues(alpha: 0.8),
-            offset: const Offset(0, 4),
-            blurRadius: 8,
-          ),
-        ],
-      );
+    gradient: const LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        SorbonneColors.lighterWood,
+        SorbonneColors.warmWood,
+        SorbonneColors.darkWood,
+      ],
+      stops: [0.0, 0.4, 1.0],
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: SorbonneColors.shadowDeep.withValues(alpha: 0.8),
+        offset: const Offset(0, 4),
+        blurRadius: 8,
+      ),
+    ],
+  );
 
   /// Dark Leather/Wood card decoration
   static BoxDecoration get _darkLeatherCardDecoration => BoxDecoration(
-        color: SorbonneColors.warmWood,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: SorbonneColors.agedPaper.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: SorbonneColors.shadowDeep.withValues(alpha: 0.5),
-            offset: const Offset(2, 3),
-            blurRadius: 6,
-          ),
-        ],
-      );
+    color: SorbonneColors.warmWood,
+    borderRadius: BorderRadius.circular(8),
+    border: Border.all(
+      color: SorbonneColors.agedPaper.withValues(alpha: 0.3),
+      width: 1,
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: SorbonneColors.shadowDeep.withValues(alpha: 0.5),
+        offset: const Offset(2, 3),
+        blurRadius: 6,
+      ),
+    ],
+  );
 
   /// Background decoration with dark wood gradient
   static BoxDecoration get _backgroundDecoration => const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            SorbonneColors.darkWood,
-            SorbonneColors.warmWood,
-          ],
-        ),
-      );
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [SorbonneColors.darkWood, SorbonneColors.warmWood],
+    ),
+  );
 
   /// Candle light overlay effect
   static BoxDecoration get _candleLightOverlay => BoxDecoration(
-        gradient: RadialGradient(
-          center: const Alignment(-0.7, -0.3),
-          radius: 1.5,
-          colors: [
-            SorbonneColors.candleGlow.withValues(alpha: 0.1),
-            Colors.transparent,
-          ],
-        ),
-      );
+    gradient: RadialGradient(
+      center: const Alignment(-0.7, -0.3),
+      radius: 1.5,
+      colors: [
+        SorbonneColors.candleGlow.withValues(alpha: 0.1),
+        Colors.transparent,
+      ],
+    ),
+  );
 
   @override
   ThemeData buildTheme({Color? accentColor}) {
-
     return ThemeData(
       primaryColor: SorbonneColors.warmWood,
       useMaterial3: true,
@@ -290,15 +285,14 @@ class SorbonneTheme extends AppTheme {
             width: 1.5,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: SorbonneColors.goldLeaf, // Changed from waxRed for visibility
+          foregroundColor:
+              SorbonneColors.goldLeaf, // Changed from waxRed for visibility
           textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -348,7 +342,8 @@ class SorbonneTheme extends AppTheme {
           color: SorbonneColors.goldLeaf,
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          backgroundColor: SorbonneColors.darkWood, // Background to prevent clipping
+          backgroundColor:
+              SorbonneColors.darkWood, // Background to prevent clipping
         ),
         floatingLabelBehavior: FloatingLabelBehavior.auto,
       ),
@@ -363,9 +358,7 @@ class SorbonneTheme extends AppTheme {
         side: BorderSide(
           color: SorbonneColors.agedPaper.withValues(alpha: 0.3),
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         labelStyle: const TextStyle(
           color: SorbonneColors.parchment,
           fontSize: 12,
@@ -393,7 +386,9 @@ class SorbonneTheme extends AppTheme {
         elevation: 6,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: SorbonneColors.goldLeaf.withValues(alpha: 0.3)),
+          side: BorderSide(
+            color: SorbonneColors.goldLeaf.withValues(alpha: 0.3),
+          ),
         ),
       ),
 
@@ -404,10 +399,7 @@ class SorbonneTheme extends AppTheme {
         minLeadingWidth: 32,
       ),
 
-      iconTheme: const IconThemeData(
-        color: SorbonneColors.goldLeaf,
-        size: 24,
-      ),
+      iconTheme: const IconThemeData(color: SorbonneColors.goldLeaf, size: 24),
 
       dialogTheme: const DialogThemeData(
         backgroundColor: SorbonneColors.warmWood,
@@ -439,25 +431,26 @@ class SorbonneTheme extends AppTheme {
       ),
 
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? SorbonneColors.softGold
-                : SorbonneColors.warmAmber),
-        trackColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? SorbonneColors.leather
-                : SorbonneColors.darkWood),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? SorbonneColors.softGold
+              : SorbonneColors.warmAmber,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? SorbonneColors.leather
+              : SorbonneColors.darkWood,
+        ),
       ),
 
       checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected)
-                ? SorbonneColors.goldLeaf
-                : Colors.transparent),
-        checkColor: WidgetStateProperty.all(SorbonneColors.darkWood),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(3),
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? SorbonneColors.goldLeaf
+              : Colors.transparent,
         ),
+        checkColor: WidgetStateProperty.all(SorbonneColors.darkWood),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
         side: BorderSide(
           color: SorbonneColors.agedPaper.withValues(alpha: 0.5),
           width: 1.5,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 /// A toast-style notification that slides from the top when achievements are unlocked.
 /// More subtle than BadgeUnlockAnimation - good for frequent achievements.
 class AchievementPopAnimation {
@@ -16,7 +15,7 @@ class AchievementPopAnimation {
   }) {
     final overlay = Overlay.of(context);
     final effectiveColor = color ?? Colors.amber;
-    
+
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => _AchievementPopWidget(
@@ -26,7 +25,7 @@ class AchievementPopAnimation {
         onComplete: () => entry.remove(),
       ),
     );
-    
+
     overlay.insert(entry);
   }
 }
@@ -58,7 +57,7 @@ class _AchievementPopWidgetState extends State<_AchievementPopWidget>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 3000),
       vsync: this,
@@ -67,17 +66,18 @@ class _AchievementPopWidgetState extends State<_AchievementPopWidget>
     // Slide down from top
     _slideAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: -100, end: 0)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: -100,
+          end: 0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 30,
       ),
+      TweenSequenceItem(tween: ConstantTween<double>(0), weight: 55),
       TweenSequenceItem(
-        tween: ConstantTween<double>(0),
-        weight: 55,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0, end: -100)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 0,
+          end: -100,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 15,
       ),
     ]).animate(_controller);
@@ -85,17 +85,18 @@ class _AchievementPopWidgetState extends State<_AchievementPopWidget>
     // Fade in/out
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 15,
       ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 70),
       TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 70,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 15,
       ),
     ]).animate(_controller);
@@ -103,18 +104,17 @@ class _AchievementPopWidgetState extends State<_AchievementPopWidget>
     // Subtle scale bounce
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.8, end: 1.05)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.8,
+          end: 1.05,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 20,
       ),
       TweenSequenceItem(
         tween: Tween<double>(begin: 1.05, end: 1.0),
         weight: 10,
       ),
-      TweenSequenceItem(
-        tween: ConstantTween<double>(1.0),
-        weight: 70,
-      ),
+      TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 70),
     ]).animate(_controller);
 
     _controller.forward().then((_) => widget.onComplete());
@@ -142,7 +142,10 @@ class _AchievementPopWidgetState extends State<_AchievementPopWidget>
                 scale: _scaleAnimation.value,
                 child: GestureDetector(
                   onTap: () {
-                    _controller.animateTo(1.0, duration: const Duration(milliseconds: 200));
+                    _controller.animateTo(
+                      1.0,
+                      duration: const Duration(milliseconds: 200),
+                    );
                   },
                   child: Material(
                     color: Colors.transparent,
@@ -255,9 +258,6 @@ class AnimatedBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: animation,
-      builder: builder,
-    );
+    return ListenableBuilder(listenable: animation, builder: builder);
   }
 }

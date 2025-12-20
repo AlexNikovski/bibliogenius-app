@@ -33,13 +33,14 @@ class _EditBookScreenState extends State<EditBookScreen> {
   late Book _book;
   List<String> _selectedTags = []; // Add this
   String _readingStatus = 'to_read';
-  String? _originalReadingStatus; // Track original status to detect changes to 'read'
+  String?
+  _originalReadingStatus; // Track original status to detect changes to 'read'
   String? _coverUrl;
   bool _isEditing = true; // Always start in edit mode
   bool _isSaving = false;
   bool _isFetchingDetails = false;
   bool _hasChanges = false;
-  
+
   // Copy availability management
   String _copyStatus = 'available';
   int? _copyId;
@@ -80,7 +81,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
       setState(() {
         _readingStatus =
             widget.book.readingStatus ?? getDefaultStatus(isLibrarian);
-        _originalReadingStatus = _readingStatus; // Store original for comparison
+        _originalReadingStatus =
+            _readingStatus; // Store original for comparison
         _owned = widget.book.owned; // Initialize owned state
       });
       // Load copy status
@@ -235,12 +237,12 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
     try {
       await apiService.updateBook(widget.book.id!, bookData);
-      
+
       // Also update copy status if changed
       if (_copyId != null) {
         await apiService.updateCopy(_copyId!, {'status': _copyStatus});
       }
-      
+
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -272,18 +274,21 @@ class _EditBookScreenState extends State<EditBookScreen> {
             subjects: _selectedTags,
           );
         });
-        
+
         // 🎉 Book Complete celebration when status changed to "read"
         if (_readingStatus == 'read' && _originalReadingStatus != 'read') {
           BookCompleteCelebration.show(
             context,
             bookTitle: _titleController.text,
-            subtitle: TranslationService.translate(context, 'book_complete_celebration'),
+            subtitle: TranslationService.translate(
+              context,
+              'book_complete_celebration',
+            ),
           );
           // Update original status so animation doesn't re-trigger
           _originalReadingStatus = 'read';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -427,7 +432,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
                 : TextButton(
                     onPressed: _saveBook,
                     child: Text(
-                      TranslationService.translate(context, 'save_changes') ?? 'Save',
+                      TranslationService.translate(context, 'save_changes') ??
+                          'Save',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -558,11 +564,16 @@ class _EditBookScreenState extends State<EditBookScreen> {
               const SizedBox(height: 24),
 
               // Author
-              _buildLabel(TranslationService.translate(context, 'author_label') ?? 'Author'),
+              _buildLabel(
+                TranslationService.translate(context, 'author_label') ??
+                    'Author',
+              ),
               TextFormField(
                 controller: _authorController,
                 decoration: _buildInputDecoration(
-                  hint: TranslationService.translate(context, 'enter_author') ?? 'Enter author name',
+                  hint:
+                      TranslationService.translate(context, 'enter_author') ??
+                      'Enter author name',
                 ),
               ),
               const SizedBox(height: 24),
@@ -654,11 +665,12 @@ class _EditBookScreenState extends State<EditBookScreen> {
               // Owned checkbox - controls copy creation
               CheckboxListTile(
                 title: Text(
-                  TranslationService.translate(context, 'own_this_book') ?? 'I own this book',
+                  TranslationService.translate(context, 'own_this_book') ??
+                      'I own this book',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 subtitle: Text(
-                  TranslationService.translate(context, 'own_this_book_hint') ?? 
+                  TranslationService.translate(context, 'own_this_book_hint') ??
                       'Uncheck for wishlist items',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -709,7 +721,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
               // Copy Availability Status
               if (_copyId != null) ...[
                 _buildLabel(
-                  TranslationService.translate(context, 'availability_label') ?? 'Availability',
+                  TranslationService.translate(context, 'availability_label') ??
+                      'Availability',
                 ),
                 DropdownButtonFormField<String>(
                   value: _copyStatus,
@@ -719,9 +732,19 @@ class _EditBookScreenState extends State<EditBookScreen> {
                       value: 'available',
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle, size: 20, color: Colors.green),
+                          Icon(
+                            Icons.check_circle,
+                            size: 20,
+                            color: Colors.green,
+                          ),
                           const SizedBox(width: 12),
-                          Text(TranslationService.translate(context, 'availability_available') ?? 'Available'),
+                          Text(
+                            TranslationService.translate(
+                                  context,
+                                  'availability_available',
+                                ) ??
+                                'Available',
+                          ),
                         ],
                       ),
                     ),
@@ -731,7 +754,13 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         children: [
                           Icon(Icons.call_made, size: 20, color: Colors.orange),
                           const SizedBox(width: 12),
-                          Text(TranslationService.translate(context, 'availability_loaned') ?? 'Loaned'),
+                          Text(
+                            TranslationService.translate(
+                                  context,
+                                  'availability_loaned',
+                                ) ??
+                                'Loaned',
+                          ),
                         ],
                       ),
                     ),
@@ -739,9 +768,19 @@ class _EditBookScreenState extends State<EditBookScreen> {
                       value: 'borrowed',
                       child: Row(
                         children: [
-                          Icon(Icons.call_received, size: 20, color: Colors.purple),
+                          Icon(
+                            Icons.call_received,
+                            size: 20,
+                            color: Colors.purple,
+                          ),
                           const SizedBox(width: 12),
-                          Text(TranslationService.translate(context, 'availability_borrowed') ?? 'Borrowed'),
+                          Text(
+                            TranslationService.translate(
+                                  context,
+                                  'availability_borrowed',
+                                ) ??
+                                'Borrowed',
+                          ),
                         ],
                       ),
                     ),
@@ -751,7 +790,13 @@ class _EditBookScreenState extends State<EditBookScreen> {
                         children: [
                           Icon(Icons.help_outline, size: 20, color: Colors.red),
                           const SizedBox(width: 12),
-                          Text(TranslationService.translate(context, 'availability_lost') ?? 'Lost'),
+                          Text(
+                            TranslationService.translate(
+                                  context,
+                                  'availability_lost',
+                                ) ??
+                                'Lost',
+                          ),
                         ],
                       ),
                     ),
@@ -766,7 +811,6 @@ class _EditBookScreenState extends State<EditBookScreen> {
               ],
 
               // Reading Dates (Conditional)
-
               if (_readingStatus != 'to_read' &&
                   _readingStatus != 'wanted') ...[
                 _buildLabel(
@@ -923,7 +967,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
               const SizedBox(height: 32),
 
               // Save Button
-            // Save Button moved to AppBar
+              // Save Button moved to AppBar
               const SizedBox(height: 16),
 
               // Delete Button

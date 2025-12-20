@@ -12,7 +12,6 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     // debugPrint('Building AppDrawer');
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final isKid = themeProvider.isKid;
 
     return Drawer(
       child: ListView(
@@ -80,7 +79,9 @@ class AppDrawer extends StatelessWidget {
           if (AppConstants.enableP2PFeatures)
             ListTile(
               leading: const Icon(Icons.swap_horiz),
-              title: Text(TranslationService.translate(context, 'nav_requests')),
+              title: Text(
+                TranslationService.translate(context, 'nav_requests'),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 context.go('/requests');

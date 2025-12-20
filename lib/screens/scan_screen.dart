@@ -41,10 +41,10 @@ class _ScanScreenState extends State<ScanScreen> {
       if (rawValue != null && IsbnValidator.isValid(rawValue)) {
         // Skip if we already scanned this ISBN (prevents rapid duplicate scans)
         if (rawValue == _lastScannedIsbn) return;
-        
+
         foundValid = true;
         _lastScannedIsbn = rawValue; // Remember this ISBN
-        
+
         // Valid ISBN found
         setState(() {
           _isScanning = false;
