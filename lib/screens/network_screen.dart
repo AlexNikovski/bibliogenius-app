@@ -28,6 +28,7 @@ class NetworkScreen extends StatefulWidget {
   State<NetworkScreen> createState() => _NetworkScreenState();
 }
 
+class _NetworkScreenState extends State<NetworkScreen>
     with SingleTickerProviderStateMixin {
   /// Feature flag to disable P2P features (mDNS, peers, QR) for alpha stability
   // Using AppConstants.enableP2PFeatures instead
