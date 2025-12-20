@@ -510,9 +510,12 @@ class _SetupScreenState extends State<SetupScreen> {
         // Close loading dialog
         Navigator.of(context).pop();
 
-        if (context.mounted) {
-          context.go('/login');
-        }
+        // Defer navigation to next frame to avoid Navigator locking
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            context.go('/login');
+          }
+        });
       }
     } catch (e) {
       // Close loading dialog

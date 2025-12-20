@@ -29,6 +29,9 @@ class NetworkScreen extends StatefulWidget {
 
 class _NetworkScreenState extends State<NetworkScreen>
     with SingleTickerProviderStateMixin {
+  /// Feature flag to disable P2P features (mDNS, peers, QR) for alpha stability
+  static const bool _enableP2PFeatures = false;
+  
   late TabController _tabController;
 
   // Unified list state
@@ -49,12 +52,13 @@ class _NetworkScreenState extends State<NetworkScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    // When P2P disabled, only show contacts tab (no Share/Scan tabs)
+    _tabController = TabController(length: _enableP2PFeatures ? 3 : 1, vsync: this);
     _loadAllMembers();
     _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted && _tabController.index == 0) _loadAllMembers(silent: true);
     });
-    _initQRData();
+    if (_enableP2PFeatures) _initQRData();
   }
 
   @override
@@ -71,6 +75,32 @@ class _NetworkScreenState extends State<NetworkScreen>
     final api = Provider.of<ApiService>(context, listen: false);
 
     try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final libraryId = await authService.getLibraryId() ?? 1;
+
+      // When P2P disabled, only load contacts
+      if (!_enableP2PFeatures) {
+        final contactsRes = await api.getContacts(libraryId: libraryId);
+        final List<dynamic> contactsJson = contactsRes.data['contacts'] ?? [];
+        final contacts = contactsJson
+            .map((json) => Contact.fromJson(json))
+            .map((c) => NetworkMember.fromContact(c))
+            .toList();
+        
+        contacts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        
+        if (mounted) {
+          setState(() {
+            _members = contacts;
+            _localPeers = [];
+            _mdnsActive = false;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // P2P enabled: full loading logic
       // Fetch config to exclude own library from peers
       String? myUrl;
       try {
@@ -79,9 +109,6 @@ class _NetworkScreenState extends State<NetworkScreen>
       } catch (e) {
         debugPrint('Could not get library config: $e');
       }
-
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final libraryId = await authService.getLibraryId() ?? 1;
 
       // Fetch contacts and peers in parallel
       final results = await Future.wait([
@@ -499,7 +526,6 @@ class _NetworkScreenState extends State<NetworkScreen>
       ),
     );
   }
-
   // --- Build Methods ---
 
   @override
@@ -518,25 +544,28 @@ class _NetworkScreenState extends State<NetworkScreen>
             : null,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            tooltip: TranslationService.translate(
-              context,
-              'network_search_title',
+          if (_enableP2PFeatures) ...[
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              tooltip: TranslationService.translate(
+                context,
+                'network_search_title',
+              ),
+              onPressed: () => context.push('/network-search'),
             ),
-            onPressed: () => context.push('/network-search'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.keyboard, color: Colors.white),
-            tooltip: TranslationService.translate(
-              context,
-              'manual_connection_btn',
+            IconButton(
+              icon: const Icon(Icons.keyboard, color: Colors.white),
+              tooltip: TranslationService.translate(
+                context,
+                'manual_connection_btn',
+              ),
+              onPressed: _showManualConnectionDialog,
+              key: const Key('manualConnectBtn'),
             ),
-            onPressed: _showManualConnectionDialog,
-            key: const Key('manualConnectBtn'),
-          ),
+          ],
         ],
-        bottom: TabBar(
+        // Only show TabBar when P2P features enabled
+        bottom: _enableP2PFeatures ? TabBar(
           controller: _tabController,
           indicatorColor: Theme.of(context).buttonTheme.colorScheme?.onPrimary,
           labelColor: Colors.white,
@@ -555,13 +584,15 @@ class _NetworkScreenState extends State<NetworkScreen>
               text: TranslationService.translate(context, 'tab_share_code'),
             ),
           ],
-        ),
+        ) : null,
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildMemberList(), _buildScanTab(), _buildShareTab()],
-      ),
-      floatingActionButton: _tabController.index == 0
+      body: _enableP2PFeatures 
+        ? TabBarView(
+            controller: _tabController,
+            children: [_buildMemberList(), _buildScanTab(), _buildShareTab()],
+          )
+        : _buildMemberList(),
+      floatingActionButton: (!_enableP2PFeatures || _tabController.index == 0)
           ? FloatingActionButton(
               onPressed: () async {
                 await context.push('/contacts/add');
@@ -625,8 +656,8 @@ class _NetworkScreenState extends State<NetworkScreen>
     return Column(
       children: [
         _buildFilterChips(),
-        // Local Network Discovery Section (mDNS) - always show for visibility
-        _buildLocalNetworkSection(),
+        // Local Network Discovery Section (mDNS) - only show when P2P enabled
+        if (_enableP2PFeatures) _buildLocalNetworkSection(),
         if (filtered.isEmpty && _localPeers.isEmpty)
           Expanded(
             child: Center(
