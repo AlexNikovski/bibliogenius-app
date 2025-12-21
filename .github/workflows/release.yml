@@ -191,21 +191,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Clone Rust repo - Windows needs different path handling
+      # Clone Rust repo locally (inside workspace)
       - name: Clone Rust repository
-        run: git clone https://github.com/bibliogenius/bibliogenius.git ..\bibliogenius
+        run: git clone https://github.com/bibliogenius/bibliogenius.git bibliogenius
       
-      - name: Debug - Verify directory structure
+      - name: Patch Windows CMakeLists.txt to use Absolute Path
         shell: pwsh
         run: |
-          Write-Host "=== Current directory ==="
-          Get-Location
-          Write-Host "=== Parent directory contents ==="
-          Get-ChildItem ..\ | Format-Table Name, Mode
-          Write-Host "=== Rust repo Cargo.toml exists? ==="
-          if (Test-Path ..\bibliogenius\Cargo.toml) { Write-Host "FOUND: ..\bibliogenius\Cargo.toml" } else { Write-Host "NOT FOUND" }
-          Write-Host "=== Path from rust_builder/windows ==="
-          if (Test-Path rust_builder\windows\..\..\..\bibliogenius\Cargo.toml) { Write-Host "FOUND from rust_builder path" } else { Write-Host "NOT FOUND from rust_builder path" }
+          $repoPath = (Get-Item -Path "bibliogenius").FullName -replace "\\", "/"
+          Write-Host "Rust repo absolute path: $repoPath"
+          
+          $cmakePath = "rust_builder\windows\CMakeLists.txt"
+          $content = Get-Content $cmakePath
+          
+          # Replace relative path with absolute path
+          # We use -replace with regex escaping causing some backslash fury, so simple string replacement logic via .NET is safer/cleaner here or ensuring regex is correct.
+          # The target string in file is: apply_cargokit(${PROJECT_NAME} ../../../bibliogenius rust_lib_app "")
+          # Note: We previously patched it to ../../../ but original is ../../../../../../../ (7 levels). The file in repo is effectively 3 levels now after my commit 397ca4a.
+          
+          # Let's handle both cases to be safe (3 levels or 7 levels)
+          $newContent = $content -replace "\.\./\.\./\.\./bibliogenius", $repoPath
+          $newContent = $newContent -replace "\.\./\.\./\.\./\.\./\.\./\.\./\.\./bibliogenius", $repoPath
+          
+          Set-Content $cmakePath $newContent
+          Write-Host "Patched CMakeLists.txt content:"
+          Get-Content $cmakePath | Select-String "apply_cargokit"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -251,20 +261,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Clone Rust repo at expected path
+      # Clone Rust repo locally (inside workspace)
       - name: Clone Rust repository
-        run: git clone https://github.com/bibliogenius/bibliogenius.git ../bibliogenius
+        run: git clone https://github.com/bibliogenius/bibliogenius.git bibliogenius
       
-      - name: Debug - Verify directory structure
+      - name: Patch Linux CMakeLists.txt to use Absolute Path
         run: |
-          echo "=== Current directory ==="
-          pwd
-          echo "=== Parent directory contents ==="
-          ls -la ../
-          echo "=== Rust repo Cargo.toml exists? ==="
-          ls -la ../bibliogenius/Cargo.toml || echo "NOT FOUND"
-          echo "=== Path from rust_builder/linux ==="
-          ls -la rust_builder/linux/../../../bibliogenius/Cargo.toml || echo "NOT FOUND from rust_builder path"
+          # Get absolute path of cloned repo
+          REPO_PATH=$(pwd)/bibliogenius
+          echo "Rust repo absolute path: $REPO_PATH"
+          
+          # Replace relative path with absolute path
+          # Original is ../../../bibliogenius
+          sed -i "s|\.\./\.\./\.\./bibliogenius|$REPO_PATH|g" rust_builder/linux/CMakeLists.txt
+          
+          echo "Patched CMakeLists.txt:"
+          grep "apply_cargokit" rust_builder/linux/CMakeLists.txt
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
