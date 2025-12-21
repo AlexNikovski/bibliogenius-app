@@ -144,6 +144,130 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _showChangePasswordDialog() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final hasPassword = await authService.hasPasswordSet();
+    
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    String? errorText;
+    
+    if (!mounted) return;
+    
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(
+            hasPassword 
+                ? (TranslationService.translate(context, 'change_password') ?? 'Change Password')
+                : (TranslationService.translate(context, 'set_password') ?? 'Set Password'),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!hasPassword)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      TranslationService.translate(context, 'first_time_password') ??
+                          'Set a password to protect your data',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                if (hasPassword)
+                  TextField(
+                    controller: currentPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: TranslationService.translate(context, 'current_password') ?? 
+                          'Current Password',
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                if (hasPassword) const SizedBox(height: 16),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: TranslationService.translate(context, 'new_password') ?? 
+                        'New Password',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: TranslationService.translate(context, 'confirm_password') ?? 
+                        'Confirm Password',
+                    errorText: errorText,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Validate
+                if (newPasswordController.text.length < 4) {
+                  setState(() => errorText = TranslationService.translate(context, 'password_too_short') ?? 
+                      'Password must be at least 4 characters');
+                  return;
+                }
+                if (newPasswordController.text != confirmPasswordController.text) {
+                  setState(() => errorText = TranslationService.translate(context, 'passwords_dont_match') ?? 
+                      'Passwords do not match');
+                  return;
+                }
+                
+                if (hasPassword) {
+                  // Verify old password first
+                  final isValid = await authService.verifyPassword(currentPasswordController.text);
+                  if (!isValid) {
+                    setState(() => errorText = TranslationService.translate(context, 'password_incorrect') ?? 
+                        'Incorrect password');
+                    return;
+                  }
+                  // Change password
+                  await authService.changePassword(
+                    currentPasswordController.text, 
+                    newPasswordController.text,
+                  );
+                } else {
+                  // First time setting password
+                  await authService.savePassword(newPasswordController.text);
+                }
+                
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        TranslationService.translate(context, 'password_changed_success') ?? 
+                            'Password changed successfully',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(TranslationService.translate(context, 'save') ?? 'Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -327,130 +451,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-  }
-
-  Future<void> _showChangePasswordDialog() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final hasPassword = await authService.hasPasswordSet();
-    
-    final currentPasswordController = TextEditingController();
-    final newPasswordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
-    String? errorText;
-    
-    if (!mounted) return;
-    
-    await showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            hasPassword 
-                ? (TranslationService.translate(context, 'change_password') ?? 'Change Password')
-                : (TranslationService.translate(context, 'set_password') ?? 'Set Password'),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!hasPassword)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      TranslationService.translate(context, 'first_time_password') ??
-                          'Set a password to protect your data',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ),
-                if (hasPassword)
-                  TextField(
-                    controller: currentPasswordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: TranslationService.translate(context, 'current_password') ?? 
-                          'Current Password',
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                if (hasPassword) const SizedBox(height: 16),
-                TextField(
-                  controller: newPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: TranslationService.translate(context, 'new_password') ?? 
-                        'New Password',
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: TranslationService.translate(context, 'confirm_password') ?? 
-                        'Confirm Password',
-                    errorText: errorText,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                // Validate
-                if (newPasswordController.text.length < 4) {
-                  setState(() => errorText = TranslationService.translate(context, 'password_too_short') ?? 
-                      'Password must be at least 4 characters');
-                  return;
-                }
-                if (newPasswordController.text != confirmPasswordController.text) {
-                  setState(() => errorText = TranslationService.translate(context, 'passwords_dont_match') ?? 
-                      'Passwords do not match');
-                  return;
-                }
-                
-                if (hasPassword) {
-                  // Verify old password first
-                  final isValid = await authService.verifyPassword(currentPasswordController.text);
-                  if (!isValid) {
-                    setState(() => errorText = TranslationService.translate(context, 'password_incorrect') ?? 
-                        'Incorrect password');
-                    return;
-                  }
-                  // Change password
-                  await authService.changePassword(
-                    currentPasswordController.text, 
-                    newPasswordController.text,
-                  );
-                } else {
-                  // First time setting password
-                  await authService.savePassword(newPasswordController.text);
-                }
-                
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        TranslationService.translate(context, 'password_changed_success') ?? 
-                            'Password changed successfully',
-                      ),
-                    ),
-                  );
-                }
-              },
-              child: Text(TranslationService.translate(context, 'save') ?? 'Save'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildBody() {
@@ -1177,6 +1177,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
                     }
                   },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Security Settings (Change Password)
+          Text(
+            TranslationService.translate(context, 'security') ?? 'Security',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.lock_outline),
+                  title: Text(
+                    TranslationService.translate(context, 'change_password') ??
+                        'Change Password',
+                  ),
+                  subtitle: Text(
+                    (TranslationService.translate(
+                          context,
+                          'manage_login_credentials',
+                        ) ??
+                        'Manage your login credentials'),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _showChangePasswordDialog,
                 ),
               ],
             ),

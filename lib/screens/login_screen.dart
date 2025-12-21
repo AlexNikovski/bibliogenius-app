@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen>
     final isSorbonne = themeProvider.themeStyle == 'sorbonne';
     
     // Theme colors
-    final primaryColor = Theme.of(context).primaryColor;
+    final primaryColor = Theme.of(context).colorScheme.primary;
     final backgroundColor = Theme.of(context).colorScheme.surface;
     final cardColor = Theme.of(context).cardColor;
     final onSurface = Theme.of(context).colorScheme.onSurface;
