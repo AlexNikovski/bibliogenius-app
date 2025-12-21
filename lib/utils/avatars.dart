@@ -27,6 +27,13 @@ const List<Avatar> availableAvatars = [
     themeColor: Colors.orange,
     profileType: 'kid',
   ),
+  Avatar(
+    id: 'robot',
+    assetPath: 'assets/avatars/avatar_robot_placeholder.png',
+    label: 'avatar_robot',
+    themeColor: Colors.purple,
+    profileType: 'kid',
+  ),
   // TODO: Add dinosaur avatar (for kid)
   // TODO: Add dragon avatar (for kid)
   // TODO: Add unicorn avatar (for kid)

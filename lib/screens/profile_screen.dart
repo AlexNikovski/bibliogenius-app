@@ -1190,6 +1190,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 listen: false,
               );
+              // Small delay to ensure any pending theme/UI updates are settled
+              // This prevents 'Failed assertion: _dependents.isEmpty' if theme changed recently
+              await Future.delayed(const Duration(milliseconds: 200));
+              
               await authService.logout();
               if (mounted) {
                 context.go('/login');

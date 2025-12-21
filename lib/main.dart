@@ -258,9 +258,8 @@ class _AppRouterState extends State<AppRouter> {
         // 1. Setup check
         if (!isSetup && !isSetupRoute) return '/setup';
         if (isSetup && isSetupRoute) {
-          // If setup is done but user tries to go to setup, redirect.
-          // We'll let the next checks decide where.
-          return '/dashboard';
+          // Allow re-entering setup if explicitly requested
+          return null;
         }
 
         // 2. Auth check

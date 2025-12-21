@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
 import '../theme/app_design.dart';
+import '../providers/theme_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -215,6 +216,15 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _showServerSettings() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isSorbonne = themeProvider.themeStyle == 'sorbonne';
+    
+    // Theme colors
+    final primaryColor = Theme.of(context).primaryColor;
+    final backgroundColor = Theme.of(context).colorScheme.surface;
+    final cardColor = Theme.of(context).cardColor;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -227,9 +237,16 @@ class _LoginScreenState extends State<LoginScreen>
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -242,17 +259,18 @@ class _LoginScreenState extends State<LoginScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                        color: primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.dns, color: Color(0xFF6366F1)),
+                      child: Icon(Icons.dns, color: primaryColor),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Server Settings',
+                    Text(
+                      TranslationService.translate(context, 'server_settings_title') ?? 'Server Settings',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: onSurface,
                       ),
                     ),
                   ],
@@ -260,12 +278,24 @@ class _LoginScreenState extends State<LoginScreen>
                 const SizedBox(height: 24),
                 TextField(
                   controller: controller,
+                  style: TextStyle(color: onSurface),
                   decoration: InputDecoration(
-                    labelText: 'Server URL',
+                    labelText: TranslationService.translate(context, 'server_url_label') ?? 'Server URL',
                     hintText: 'http://localhost:8000',
-                    prefixIcon: const Icon(Icons.link),
+                    prefixIcon: Icon(Icons.link, color: isSorbonne ? primaryColor : null),
+                    filled: true,
+                    fillColor: isSorbonne ? Theme.of(context).scaffoldBackgroundColor : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: isSorbonne ? BorderSide(color: primaryColor.withOpacity(0.5)) : const BorderSide(),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: isSorbonne ? BorderSide(color: primaryColor.withOpacity(0.3)) : const BorderSide(color: Colors.grey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: primaryColor, width: 2),
                     ),
                   ),
                 ),
@@ -277,11 +307,13 @@ class _LoginScreenState extends State<LoginScreen>
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
+                          foregroundColor: isSorbonne ? primaryColor : null,
+                          side: isSorbonne ? BorderSide(color: primaryColor.withOpacity(0.5)) : null,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Cancel'),
+                        child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -305,24 +337,39 @@ class _LoginScreenState extends State<LoginScreen>
                           messenger.showSnackBar(
                             SnackBar(
                               content: Text(
-                                'Server changed to ${controller.text}',
+                                '${TranslationService.translate(context, 'server_changed') ?? 'Server changed to'} ${controller.text}',
                               ),
                               behavior: SnackBarBehavior.floating,
+                              backgroundColor: primaryColor,
                             ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1),
+                          backgroundColor: primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
+                          elevation: isSorbonne ? 4 : 2,
                         ),
-                        child: const Text('Save'),
+                        child: Text(TranslationService.translate(context, 'save') ?? 'Save'),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      context.go('/setup');
+                    },
+                    child: Text(
+                      TranslationService.translate(context, 'new_server_setup') ?? 'Setup Wizard',
+                      style: TextStyle(color: primaryColor),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -335,9 +382,17 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isSorbonne = themeProvider.themeStyle == 'sorbonne';
+    
+    // Choose background based on theme
+    final Gradient bgGradient = isSorbonne 
+        ? AppDesign.sorbonnePageGradient 
+        : AppDesign.primaryGradient;
+
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppDesign.primaryGradient),
+        decoration: BoxDecoration(gradient: bgGradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -364,9 +419,9 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'BiblioGenius',
-                        style: TextStyle(
+                      Text(
+                         TranslationService.translate(context, 'app_title'),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -379,7 +434,7 @@ class _LoginScreenState extends State<LoginScreen>
                         constraints: const BoxConstraints(maxWidth: 400),
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: AppDesign.elevatedShadow,
                         ),
@@ -391,17 +446,15 @@ class _LoginScreenState extends State<LoginScreen>
                                 context,
                                 'login_title',
                               ),
-                              style: const TextStyle(
-                                fontSize: 24,
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Sign in to access your library',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                              TranslationService.translate(context, 'login_subtitle') ?? 'Sign in to access your library',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -412,15 +465,15 @@ class _LoginScreenState extends State<LoginScreen>
                                 padding: const EdgeInsets.all(12),
                                 margin: const EdgeInsets.only(bottom: 16),
                                 decoration: BoxDecoration(
-                                  color: Colors.red[50],
+                                  color: Theme.of(context).colorScheme.errorContainer,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.red[200]!),
+                                  border: Border.all(color: Theme.of(context).colorScheme.error),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
                                       Icons.error_outline,
-                                      color: Colors.red[700],
+                                      color: Theme.of(context).colorScheme.error,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 8),
@@ -428,7 +481,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       child: Text(
                                         _errorMessage!,
                                         style: TextStyle(
-                                          color: Colors.red[700],
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                       ),
                                     ),
@@ -443,23 +496,10 @@ class _LoginScreenState extends State<LoginScreen>
                               textInputAction: TextInputAction.next,
                               onSubmitted: (_) => _passwordFocus.requestFocus(),
                               decoration: InputDecoration(
-                                labelText: 'Username',
+                                labelText: TranslationService.translate(context, 'username') ?? 'Username',
                                 prefixIcon: const Icon(Icons.person_outline),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF6366F1),
-                                    width: 2,
-                                  ),
                                 ),
                               ),
                             ),
@@ -473,7 +513,7 @@ class _LoginScreenState extends State<LoginScreen>
                               obscureText: _obscurePassword,
                               onSubmitted: (_) => _login(),
                               decoration: InputDecoration(
-                                labelText: 'Password',
+                                labelText: TranslationService.translate(context, 'password') ?? 'Password',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -491,19 +531,6 @@ class _LoginScreenState extends State<LoginScreen>
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF6366F1),
-                                    width: 2,
-                                  ),
-                                ),
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -516,11 +543,8 @@ class _LoginScreenState extends State<LoginScreen>
                                 key: const Key('loginButton'),
                                 onPressed: _isLoading ? null : _login,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF6366F1),
+                                  backgroundColor: Theme.of(context).primaryColor,
                                   foregroundColor: Colors.white,
-                                  disabledBackgroundColor: const Color(
-                                    0xFF6366F1,
-                                  ).withValues(alpha: 0.5),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -552,21 +576,10 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             const SizedBox(height: 16),
 
-                            // New setup link
-                            Center(
-                              child: TextButton(
-                                onPressed: () => context.go('/setup'),
-                                child: Text(
-                                  TranslationService.translate(
-                                    context,
-                                    'new_server_setup',
-                                  ),
-                                  style: const TextStyle(
-                                    color: Color(0xFF6366F1),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // New setup link removed - moved to Server Settings modal
+                          ],
+                        ),
+                      ),
                           ],
                         ),
                       ),
@@ -581,9 +594,9 @@ class _LoginScreenState extends State<LoginScreen>
                           color: Colors.white70,
                           size: 18,
                         ),
-                        label: const Text(
-                          'Server Settings',
-                          style: TextStyle(color: Colors.white70),
+                        label: Text(
+                           TranslationService.translate(context, 'server_settings_title') ?? 'Server Settings',
+                          style: const TextStyle(color: Colors.white70),
                         ),
                       ),
                     ],
