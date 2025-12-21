@@ -59,8 +59,29 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
+      # Checkout bibliogenius-app into a subdir
       - uses: actions/checkout@v4
+        with:
+          path: bibliogenius-app
       
+      # Checkout bibliogenius Rust repo at the expected relative path
+      - uses: actions/checkout@v4
+        with:
+          repository: bibliogenius/bibliogenius
+          path: bibliogenius
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r25c
+          add-to-path: true
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -75,19 +96,24 @@ jobs:
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Create .env file
+        working-directory: bibliogenius-app
         run: cp .env.example .env
 
       - name: Get dependencies
+        working-directory: bibliogenius-app
         run: flutter pub get
         
       - name: Build APK
+        working-directory: bibliogenius-app
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: flutter build apk --release
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bibliogenius-android
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: bibliogenius-app/build/app/outputs/flutter-apk/app-release.apk
 
   build-macos:
     needs: build-rust
