@@ -200,9 +200,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Clone Rust repo locally (inside rust_builder to travel with plugin)
+      # Clone Rust repo locally
       - name: Clone Rust repository
         run: git clone https://github.com/bibliogenius/bibliogenius.git rust_builder/bibliogenius
+      
+      - name: Patch CMakeLists.txt with absolute path
+        shell: pwsh
+        run: |
+          $absolutePath = (Resolve-Path "rust_builder/bibliogenius").Path.Replace('\', '/')
+          Write-Host "Using absolute Rust path: $absolutePath"
+          $cmakePath = "rust_builder/windows/CMakeLists.txt"
+          $content = Get-Content $cmakePath -Raw
+          # Replace the entire if/else block with direct absolute path
+          $newContent = $content -replace 'if\(EXISTS.*?endif\(\)', "set(RUST_MANIFEST_PATH `"$absolutePath`")"
+          Set-Content $cmakePath $newContent
+          Write-Host "Patched CMakeLists.txt:"
+          Get-Content $cmakePath
       
 
 
@@ -258,9 +271,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Clone Rust repo locally (inside rust_builder to travel with plugin)
+      # Clone Rust repo locally
       - name: Clone Rust repository
         run: git clone https://github.com/bibliogenius/bibliogenius.git rust_builder/bibliogenius
+      
+      - name: Patch CMakeLists.txt with absolute path
+        run: |
+          ABSOLUTE_PATH=$(realpath rust_builder/bibliogenius)
+          echo "Using absolute Rust path: $ABSOLUTE_PATH"
+          # Replace the if/else block with direct absolute path
+          sed -i "s|if(EXISTS.*endif()|set(RUST_MANIFEST_PATH \"$ABSOLUTE_PATH\")|g" rust_builder/linux/CMakeLists.txt
+          echo "Patched CMakeLists.txt:"
+          cat rust_builder/linux/CMakeLists.txt
       
 
 

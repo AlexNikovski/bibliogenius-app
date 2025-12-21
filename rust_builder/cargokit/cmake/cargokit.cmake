@@ -36,7 +36,16 @@ function(apply_cargokit target manifest_dir lib_name any_symbol_name)
     set(CARGOKIT_ENV
         "CARGOKIT_CMAKE=${CMAKE_COMMAND}"
         "CARGOKIT_CONFIGURATION=$<CONFIG>"
-        "CARGOKIT_MANIFEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}/${manifest_dir}"
+    )
+
+    # Handle both absolute and relative paths for manifest_dir
+    if(IS_ABSOLUTE "${manifest_dir}")
+        list(APPEND CARGOKIT_ENV "CARGOKIT_MANIFEST_DIR=${manifest_dir}")
+    else()
+        list(APPEND CARGOKIT_ENV "CARGOKIT_MANIFEST_DIR=${CMAKE_CURRENT_SOURCE_DIR}/${manifest_dir}")
+    endif()
+
+    list(APPEND CARGOKIT_ENV
         "CARGOKIT_TARGET_TEMP_DIR=${CARGOKIT_TEMP_DIR}"
         "CARGOKIT_OUTPUT_DIR=${CARGOKIT_OUTPUT_DIR}"
         "CARGOKIT_TARGET_PLATFORM=${CARGOKIT_TARGET_PLATFORM}"
