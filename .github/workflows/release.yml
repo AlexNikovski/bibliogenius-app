@@ -54,21 +54,16 @@ jobs:
             target/${{ matrix.target }}/release/bibliogenius.exe
 
   # =============================================================================
-  # BUILD FLUTTER APP
+  # BUILD FLUTTER APP (all platforms use default checkout + clone Rust repo)
   # =============================================================================
   build-android:
     runs-on: ubuntu-latest
     steps:
-      # Checkout bibliogenius-app into a subdir
       - uses: actions/checkout@v4
-        with:
-          path: bibliogenius-app
       
-      # Checkout bibliogenius Rust repo at the expected relative path
-      - uses: actions/checkout@v4
-        with:
-          repository: bibliogenius/bibliogenius
-          path: bibliogenius
+      # Clone Rust repo at expected path (3 levels up from rust_builder subdirs)
+      - name: Clone Rust repository
+        run: git clone https://github.com/bibliogenius/bibliogenius.git ../bibliogenius
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -96,15 +91,12 @@ jobs:
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Create .env file
-        working-directory: bibliogenius-app
         run: cp .env.example .env
 
       - name: Get dependencies
-        working-directory: bibliogenius-app
         run: flutter pub get
         
       - name: Build APK
-        working-directory: bibliogenius-app
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: flutter build apk --release
@@ -113,20 +105,17 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bibliogenius-android
-          path: bibliogenius-app/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
   build-macos:
     needs: build-rust
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bibliogenius-app
       
-      - uses: actions/checkout@v4
-        with:
-          repository: bibliogenius/bibliogenius
-          path: bibliogenius
+      # Clone Rust repo at expected path
+      - name: Clone Rust repository
+        run: git clone https://github.com/bibliogenius/bibliogenius.git ../bibliogenius
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -137,15 +126,12 @@ jobs:
           channel: 'stable'
           
       - name: Create .env file
-        working-directory: bibliogenius-app
         run: cp .env.example .env
 
       - name: Get dependencies
-        working-directory: bibliogenius-app
         run: flutter pub get
         
       - name: Disable Code Signing
-        working-directory: bibliogenius-app
         run: sed -i '' 's/Apple Development/-/g' macos/Runner.xcodeproj/project.pbxproj
 
       - name: Download Rust Backend (x64)
@@ -161,23 +147,20 @@ jobs:
           path: backend-arm64
 
       - name: Build macOS app
-        working-directory: bibliogenius-app
         run: flutter build macos --release
 
       - name: Inject Rust Binary
-        working-directory: bibliogenius-app
         run: |
           ARCH=$(uname -m)
           mkdir -p build/macos/Build/Products/Release/bibliogenius.app/Contents/Resources/backend
           if [ "$ARCH" == "arm64" ]; then
-            cp ../backend-arm64/bibliogenius build/macos/Build/Products/Release/bibliogenius.app/Contents/Resources/backend/
+            cp backend-arm64/bibliogenius build/macos/Build/Products/Release/bibliogenius.app/Contents/Resources/backend/
           else
-            cp ../backend-x64/bibliogenius build/macos/Build/Products/Release/bibliogenius.app/Contents/Resources/backend/
+            cp backend-x64/bibliogenius build/macos/Build/Products/Release/bibliogenius.app/Contents/Resources/backend/
           fi
           chmod +x build/macos/Build/Products/Release/bibliogenius.app/Contents/Resources/backend/bibliogenius
         
       - name: Create DMG
-        working-directory: bibliogenius-app
         run: |
           brew install create-dmg
           create-dmg \
@@ -199,21 +182,18 @@ jobs:
         with:
           name: bibliogenius-macos
           path: |
-            bibliogenius-app/BiblioGenius-macOS.dmg
-            bibliogenius-app/BiblioGenius-macOS.zip
+            BiblioGenius-macOS.dmg
+            BiblioGenius-macOS.zip
 
   build-windows:
     needs: build-rust
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bibliogenius-app
       
-      - uses: actions/checkout@v4
-        with:
-          repository: bibliogenius/bibliogenius
-          path: bibliogenius
+      # Clone Rust repo - Windows needs different path handling
+      - name: Clone Rust repository
+        run: git clone https://github.com/bibliogenius/bibliogenius.git ..\bibliogenius
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -224,11 +204,9 @@ jobs:
           channel: 'stable'
           
       - name: Create .env file
-        working-directory: bibliogenius-app
         run: copy .env.example .env
 
       - name: Get dependencies
-        working-directory: bibliogenius-app
         run: flutter pub get
         
       - name: Download Rust Backend
@@ -238,17 +216,14 @@ jobs:
           path: backend
 
       - name: Build Windows app
-        working-directory: bibliogenius-app
         run: flutter build windows --release
 
       - name: Inject Rust Binary
-        working-directory: bibliogenius-app
         run: |
           mkdir build\windows\x64\runner\Release\backend
-          copy ..\backend\bibliogenius.exe build\windows\x64\runner\Release\backend\
+          copy backend\bibliogenius.exe build\windows\x64\runner\Release\backend\
         
       - name: Create ZIP
-        working-directory: bibliogenius-app
         run: |
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath BiblioGenius-Windows.zip
           
@@ -256,20 +231,17 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bibliogenius-windows
-          path: bibliogenius-app/BiblioGenius-Windows.zip
+          path: BiblioGenius-Windows.zip
 
   build-linux:
     needs: build-rust
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bibliogenius-app
       
-      - uses: actions/checkout@v4
-        with:
-          repository: bibliogenius/bibliogenius
-          path: bibliogenius
+      # Clone Rust repo at expected path
+      - name: Clone Rust repository
+        run: git clone https://github.com/bibliogenius/bibliogenius.git ../bibliogenius
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -285,11 +257,9 @@ jobs:
           channel: 'stable'
           
       - name: Create .env file
-        working-directory: bibliogenius-app
         run: cp .env.example .env
 
       - name: Get dependencies
-        working-directory: bibliogenius-app
         run: flutter pub get
         
       - name: Download Rust Backend
@@ -299,18 +269,15 @@ jobs:
           path: backend
 
       - name: Build Linux app
-        working-directory: bibliogenius-app
         run: flutter build linux --release
 
       - name: Inject Rust Binary
-        working-directory: bibliogenius-app
         run: |
           mkdir -p build/linux/x64/release/bundle/backend
-          cp ../backend/bibliogenius build/linux/x64/release/bundle/backend/
+          cp backend/bibliogenius build/linux/x64/release/bundle/backend/
           chmod +x build/linux/x64/release/bundle/backend/bibliogenius
         
       - name: Create tarball
-        working-directory: bibliogenius-app
         run: |
           cd build/linux/x64/release
           tar -czvf ../../../../BiblioGenius-Linux.tar.gz bundle/
@@ -319,7 +286,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bibliogenius-linux
-          path: bibliogenius-app/BiblioGenius-Linux.tar.gz
+          path: BiblioGenius-Linux.tar.gz
 
   # =============================================================================
   # CREATE GITHUB RELEASE
