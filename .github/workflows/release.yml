@@ -200,40 +200,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Clone Rust repo locally
+      # Clone Rust repo locally - CMakeLists.txt uses CMAKE_SOURCE_DIR to find it
       - name: Clone Rust repository
         run: git clone https://github.com/bibliogenius/bibliogenius.git rust_builder/bibliogenius
-      
-      - name: Patch CMakeLists.txt with absolute path
-        shell: pwsh
-        run: |
-          $absolutePath = (Resolve-Path "rust_builder/bibliogenius").Path.Replace('\', '/')
-          Write-Host "Using absolute Rust path: $absolutePath"
-          $lines = @(
-            'cmake_minimum_required(VERSION 3.14)',
-            'set(PROJECT_NAME "rust_lib_app")',
-            'project(${PROJECT_NAME} LANGUAGES CXX)',
-            'include("../cargokit/cmake/cargokit.cmake")',
-            "set(RUST_MANIFEST_PATH `"$absolutePath`")",
-            'apply_cargokit(${PROJECT_NAME} ${RUST_MANIFEST_PATH} rust_lib_app "")',
-            'set(rust_lib_app_bundled_libraries "${${PROJECT_NAME}_cargokit_lib}" PARENT_SCOPE)'
-          )
-          $lines | Out-File -FilePath "rust_builder/windows/CMakeLists.txt" -Encoding utf8
-          Write-Host "Generated CMakeLists.txt:"
-          Get-Content "rust_builder/windows/CMakeLists.txt"
-      
-
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Explicit Rust Build (Debug)
-        shell: pwsh
-        run: |
-          cd rust_builder/bibliogenius
-          cargo build --release --lib
-          if ($LastExitCode -ne 0) { exit 1 }
-          Write-Host "Cargo build successful"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -276,29 +248,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Clone Rust repo locally
+      # Clone Rust repo locally - CMakeLists.txt uses CMAKE_SOURCE_DIR to find it
       - name: Clone Rust repository
         run: git clone https://github.com/bibliogenius/bibliogenius.git rust_builder/bibliogenius
-      
-      - name: Patch CMakeLists.txt with absolute path
-        run: |
-          ABSOLUTE_PATH=$(realpath rust_builder/bibliogenius)
-          echo "Using absolute Rust path: $ABSOLUTE_PATH"
-          cat > rust_builder/linux/CMakeLists.txt << 'CMAKEFILE'
-cmake_minimum_required(VERSION 3.10)
-set(PROJECT_NAME "rust_lib_app")
-project(${PROJECT_NAME} LANGUAGES CXX)
-include("../cargokit/cmake/cargokit.cmake")
-CMAKEFILE
-          echo "set(RUST_MANIFEST_PATH \"$ABSOLUTE_PATH\")" >> rust_builder/linux/CMakeLists.txt
-          cat >> rust_builder/linux/CMakeLists.txt << 'CMAKEFILE'
-apply_cargokit(${PROJECT_NAME} ${RUST_MANIFEST_PATH} rust_lib_app "")
-set(rust_lib_app_bundled_libraries "${${PROJECT_NAME}_cargokit_lib}" PARENT_SCOPE)
-CMAKEFILE
-          echo "Generated CMakeLists.txt:"
-          cat rust_builder/linux/CMakeLists.txt
-      
-
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -307,11 +259,6 @@ CMAKEFILE
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libglu1-mesa-dev libstdc++-12-dev libsecret-1-dev libsqlite3-dev libssl-dev
-          
-      - name: Explicit Rust Build (Debug)
-        run: |
-          cd rust_builder/bibliogenius
-          cargo build --release --lib
 
       - uses: subosito/flutter-action@v2
         with:

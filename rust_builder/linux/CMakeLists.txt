@@ -9,10 +9,17 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 
 include("../cargokit/cmake/cargokit.cmake")
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../../bibliogenius")
-    set(RUST_MANIFEST_PATH "../../../bibliogenius")
+# CMAKE_SOURCE_DIR points to the Flutter app root (project root)
+# This is reliable regardless of where CMake runs from during the build
+# Try CI location first (rust_builder/bibliogenius), then local dev (sibling ../bibliogenius)
+if(EXISTS "${CMAKE_SOURCE_DIR}/rust_builder/bibliogenius")
+    set(RUST_MANIFEST_PATH "${CMAKE_SOURCE_DIR}/rust_builder/bibliogenius")
+    message(STATUS "Using CI Rust path: ${RUST_MANIFEST_PATH}")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/../bibliogenius")
+    set(RUST_MANIFEST_PATH "${CMAKE_SOURCE_DIR}/../bibliogenius")
+    message(STATUS "Using local dev Rust path: ${RUST_MANIFEST_PATH}")
 else()
-    set(RUST_MANIFEST_PATH "../bibliogenius")
+    message(FATAL_ERROR "Could not find bibliogenius Rust source. Looked in:\n  - ${CMAKE_SOURCE_DIR}/rust_builder/bibliogenius\n  - ${CMAKE_SOURCE_DIR}/../bibliogenius")
 endif()
 
 apply_cargokit(${PROJECT_NAME} ${RUST_MANIFEST_PATH} rust_lib_app "")
