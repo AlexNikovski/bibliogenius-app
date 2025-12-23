@@ -636,7 +636,9 @@ class ApiService {
   Future<Response> deleteCopy(int copyId) async {
     // FFI doesn't have deleteCopy, use local HTTP server
     if (useFfi) {
-      final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:${ApiService.httpPort}'));
+      final localDio = Dio(
+        BaseOptions(baseUrl: 'http://127.0.0.1:${ApiService.httpPort}'),
+      );
       return await localDio.delete('/api/copies/$copyId');
     }
     return await _dio.delete('/api/copies/$copyId');
@@ -778,9 +780,11 @@ class ApiService {
         // Streak Calculation (Daily Logic)
         final now = DateTime.now();
         // Format YYYY-MM-DD
-        final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+        final todayStr =
+            "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
         final yesterday = now.subtract(const Duration(days: 1));
-        final yesterdayStr = "${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}";
+        final yesterdayStr =
+            "${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}";
 
         final lastActiveStr = prefs.getString('ffi_last_active_date');
         int currentStreak = prefs.getInt('ffi_current_streak') ?? 0;
@@ -863,7 +867,9 @@ class ApiService {
           lenderLevel = 1;
           lenderNext = 20;
         }
-        double lenderProgress = lenderLevel >= 3 ? 1.0 : totalLoans / lenderNext;
+        double lenderProgress = lenderLevel >= 3
+            ? 1.0
+            : totalLoans / lenderNext;
 
         // Calculate cataloguer progress (thresholds: 10, 20, 50) based on shelves (tags)
         int totalShelves = 0;
@@ -886,8 +892,9 @@ class ApiService {
           cataloguerLevel = 1;
           cataloguerNext = 20;
         }
-        double cataloguerProgress =
-            cataloguerLevel >= 3 ? 1.0 : totalShelves / cataloguerNext;
+        double cataloguerProgress = cataloguerLevel >= 3
+            ? 1.0
+            : totalShelves / cataloguerNext;
 
         return Response(
           requestOptions: RequestOptions(path: '/api/user/status'),
@@ -1078,9 +1085,12 @@ class ApiService {
         } else {
           throw Exception("Unsupported file source type");
         }
-        
+
         // Parse CSV
-        final lines = csvContent.split('\n').where((l) => l.trim().isNotEmpty).toList();
+        final lines = csvContent
+            .split('\n')
+            .where((l) => l.trim().isNotEmpty)
+            .toList();
         if (lines.isEmpty) {
           return Response(
             requestOptions: RequestOptions(path: '/api/import'),
@@ -1088,41 +1098,63 @@ class ApiService {
             data: {'error': 'Empty file'},
           );
         }
-        
+
         // First line is header
         final header = _parseCsvLine(lines.first);
         final headerLower = header.map((h) => h.toLowerCase().trim()).toList();
-        
+
         // Find column indices - support multiple formats including Goodreads
-        final titleIdx = headerLower.indexWhere((h) => h.contains('title') || h.contains('titre'));
-        final authorIdx = headerLower.indexWhere((h) => h.contains('author') || h.contains('auteur'));
+        final titleIdx = headerLower.indexWhere(
+          (h) => h.contains('title') || h.contains('titre'),
+        );
+        final authorIdx = headerLower.indexWhere(
+          (h) => h.contains('author') || h.contains('auteur'),
+        );
         // Goodreads uses "ISBN13" column - prefer it over regular ISBN if both exist
-        int isbnIdx = headerLower.indexWhere((h) => h == 'isbn13' || h == 'isbn 13');
+        int isbnIdx = headerLower.indexWhere(
+          (h) => h == 'isbn13' || h == 'isbn 13',
+        );
         if (isbnIdx == -1) {
           isbnIdx = headerLower.indexWhere((h) => h.contains('isbn'));
         }
-        final publisherIdx = headerLower.indexWhere((h) => h.contains('publisher') || h.contains('editeur') || h.contains('éditeur'));
+        final publisherIdx = headerLower.indexWhere(
+          (h) =>
+              h.contains('publisher') ||
+              h.contains('editeur') ||
+              h.contains('éditeur'),
+        );
         // Goodreads uses "Year Published" or "Original Publication Year"
-        int yearIdx = headerLower.indexWhere((h) => h == 'year published' || h == 'original publication year');
+        int yearIdx = headerLower.indexWhere(
+          (h) => h == 'year published' || h == 'original publication year',
+        );
         if (yearIdx == -1) {
-          yearIdx = headerLower.indexWhere((h) => h.contains('year') || h.contains('année') || h.contains('annee'));
+          yearIdx = headerLower.indexWhere(
+            (h) =>
+                h.contains('year') ||
+                h.contains('année') ||
+                h.contains('annee'),
+          );
         }
-        
+
         if (titleIdx == -1) {
           return Response(
             requestOptions: RequestOptions(path: '/api/import'),
             statusCode: 400,
-            data: {'error': 'Title column not found. Make sure CSV has a "Title" header.'},
+            data: {
+              'error':
+                  'Title column not found. Make sure CSV has a "Title" header.',
+            },
           );
         }
-        
+
         int imported = 0;
         for (int i = 1; i < lines.length; i++) {
           final values = _parseCsvLine(lines[i]);
-          if (values.isEmpty || (titleIdx < values.length && values[titleIdx].trim().isEmpty)) {
+          if (values.isEmpty ||
+              (titleIdx < values.length && values[titleIdx].trim().isEmpty)) {
             continue;
           }
-          
+
           try {
             // Helper to get value or null if empty
             String? getValueOrNull(int idx) {
@@ -1134,14 +1166,16 @@ class ApiService {
               }
               return val.isEmpty ? null : val;
             }
-            
+
             final book = frb.FrbBook(
-              title: titleIdx < values.length ? values[titleIdx].trim() : 'Unknown',
+              title: titleIdx < values.length
+                  ? values[titleIdx].trim()
+                  : 'Unknown',
               author: getValueOrNull(authorIdx),
               isbn: getValueOrNull(isbnIdx),
               publisher: getValueOrNull(publisherIdx),
-              publicationYear: yearIdx >= 0 && yearIdx < values.length 
-                  ? int.tryParse(values[yearIdx].trim()) 
+              publicationYear: yearIdx >= 0 && yearIdx < values.length
+                  ? int.tryParse(values[yearIdx].trim())
                   : null,
               owned: true,
             );
@@ -1152,7 +1186,7 @@ class ApiService {
             // Continue with next book
           }
         }
-        
+
         return Response(
           requestOptions: RequestOptions(path: '/api/import'),
           statusCode: 200,
@@ -1167,7 +1201,7 @@ class ApiService {
         );
       }
     }
-    
+
     // HTTP mode
     MultipartFile file;
     if (fileSource is String) {
@@ -1191,7 +1225,7 @@ class ApiService {
     final result = <String>[];
     bool inQuotes = false;
     StringBuffer current = StringBuffer();
-    
+
     for (int i = 0; i < line.length; i++) {
       final char = line[i];
       if (char == '"') {
@@ -1252,6 +1286,28 @@ class ApiService {
       '$hubUrl/api/peers/search',
       queryParameters: {'q': query},
     );
+  }
+
+  /// Update a peer's URL (for mDNS IP changes)
+  Future<Response> updatePeerUrl(int peerId, String newUrl) async {
+    if (useFfi) {
+      try {
+        final localDio = Dio(
+          BaseOptions(
+            baseUrl: 'http://localhost:${ApiService.httpPort}',
+            connectTimeout: const Duration(seconds: 5),
+          ),
+        );
+        return await localDio.put(
+          '/api/peers/$peerId/url',
+          data: {'url': newUrl},
+        );
+      } catch (e) {
+        debugPrint('❌ updatePeerUrl error: $e');
+        rethrow;
+      }
+    }
+    return await _dio.put('/api/peers/$peerId/url', data: {'url': newUrl});
   }
 
   Future<Response> syncPeer(String peerUrl) async {
@@ -1818,13 +1874,13 @@ class ApiService {
         );
 
         if (response.statusCode == 200 && response.data['success'] == true) {
-           final data = response.data;
-           if (data['user_id'] != null) {
-              await _authService.saveUserId(data['user_id']);
-           }
-           if (data['library_id'] != null) {
-              await _authService.saveLibraryId(data['library_id']);
-           }
+          final data = response.data;
+          if (data['user_id'] != null) {
+            await _authService.saveUserId(data['user_id']);
+          }
+          if (data['library_id'] != null) {
+            await _authService.saveLibraryId(data['library_id']);
+          }
         }
         return response;
       } catch (e) {
@@ -1832,30 +1888,30 @@ class ApiService {
         rethrow;
       }
     }
-      final response = await _dio.post(
-        '/api/setup',
-        data: {
-          'library_name': libraryName,
-          'library_description': libraryDescription,
-          'profile_type': profileType,
-          'theme': theme,
-          'latitude': latitude,
-          'longitude': longitude,
-          'share_location': shareLocation,
-        },
-      );
+    final response = await _dio.post(
+      '/api/setup',
+      data: {
+        'library_name': libraryName,
+        'library_description': libraryDescription,
+        'profile_type': profileType,
+        'theme': theme,
+        'latitude': latitude,
+        'longitude': longitude,
+        'share_location': shareLocation,
+      },
+    );
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        // Save returned user_id and library_id to secure storage
-        final data = response.data;
-        if (data['user_id'] != null) {
-          await _authService.saveUserId(data['user_id']);
-        }
-        if (data['library_id'] != null) {
-          await _authService.saveLibraryId(data['library_id']);
-        }
+    if (response.statusCode == 200 && response.data['success'] == true) {
+      // Save returned user_id and library_id to secure storage
+      final data = response.data;
+      if (data['user_id'] != null) {
+        await _authService.saveUserId(data['user_id']);
       }
-      return response;
+      if (data['library_id'] != null) {
+        await _authService.saveLibraryId(data['library_id']);
+      }
+    }
+    return response;
   }
 
   Future<Response> resetApp() async {

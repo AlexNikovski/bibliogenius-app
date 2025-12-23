@@ -176,6 +176,43 @@ class _NetworkScreenState extends State<NetworkScreen>
               .whereType<String>()
               .toSet();
 
+          // Auto-update URLs for PENDING peers if mDNS discovers a new IP
+          // Security: Only pending peers are updated, connected peers are not touched
+          for (final mdnsPeer in localJson) {
+            final mdnsName = (mdnsPeer['name'] as String?)?.toLowerCase();
+            final mdnsAddresses =
+                (mdnsPeer['addresses'] as List<dynamic>?)?.cast<String>() ?? [];
+            final mdnsPort = mdnsPeer['port'] ?? 8000;
+            if (mdnsName == null || mdnsAddresses.isEmpty) continue;
+
+            // Find matching peer in database by name
+            final dbPeer = peersJson.firstWhere(
+              (p) => (p['name'] as String?)?.toLowerCase() == mdnsName,
+              orElse: () => null,
+            );
+
+            if (dbPeer != null) {
+              final dbUrl = dbPeer['url'] as String?;
+              final dbStatus = dbPeer['status'] as String?;
+              final peerId = dbPeer['id'];
+              final newUrl = 'http://${mdnsAddresses.first}:$mdnsPort';
+
+              // Only update if pending AND URL is different
+              if (dbStatus == 'pending' && dbUrl != newUrl && peerId != null) {
+                debugPrint(
+                  '🔄 mDNS: Updating pending peer "$mdnsName" URL from $dbUrl to $newUrl',
+                );
+                try {
+                  await api.updatePeerUrl(peerId as int, newUrl);
+                  // Update local copy for this session
+                  dbPeer['url'] = newUrl;
+                } catch (e) {
+                  debugPrint('⚠️ mDNS: Failed to update peer URL: $e');
+                }
+              }
+            }
+          }
+
           // Filter out own library by name AND already-connected peers by NAME
           localPeers = localJson.cast<Map<String, dynamic>>().where((peer) {
             final peerName = peer['name'] as String?;
