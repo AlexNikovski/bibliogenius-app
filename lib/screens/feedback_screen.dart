@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/translation_service.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/genie_app_bar.dart';
@@ -29,12 +30,31 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   bool _isBug = true; // true = bug, false = feature request
   bool _isSubmitting = false;
 
-  // App info - Hub URL configurable via .env
-  static const String appVersion = '1.0.0';
+  // App info - fetched asynchronously
+  String _appVersion = 'Unknown';
 
   // Hub URL from environment with production fallback
   static String get _hubUrl =>
       dotenv.env['HUB_URL'] ?? 'https://hub.bibliogenius.org';
+
+  @override
+  void initState() {
+    super.initState();
+    _initPackageInfo();
+  }
+
+  Future<void> _initPackageInfo() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = info.version;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting package info: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -73,7 +93,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       }
 
       buffer.writeln('**Environment**');
-      buffer.writeln('- App Version: $appVersion');
+      buffer.writeln('- App Version: $_appVersion');
       buffer.writeln('- OS: ${_getPlatformInfo()}');
       buffer.writeln('- Profile: $profileType');
       buffer.writeln('- Language: $locale');
@@ -114,7 +134,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   ? '\n\n${_isBug ? "Steps to reproduce:" : "Proposed solution:"}\n${_stepsController.text.trim()}'
                   : ''),
           'context': {
-            'app_version': appVersion,
+            'app_version': _appVersion,
             'os': _getPlatformInfo(),
             'profile': themeProvider.profileType,
             'language': themeProvider.locale.languageCode,
@@ -382,7 +402,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '• App: v$appVersion\n'
+                      '• App: v$_appVersion\n'
                       '• OS: ${_getPlatformInfo()}\n'
                       '• Profile: ${Provider.of<ThemeProvider>(context).profileType}',
                       style: TextStyle(

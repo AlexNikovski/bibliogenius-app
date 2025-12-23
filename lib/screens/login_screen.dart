@@ -394,213 +394,221 @@ class _LoginScreenState extends State<LoginScreen>
       body: Container(
         decoration: BoxDecoration(gradient: bgGradient),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.auto_stories,
-                          size: 40,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                         TranslationService.translate(context, 'app_title'),
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Login Card
-                      Container(
-                        constraints: const BoxConstraints(maxWidth: 400),
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: AppDesign.elevatedShadow,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              TranslationService.translate(
-                                context,
-                                'login_title',
-                              ),
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+          child: Stack(
+            children: [
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Logo
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              TranslationService.translate(context, 'login_subtitle') ?? 'Sign in to access your library',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                              ),
+                            child: const Icon(
+                              Icons.auto_stories,
+                              size: 40,
+                              color: Colors.white,
                             ),
-                            const SizedBox(height: 24),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            TranslationService.translate(context, 'app_title'),
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
 
-                            // Error message
-                            if (_errorMessage != null)
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                margin: const EdgeInsets.only(bottom: 16),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.errorContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Theme.of(context).colorScheme.error),
+                          // Login Card
+                          Container(
+                            constraints: const BoxConstraints(maxWidth: 400),
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: AppDesign.elevatedShadow,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  TranslationService.translate(
+                                    context,
+                                    'login_title',
+                                  ),
+                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color: Theme.of(context).colorScheme.error,
-                                      size: 20,
+                                const SizedBox(height: 8),
+                                Text(
+                                  TranslationService.translate(context, 'login_subtitle') ?? 'Sign in to access your library',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Error message
+                                if (_errorMessage != null)
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.errorContainer,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Theme.of(context).colorScheme.error),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        _errorMessage!,
-                                        style: TextStyle(
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.error_outline,
                                           color: Theme.of(context).colorScheme.error,
+                                          size: 20,
                                         ),
-                                      ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _errorMessage!,
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.error,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-
-                            TextField(
-                              key: const Key('usernameField'),
-                              controller: _usernameController,
-                              focusNode: _usernameFocus,
-                              textInputAction: TextInputAction.next,
-                              onSubmitted: (_) => _passwordFocus.requestFocus(),
-                              decoration: InputDecoration(
-                                labelText: TranslationService.translate(context, 'username') ?? 'Username',
-                                prefixIcon: const Icon(Icons.person_outline),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Password field
-                            TextField(
-                              key: const Key('passwordField'),
-                              controller: _passwordController,
-                              focusNode: _passwordFocus,
-                              obscureText: _obscurePassword,
-                              onSubmitted: (_) => _login(),
-                              decoration: InputDecoration(
-                                labelText: TranslationService.translate(context, 'password') ?? 'Password',
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
                                   ),
-                                  onPressed: () {
-                                    setState(
-                                      () =>
-                                          _obscurePassword = !_obscurePassword,
-                                    );
-                                  },
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
 
-                            // Login button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton(
-                                key: const Key('loginButton'),
-                                onPressed: _isLoading ? null : _login,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).primaryColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                TextField(
+                                  key: const Key('usernameField'),
+                                  controller: _usernameController,
+                                  focusNode: _usernameFocus,
+                                  textInputAction: TextInputAction.next,
+                                  onSubmitted: (_) => _passwordFocus.requestFocus(),
+                                  decoration: InputDecoration(
+                                    labelText: TranslationService.translate(context, 'username') ?? 'Username',
+                                    prefixIcon: const Icon(Icons.person_outline),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
-                                  elevation: 0,
                                 ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                    : Text(
-                                        TranslationService.translate(
-                                          context,
-                                          'login_btn',
-                                        ),
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                const SizedBox(height: 16),
+
+                                // Password field
+                                TextField(
+                                  key: const Key('passwordField'),
+                                  controller: _passwordController,
+                                  focusNode: _passwordFocus,
+                                  obscureText: _obscurePassword,
+                                  onSubmitted: (_) => _login(),
+                                  decoration: InputDecoration(
+                                    labelText: TranslationService.translate(context, 'password') ?? 'Password',
+                                    prefixIcon: const Icon(Icons.lock_outline),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
                                       ),
-                              ),
+                                      onPressed: () {
+                                        setState(() => _obscurePassword = !_obscurePassword);
+                                      },
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Login button
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: ElevatedButton(
+                                    key: const Key('loginButton'),
+                                    onPressed: _isLoading ? null : _login,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context).primaryColor,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          )
+                                        : Text(
+                                            TranslationService.translate(context, 'login_btn'),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
                             ),
-                            const SizedBox(height: 16),
+                          ),
 
-                            // New setup link removed - moved to Server Settings modal
-                          ],
-                        ),
+                          const SizedBox(height: 24),
+
+                          // Server settings button
+                          TextButton.icon(
+                            onPressed: _showServerSettings,
+                            icon: const Icon(
+                              Icons.settings,
+                              color: Colors.white70,
+                              size: 18,
+                            ),
+                            label: Text(
+                              TranslationService.translate(context, 'server_settings_title') ?? 'Server Settings',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                          ),
+                        ],
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // Server settings button
-                      TextButton.icon(
-                        onPressed: _showServerSettings,
-                        icon: const Icon(
-                          Icons.settings,
-                          color: Colors.white70,
-                          size: 18,
-                        ),
-                        label: Text(
-                           TranslationService.translate(context, 'server_settings_title') ?? 'Server Settings',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+              // Version display at bottom
+              Positioned(
+                bottom: 16,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(
+                    'v0.5.0-alpha.2+2',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

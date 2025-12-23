@@ -274,6 +274,12 @@ class MdnsService {
             debugPrint('👋 mDNS: Lost "${service.name}" (key: $key)');
           }
         }
+      }, onError: (error) {
+        debugPrint('❌ mDNS: Error in discovery stream - $error');
+        // Handle stream errors (like defunct connection) gracefully
+        // We don't want to crash the app, just log and maybe cleanup
+        // If needed, we could implement a retry mechanism here
+        stopDiscovery();
       });
 
       await _discovery!.start();
