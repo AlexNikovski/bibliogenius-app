@@ -18,70 +18,107 @@ class ScaffoldWithNav extends StatelessWidget {
       body: Row(
         children: [
           if (useRail)
-            NavigationRail(
-              selectedIndex: _calculateSelectedIndex(context),
-              onDestinationSelected: (int index) =>
-                  _onItemTapped(index, context),
-              labelType: NavigationRailLabelType.all,
-              destinations: [
-                NavigationRailDestination(
-                  icon: Icon(Icons.dashboard),
-                  label: Text(
-                    TranslationService.translate(context, 'dashboard'),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: NavigationRail(
+                        selectedIndex: _calculateSelectedIndex(context),
+                        onDestinationSelected: (int index) =>
+                            _onItemTapped(index, context),
+                        labelType: NavigationRailLabelType.all,
+                        destinations: [
+                          NavigationRailDestination(
+                            icon: Icon(Icons.dashboard),
+                            label: Text(
+                              TranslationService.translate(
+                                context,
+                                'dashboard',
+                              ),
+                            ),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.book),
+                            label: Text(
+                              TranslationService.translate(context, 'library'),
+                            ),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.shelves),
+                            label: Text(
+                              TranslationService.translate(
+                                    context,
+                                    'shelves',
+                                  ) ??
+                                  'Shelves',
+                            ),
+                          ),
+                          // Unified Network (contacts + peers merged)
+                          NavigationRailDestination(
+                            icon: Icon(Icons.cloud_sync),
+                            label: Text(
+                              TranslationService.translate(context, 'network'),
+                            ),
+                          ),
+                          // P2P Requests
+                          NavigationRailDestination(
+                            icon: Icon(Icons.swap_horiz),
+                            label: Text(
+                              TranslationService.translate(
+                                context,
+                                'nav_requests',
+                              ),
+                            ),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.person),
+                            label: Text(
+                              TranslationService.translate(context, 'profile'),
+                            ),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.insights),
+                            label: Text(
+                              TranslationService.translate(
+                                context,
+                                'nav_statistics',
+                              ),
+                            ),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.school),
+                            label: Text(
+                              TranslationService.translate(
+                                context,
+                                'menu_tutorial',
+                              ),
+                            ),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.help_outline),
+                            label: Text(
+                              TranslationService.translate(context, 'nav_help'),
+                            ),
+                          ),
+                          NavigationRailDestination(
+                            icon: Icon(Icons.bug_report),
+                            label: Text(
+                              TranslationService.translate(
+                                context,
+                                'nav_report_bug',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.book),
-                  label: Text(TranslationService.translate(context, 'library')),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.shelves),
-                  label: Text(
-                    TranslationService.translate(context, 'shelves') ??
-                        'Shelves',
-                  ),
-                ),
-                // Unified Network (contacts + peers merged)
-                NavigationRailDestination(
-                  icon: Icon(Icons.cloud_sync),
-                  label: Text(TranslationService.translate(context, 'network')),
-                ),
-                // Requests hidden for now
-                // NavigationRailDestination(
-                //   icon: Icon(Icons.swap_horiz),
-                //   label: Text(
-                //     TranslationService.translate(context, 'requests'),
-                //   ),
-                // ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person),
-                  label: Text(TranslationService.translate(context, 'profile')),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.insights),
-                  label: Text(
-                    TranslationService.translate(context, 'nav_statistics'),
-                  ),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.school),
-                  label: Text(
-                    TranslationService.translate(context, 'menu_tutorial'),
-                  ),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.help_outline),
-                  label: Text(
-                    TranslationService.translate(context, 'nav_help'),
-                  ),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.bug_report),
-                  label: Text(
-                    TranslationService.translate(context, 'nav_report_bug'),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           if (useRail) const VerticalDivider(thickness: 1, width: 1),
           Expanded(child: child),
@@ -101,12 +138,12 @@ class ScaffoldWithNav extends StatelessWidget {
         location.startsWith('/peers')) {
       return 3;
     }
-    // Requests hidden: if (location.startsWith('/requests')) return 4;
-    if (location.startsWith('/profile')) return 4;
-    if (location.startsWith('/statistics')) return 5;
-    if (location.startsWith('/onboarding')) return 6;
-    if (location.startsWith('/help')) return 7;
-    if (location.startsWith('/feedback')) return 8;
+    if (location.startsWith('/requests')) return 4;
+    if (location.startsWith('/profile')) return 5;
+    if (location.startsWith('/statistics')) return 6;
+    if (location.startsWith('/onboarding')) return 7;
+    if (location.startsWith('/help')) return 8;
+    if (location.startsWith('/feedback')) return 9;
     return 0;
   }
 
@@ -124,20 +161,22 @@ class ScaffoldWithNav extends StatelessWidget {
       case 3:
         context.go('/network');
         break;
-      // case 4: context.go('/requests'); break; // Requests hidden
       case 4:
-        context.go('/profile');
+        context.go('/requests');
         break;
       case 5:
-        context.go('/statistics');
+        context.go('/profile');
         break;
       case 6:
-        context.push('/onboarding');
+        context.go('/statistics');
         break;
       case 7:
-        context.go('/help');
+        context.push('/onboarding');
         break;
       case 8:
+        context.go('/help');
+        break;
+      case 9:
         context.push('/feedback');
         break;
     }
