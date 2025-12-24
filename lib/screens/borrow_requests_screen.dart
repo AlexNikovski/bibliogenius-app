@@ -585,24 +585,30 @@ class _BorrowRequestsScreenState extends State<BorrowRequestsScreen>
 
   Widget _buildStatusText(String status) {
     Color color;
+    String label;
     switch (status) {
       case 'pending':
         color = Colors.orange;
+        label = 'EN ATTENTE';
         break;
       case 'accepted':
         color = Colors.green;
+        label = 'ACCEPTÉ';
         break;
       case 'rejected':
         color = Colors.red;
+        label = 'REFUSÉ';
         break;
       case 'returned':
         color = const Color(0xFFD4A855); // Bronze instead of blue
+        label = 'RETOURNÉ';
         break;
       default:
         color = Colors.grey;
+        label = status.toUpperCase();
     }
     return Text(
-      status.toUpperCase(),
+      label,
       style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
     );
   }

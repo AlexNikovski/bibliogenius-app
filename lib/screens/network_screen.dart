@@ -1273,24 +1273,42 @@ class _NetworkScreenState extends State<NetworkScreen>
           ),
           const SizedBox(width: 8),
           if (!isPending && isNetwork)
-            ElevatedButton(
-              onPressed: () => _onMemberTap(member),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _onMemberTap(member),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Browse',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 20,
+                  ),
+                  tooltip: TranslationService.translate(
+                    context,
+                    'tooltip_remove_library',
+                  ),
+                  onPressed: () => _deleteMember(member),
                 ),
-              ),
-              child: const Text(
-                'Browse',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              ],
             )
           else
             _buildMemberActions(member),
