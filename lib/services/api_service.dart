@@ -2173,6 +2173,35 @@ class ApiService {
     }
   }
 
+  Future<Tag> createTag(String name, {int? parentId}) async {
+    if (useFfi) {
+      return FfiService().createTag(name, parentId: parentId);
+    }
+    final response = await _dio.post(
+      '/api/tags',
+      data: {'name': name, 'parent_id': parentId},
+    );
+    return Tag.fromJson(response.data['tag']);
+  }
+
+  Future<Tag> updateTag(int id, String name, {int? parentId}) async {
+    if (useFfi) {
+      return FfiService().updateTag(id, name, parentId: parentId);
+    }
+    final response = await _dio.put(
+      '/api/tags/$id',
+      data: {'name': name, 'parent_id': parentId},
+    );
+    return Tag.fromJson(response.data['tag']);
+  }
+
+  Future<void> deleteTag(int id) async {
+    if (useFfi) {
+      return FfiService().deleteTag(id);
+    }
+    await _dio.delete('/api/tags/$id');
+  }
+
   // ============ P2P Device Pairing ============
 
   /// Generate a pairing code on this device (Source) by calling the local backend.

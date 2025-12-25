@@ -6,6 +6,9 @@ import '../services/translation_service.dart';
 import '../providers/theme_provider.dart';
 import '../utils/book_status.dart';
 import '../models/book.dart';
+import '../widgets/hierarchical_tag_selector.dart';
+import '../models/tag.dart';
+
 import '../widgets/book_complete_animation.dart';
 
 class EditBookScreen extends StatefulWidget {
@@ -94,43 +97,36 @@ class _EditBookScreenState extends State<EditBookScreen> {
         : [];
 
     // Get profile type from ThemeProvider after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-      final isLibrarian = themeProvider.isLibrarian;
-
-      // Get valid status values for current profile
-      final validStatuses = isLibrarian
-          ? librarianStatuses.map((s) => s.value).toList()
-          : individualStatuses.map((s) => s.value).toList();
-
-      setState(() {
-        final status =
-            widget.book.readingStatus ?? getDefaultStatus(isLibrarian);
-        // Sanitize: ensure status is valid for current profile, fallback to default
-        _readingStatus = validStatuses.contains(status)
-            ? status
-            : getDefaultStatus(isLibrarian);
-        _originalReadingStatus =
-            _readingStatus; // Store original for comparison
-        _owned = widget.book.owned; // Initialize owned state
-      });
-      // Load copy status
-      _loadCopyStatus();
-    });
-
     // Add listener for ISBN changes
     _isbnController.addListener(_onIsbnChanged);
   }
 
-  // ... (keeping _loadCopyStatus and _fetchBookDetails methods as is, assuming they are outside the range or I will include them if needed, see strict ReplacementContent)
-  // Actually, I need to update _fetchBookDetails too to populate _authors!
-  // But wait, the previous tool call viewed lines 1-800.
-  // The ReplacementBlock spans lines 34-276 roughly.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-  // Let's do the initialization first, and I'll do _fetchBookDetails in a separate chunk to be safe or verify line numbers.
-  // Wait, I can do multiple chunks if they are non-contiguous, but I should use multi_replace for that.
-  // Here I'm using replace_file_content.
-  // Let's just focus on Init and Save logic first.
+    // Initialize status based on profile - doing this here ensures we have context access
+    // and it runs before build, preventing the invalid 'to_read' default for librarians
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isLibrarian = themeProvider.isLibrarian;
+
+    // Get valid status values for current profile
+    final validStatuses = isLibrarian
+        ? librarianStatuses.map((s) => s.value).toList()
+        : individualStatuses.map((s) => s.value).toList();
+
+    // Use book status if valid, else default
+    // Only set if not already set (to avoid implementation overriding user changes on hot reload/rebuilds)
+    if (_originalReadingStatus == null) {
+      final status = widget.book.readingStatus ?? getDefaultStatus(isLibrarian);
+      _readingStatus = validStatuses.contains(status)
+          ? status
+          : getDefaultStatus(isLibrarian);
+      _originalReadingStatus = _readingStatus;
+      _owned = widget.book.owned;
+      _loadCopyStatus();
+    }
+  }
 
   Future<void> _loadCopyStatus() async {
     // ... existing implementation
@@ -299,7 +295,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
       'finished_reading_at': _finishedDateController.text.isNotEmpty
           ? DateTime.parse(_finishedDateController.text).toIso8601String()
           : null,
-      'subjects': _selectedTags,
+      'subjects': _selectedTags.isEmpty
+          ? null
+          : _selectedTags, // Ensure null if empty for cleaner JSON
       'owned': _owned,
     };
 
@@ -432,6 +430,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
       }
     }
   }
+
+  // Tag tree dialog removed - replaced by HierarchicalTagSelector
 
   @override
   Widget build(BuildContext context) {
@@ -772,6 +772,19 @@ class _EditBookScreenState extends State<EditBookScreen> {
                   final isLibrarian = themeProvider.isLibrarian;
                   final statusOptions = getStatusOptions(context, isLibrarian);
 
+                  // Safety check: ensure current value exists in options
+                  if (!statusOptions.any((s) => s.value == _readingStatus)) {
+                    // If mismatch, add a temporary option to prevent crash
+                    statusOptions.add(
+                      BookStatus(
+                        value: _readingStatus,
+                        label: _readingStatus,
+                        icon: Icons.help_outline,
+                        color: Colors.grey,
+                      ),
+                    );
+                  }
+
                   return DropdownButtonFormField<String>(
                     value: _readingStatus,
                     decoration: _buildInputDecoration(),
@@ -956,96 +969,14 @@ class _EditBookScreenState extends State<EditBookScreen> {
               ],
 
               // Tags
-              _buildLabel(TranslationService.translate(context, 'tags')),
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) async {
-                  if (textEditingValue.text == '') {
-                    return const Iterable<String>.empty();
-                  }
-
-                  // Fetch tags from backend or filter local list if we had one
-                  try {
-                    final api = Provider.of<ApiService>(context, listen: false);
-                    final tags = await api.getTags();
-                    final tagNames = tags.map((t) => t.name).toList();
-
-                    return tagNames.where((String option) {
-                      return option.toLowerCase().contains(
-                            textEditingValue.text.toLowerCase(),
-                          ) &&
-                          !_selectedTags.contains(option);
-                    });
-                  } catch (e) {
-                    return const Iterable<String>.empty();
-                  }
-                },
-                onSelected: (String selection) {
+              HierarchicalTagSelector(
+                selectedTags: _selectedTags,
+                onTagsChanged: (tags) {
                   setState(() {
-                    final trimmed = selection.trim();
-                    if (trimmed.isNotEmpty &&
-                        !_selectedTags.contains(trimmed)) {
-                      _selectedTags.add(trimmed);
-                    }
-                    _tagsController.clear();
+                    _selectedTags = tags;
+                    _hasChanges = true;
                   });
                 },
-                fieldViewBuilder:
-                    (context, controller, focusNode, onFieldSubmitted) {
-                      _tagsController =
-                          controller; // Keep reference to check in _saveBook
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: _buildInputDecoration(
-                          hint: TranslationService.translate(
-                            context,
-                            'add_tag_hint',
-                          ),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: () {
-                              if (controller.text.trim().isNotEmpty) {
-                                setState(() {
-                                  final val = controller.text.trim();
-                                  if (!_selectedTags.contains(val)) {
-                                    _selectedTags.add(val);
-                                  }
-                                  controller.clear();
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                        onFieldSubmitted: (String value) {
-                          final trimmed = value.trim();
-                          if (trimmed.isNotEmpty) {
-                            setState(() {
-                              if (!_selectedTags.contains(trimmed)) {
-                                _selectedTags.add(trimmed);
-                              }
-                              controller.clear();
-                            });
-                            focusNode.requestFocus(); // Keep focus to add more
-                          }
-                        },
-                      );
-                    },
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _selectedTags.map((tag) {
-                  return Chip(
-                    label: Text(tag),
-                    deleteIcon: const Icon(Icons.close, size: 18),
-                    onDeleted: () {
-                      setState(() {
-                        _selectedTags.remove(tag);
-                      });
-                    },
-                  );
-                }).toList(),
               ),
               const SizedBox(height: 32),
 

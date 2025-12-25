@@ -57,4 +57,60 @@ class Tag {
       children: newChildren,
     );
   }
+
+  /// Get all descendant IDs (children, grandchildren, etc.) for this tag
+  /// Requires a flat list of all tags to traverse the hierarchy
+  static Set<int> getDescendantIds(int tagId, List<Tag> allTags) {
+    final descendants = <int>{};
+    void collectChildren(int parentId) {
+      for (final tag in allTags) {
+        if (tag.parentId == parentId && tag.id > 0) {
+          descendants.add(tag.id);
+          collectChildren(tag.id);
+        }
+      }
+    }
+
+    collectChildren(tagId);
+    return descendants;
+  }
+
+  /// Get all tag names (including descendants) that match the given tag
+  /// Used for filtering books by tag with hierarchy support
+  static Set<String> getTagNamesWithDescendants(Tag tag, List<Tag> allTags) {
+    final names = <String>{
+      tag.fullPath.toLowerCase(),
+      tag.name.toLowerCase(), // Also include simple name for matching
+    };
+    final descendantIds = getDescendantIds(tag.id, allTags);
+    for (final t in allTags) {
+      if (descendantIds.contains(t.id)) {
+        names.add(t.fullPath.toLowerCase());
+        names.add(t.name.toLowerCase());
+      }
+    }
+    return names;
+  }
+
+  /// Get aggregated book count (this tag + all descendants)
+  static int getAggregatedCount(Tag tag, List<Tag> allTags) {
+    int total = tag.count;
+    final descendantIds = getDescendantIds(tag.id, allTags);
+    for (final t in allTags) {
+      if (descendantIds.contains(t.id)) {
+        total += t.count;
+      }
+    }
+    return total;
+  }
+
+  /// Get only root-level tags (no parent)
+  static List<Tag> getRootTags(List<Tag> allTags) {
+    return allTags.where((t) => t.parentId == null).toList();
+  }
+
+  /// Get direct children of a tag
+  static List<Tag> getDirectChildren(int tagId, List<Tag> allTags) {
+    return allTags.where((t) => t.parentId == tagId).toList();
+  }
 }

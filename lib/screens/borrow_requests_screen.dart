@@ -68,14 +68,21 @@ class _LoansScreenState extends State<LoansScreen>
       // Fetch active loans (books I lent)
       final loansRes = await api.getLoans(status: 'active');
 
+      List<dynamic> borrowedBooks = [];
+      try {
+        final borrowedRes = await api.getLoans(status: 'borrowed');
+        borrowedBooks = borrowedRes.data['loans'] ?? [];
+      } catch (e) {
+        debugPrint('Could not fetch borrowed books: $e');
+      }
+
       if (mounted) {
         setState(() {
           _incomingRequests = inRes.data;
           _outgoingRequests = outRes.data;
           _connectionRequests = connRes.data['requests'] ?? [];
           _activeLoans = loansRes.data['loans'] ?? [];
-          // TODO: Fetch borrowed books when API is available
-          _borrowedBooks = [];
+          _borrowedBooks = borrowedBooks;
         });
       }
     } catch (e) {
@@ -207,12 +214,12 @@ class _LoansScreenState extends State<LoansScreen>
     return Column(
       children: [
         Material(
-          color: Theme.of(context).primaryColor.withOpacity(0.1),
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
           child: TabBar(
             controller: _requestsTabController,
-            labelColor: Theme.of(context).primaryColor,
+            labelColor: Theme.of(context).colorScheme.primary,
             unselectedLabelColor: Colors.grey,
-            indicatorColor: Theme.of(context).primaryColor,
+            indicatorColor: Theme.of(context).colorScheme.primary,
             tabs: [
               Tab(
                 text:

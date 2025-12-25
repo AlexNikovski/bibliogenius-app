@@ -24,6 +24,7 @@ import 'package:dio/dio.dart' show Response;
 import 'dart:convert'; // For base64Decode
 import '../themes/base/theme_registry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/app_constants.dart';
 import '../audio/audio_module.dart'; // Audio module (decoupled)
 
 class ProfileScreen extends StatefulWidget {
@@ -849,6 +850,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const Divider(),
+                // Hierarchical Tags Toggle
+                SwitchListTile(
+                  title: Text(
+                    TranslationService.translate(context, 'enable_taxonomy') ??
+                        'Hierarchical Tags',
+                  ),
+                  subtitle: Text(
+                    TranslationService.translate(
+                          context,
+                          'enable_taxonomy_subtitle',
+                        ) ??
+                        'Use "Parent > Child" naming to create sub-tags',
+                  ),
+                  value: AppConstants.enableHierarchicalTags,
+                  onChanged: (bool value) async {
+                    setState(() {
+                      AppConstants.enableHierarchicalTags = value;
+                    });
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('enableHierarchicalTags', value);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            TranslationService.translate(
+                                  context,
+                                  'restart_required_for_changes',
+                                ) ??
+                                'Please restart the app for changes to take full effect',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                const Divider(),
                 ListTile(
                   leading: const Icon(Icons.phonelink_setup),
                   title: Text(
@@ -1011,6 +1048,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: _exportData,
             icon: const Icon(Icons.download),
             label: Text(TranslationService.translate(context, 'export_backup')),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Shelf Management (back-office)
+          ElevatedButton.icon(
+            onPressed: () => context.push('/shelves-management'),
+            icon: const Icon(Icons.folder_special),
+            label: Text(
+              TranslationService.translate(context, 'manage_shelves') ??
+                  'Manage Shelves',
+            ),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
             ),

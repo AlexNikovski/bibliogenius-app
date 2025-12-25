@@ -124,7 +124,6 @@ class _LinkDeviceScreenState extends State<LinkDeviceScreen>
       final apiService = Provider.of<ApiService>(context, listen: false);
       final authService = Provider.of<AuthService>(context, listen: false);
 
-    try {
       final uuid = await authService.getOrCreateLibraryUuid();
       final ip = _myIp ?? 'localhost:${ApiService.httpPort}';
 
@@ -178,10 +177,6 @@ class _LinkDeviceScreenState extends State<LinkDeviceScreen>
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       final authService = Provider.of<AuthService>(context, listen: false);
-
-    try {
-      final host = _ipController.text.trim();
-      final code = _codeController.text.trim();
 
       // Verify code with remote
       final res = await apiService.verifyRemotePairingCode(

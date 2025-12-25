@@ -13,6 +13,8 @@ import 'services/sync_service.dart';
 import 'services/translation_service.dart';
 import 'services/mdns_service.dart';
 import 'services/ffi_service.dart';
+import 'utils/app_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/theme_provider.dart';
 import 'audio/audio_module.dart'; // Audio module (decoupled)
 import 'screens/login_screen.dart';
@@ -31,6 +33,7 @@ import 'screens/setup_screen.dart';
 import 'screens/external_search_screen.dart';
 import 'screens/borrow_requests_screen.dart';
 import 'screens/peer_book_list_screen.dart';
+import 'screens/shelf_management_screen.dart';
 import 'screens/search_peer_screen.dart';
 import 'screens/genie_chat_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -116,6 +119,12 @@ void main([List<String>? args]) async {
   // Load settings early so library name is available for mDNS
   try {
     await themeProvider.loadSettings();
+    // Initialize feature flags
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey('enableHierarchicalTags')) {
+      AppConstants.enableHierarchicalTags =
+          prefs.getBool('enableHierarchicalTags') ?? true;
+    }
   } catch (e) {
     debugPrint('Error loading settings early: $e');
   }
@@ -322,6 +331,10 @@ class _AppRouterState extends State<AppRouter> {
         GoRoute(
           path: '/genie-chat',
           builder: (context, state) => const GenieChatScreen(),
+        ),
+        GoRoute(
+          path: '/shelves-management',
+          builder: (context, state) => const ShelfManagementScreen(),
         ),
         ShellRoute(
           builder: (context, state, child) {
