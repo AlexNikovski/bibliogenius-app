@@ -29,7 +29,8 @@ class BookListScreen extends StatefulWidget {
   State<BookListScreen> createState() => _BookListScreenState();
 }
 
-class _BookListScreenState extends State<BookListScreen> {
+class _BookListScreenState extends State<BookListScreen>
+    with WidgetsBindingObserver {
   List<Book> _books = [];
   List<Book> _filteredBooks = [];
 
@@ -59,6 +60,7 @@ class _BookListScreenState extends State<BookListScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _searchQuery = widget.initialSearchQuery ?? '';
     if (_searchQuery.isNotEmpty) {
       _isSearching = true;
@@ -98,7 +100,16 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh books when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      _fetchBooks();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
