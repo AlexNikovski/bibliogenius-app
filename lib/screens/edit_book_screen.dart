@@ -375,6 +375,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
             ),
           ),
         );
+
+        // Redirect to previous screen (book details)
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {
