@@ -967,8 +967,13 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
+          // Show progress intelligently: if current >= nextThreshold, show level completed
           Text(
-            '${track.current}/${track.nextThreshold}',
+            track.isMaxLevel
+                ? '${track.current} ✓'
+                : track.current >= track.nextThreshold
+                ? '${track.current}/${track.nextThreshold} ✓'
+                : '${track.current}/${track.nextThreshold}',
             style: TextStyle(fontSize: 10, color: Colors.grey[600]),
           ),
         ],

@@ -490,7 +490,15 @@ class TrackProgressWidget extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(trackName, style: labelStyle),
-        Text('${track.current}/${track.nextThreshold}', style: progressStyle),
+        // Show progress intelligently: if current >= nextThreshold, show level completed
+        Text(
+          track.isMaxLevel
+              ? '${track.current} ✓'
+              : track.current >= track.nextThreshold
+              ? '${track.current}/${track.nextThreshold} ✓'
+              : '${track.current}/${track.nextThreshold}',
+          style: progressStyle,
+        ),
       ],
     );
   }
