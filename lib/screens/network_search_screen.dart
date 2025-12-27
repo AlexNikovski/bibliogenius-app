@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../widgets/genie_app_bar.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
+import 'package:dio/dio.dart';
+import 'dart:async';
 
 class NetworkSearchScreen extends StatefulWidget {
   const NetworkSearchScreen({super.key});
@@ -39,30 +41,49 @@ class _NetworkSearchScreenState extends State<NetworkSearchScreen> {
 
       if (peersResponse.statusCode == 200) {
         final List<dynamic> peers = peersResponse.data['peers'] ?? [];
-        List<dynamic> allBooks = [];
 
         // Search in each peer's library
-        for (var peer in peers) {
-          if (peer['status'] == 'accepted' && peer['url'] != null) {
-            try {
-              final booksResponse = await apiService.getPeerBooksByUrl(
-                peer['url'],
-              );
-              if (booksResponse.statusCode == 200) {
-                final List<dynamic> books = booksResponse.data['books'] ?? [];
-                // Add peer info to each book for display
-                for (var book in books) {
-                  book['_peer_name'] = peer['name'];
-                  book['_peer_id'] = peer['id'];
-                  book['_peer_url'] = peer['url'];
-                }
-                allBooks.addAll(books);
+        // Search in each peer's library in parallel to prevent blocking
+        final searchFutures = peers.map((peer) async {
+          if (peer['status'] != 'accepted' || peer['url'] == null) return [];
+
+          try {
+            // Add a timeout to prevent one slow peer from blocking everyone
+            // ignore: unnecessary_cast
+            final Future<Response> request = apiService.getPeerBooksByUrl(
+              peer['url'],
+            );
+
+            // We use a local timeout to ensure the UI stays responsive
+            final response = await request.timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                throw TimeoutException('Peer ${peer['name']} timed out');
+              },
+            );
+
+            if (response.statusCode == 200) {
+              final List<dynamic> books = response.data['books'] ?? [];
+              // Add peer info to each book for display
+              for (var book in books) {
+                book['_peer_name'] = peer['name'];
+                book['_peer_id'] = peer['id'];
+                book['_peer_url'] = peer['url'];
               }
-            } catch (e) {
-              debugPrint('Error fetching books from peer ${peer['name']}: $e');
+              return books;
             }
+          } catch (e) {
+            // Log error but don't fail the whole search
+            debugPrint('Error fetching books from peer ${peer['name']}: $e');
           }
-        }
+          return <dynamic>[];
+        }).toList();
+
+        final resultsListOfLists = await Future.wait(searchFutures);
+        // Flatten the list of lists
+        final List<dynamic> allBooks = resultsListOfLists
+            .expand((x) => x)
+            .toList();
 
         // Filter books based on search query
         final results = allBooks.where((book) {

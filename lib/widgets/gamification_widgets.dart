@@ -51,6 +51,156 @@ BadgeInfo getBadgeInfo(int level) {
   }
 }
 
+/// Shows a dialog explaining the level thresholds for a gamification track.
+void showTrackLevelInfo(
+  BuildContext context, {
+  required String trackName,
+  required TrackProgress track,
+  required IconData icon,
+  required Color color,
+}) {
+  // Define thresholds for each track type
+  // These match the backend thresholds
+  final thresholds = {
+    'collector': [10, 50, 100],
+    'reader': [5, 20, 50],
+    'lender': [5, 20, 50],
+    'cataloguer': [10, 50, 100],
+  };
+
+  // Determine track type from name
+  String trackType = 'collector';
+  if (trackName.toLowerCase().contains('lect')) {
+    trackType = 'reader';
+  } else if (trackName.toLowerCase().contains('prêt') ||
+      trackName.toLowerCase().contains('lender')) {
+    trackType = 'lender';
+  } else if (trackName.toLowerCase().contains('catal')) {
+    trackType = 'cataloguer';
+  }
+
+  final levels = thresholds[trackType] ?? [10, 50, 100];
+  final levelNames = [
+    TranslationService.translate(context, 'level_bronze') ?? 'Bronze',
+    TranslationService.translate(context, 'level_silver') ?? 'Argent',
+    TranslationService.translate(context, 'level_gold') ?? 'Or',
+  ];
+
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              trackName,
+              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            TranslationService.translate(context, 'badge_progress_info') ??
+                'Votre progression :',
+            style: Theme.of(
+              ctx,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 12),
+          // Current progress
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.star, color: color),
+                const SizedBox(width: 8),
+                Text(
+                  '${TranslationService.translate(context, 'current') ?? 'Actuel'}: ${track.current}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            TranslationService.translate(context, 'badge_levels_title') ??
+                'Niveaux à atteindre :',
+            style: Theme.of(
+              ctx,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          // Level thresholds
+          ...List.generate(3, (i) {
+            final threshold = levels[i];
+            final isAchieved = track.current >= threshold;
+            final isCurrent = track.level == i + 1;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isAchieved ? color : Colors.grey[300],
+                    ),
+                    child: Icon(
+                      isAchieved ? Icons.check : Icons.lock_outline,
+                      size: 14,
+                      color: isAchieved ? Colors.white : Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '${levelNames[i]} : $threshold+',
+                      style: TextStyle(
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isAchieved ? Colors.black87 : Colors.grey,
+                        decoration: isAchieved ? TextDecoration.none : null,
+                      ),
+                    ),
+                  ),
+                  if (isAchieved)
+                    Icon(Icons.emoji_events, color: color, size: 18),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text(
+            TranslationService.translate(context, 'close') ?? 'Fermer',
+            style: TextStyle(color: color),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class BadgeCollectionWidget extends StatelessWidget {
   final int maxTrackLevel;
 
@@ -420,86 +570,95 @@ class TrackProgressWidget extends StatelessWidget {
         : Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey);
     final levelFontSize = isDesktop ? 12.0 : 10.0;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Background circle
-              SizedBox(
-                width: size,
-                height: size,
-                child: CircularProgressIndicator(
-                  value: 1.0,
-                  strokeWidth: 6,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    color.withValues(alpha: 0.2),
+    return GestureDetector(
+      onTap: () => showTrackLevelInfo(
+        context,
+        trackName: trackName,
+        track: track,
+        icon: icon,
+        color: color,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: size,
+            height: size,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background circle
+                SizedBox(
+                  width: size,
+                  height: size,
+                  child: CircularProgressIndicator(
+                    value: 1.0,
+                    strokeWidth: 6,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      color.withValues(alpha: 0.2),
+                    ),
                   ),
                 ),
-              ),
-              // Progress circle
-              SizedBox(
-                width: size,
-                height: size,
-                child: CircularProgressIndicator(
-                  value: track.progress,
-                  strokeWidth: 6,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                // Progress circle
+                SizedBox(
+                  width: size,
+                  height: size,
+                  child: CircularProgressIndicator(
+                    value: track.progress,
+                    strokeWidth: 6,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
                 ),
-              ),
-              // Center icon
-              Container(
-                width: size * 0.6,
-                height: size * 0.6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withValues(alpha: 0.1),
+                // Center icon
+                Container(
+                  width: size * 0.6,
+                  height: size * 0.6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color.withValues(alpha: 0.1),
+                  ),
+                  child: Icon(icon, color: color, size: size * 0.35),
                 ),
-                child: Icon(icon, color: color, size: size * 0.35),
-              ),
-              // Level badge (top-right corner)
-              if (track.level > 0)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: _getLevelColor(track.level),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Text(
-                      track.level.toString(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: levelFontSize,
+                // Level badge (top-right corner)
+                if (track.level > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: _getLevelColor(track.level),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Text(
+                        track.level.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: levelFontSize,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(trackName, style: labelStyle),
-        // Show progress intelligently: if current >= nextThreshold, show level completed
-        Text(
-          track.isMaxLevel
-              ? '${track.current} ✓'
-              : track.current >= track.nextThreshold
-              ? '${track.current}/${track.nextThreshold} ✓'
-              : '${track.current}/${track.nextThreshold}',
-          style: progressStyle,
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(trackName, style: labelStyle),
+          // Show progress intelligently: if current >= nextThreshold, show level completed
+          Text(
+            track.isMaxLevel
+                ? '${track.current} ✓'
+                : track.current >= track.nextThreshold
+                ? '${track.current}/${track.nextThreshold} ✓'
+                : '${track.current}/${track.nextThreshold}',
+            style: progressStyle,
+          ),
+        ],
+      ),
     );
   }
 

@@ -702,13 +702,16 @@ class ApiService {
       debugPrint('Error fetching config for handshake: $e');
     }
 
+    // Get my local IP dynamically
+    final myIp = await NetworkInfo().getWifiIP() ?? 'localhost';
+
     return await _dio.post(
       '$hubUrl/api/peers/connect',
       data: {
         'name': name,
         'url': url,
         'my_name': myName,
-        'my_url': 'http://localhost:8000', // TODO: Make this configurable!
+        'my_url': 'http://$myIp:$httpPort',
       },
     );
   }
@@ -2036,6 +2039,32 @@ class ApiService {
     }
   }
 
+  /// Get a list of all unique authors from existing books
+  Future<List<String>> getAllAuthors() async {
+    try {
+      final books = await getBooks();
+      final Set<String> authors = {};
+      for (final book in books) {
+        if (book.author != null && book.author!.isNotEmpty) {
+          // Split by comma or semicolon to handle multiple authors
+          final split = book.author!.split(RegExp(r'[,;]\s*'));
+          for (var a in split) {
+            final trimmed = a.trim();
+            if (trimmed.isNotEmpty) {
+              authors.add(trimmed);
+            }
+          }
+        }
+      }
+      final list = authors.toList()
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      return list;
+    } catch (e) {
+      debugPrint('Error fetching all authors: $e');
+      return [];
+    }
+  }
+
   Future<Book> getBook(int id) async {
     // Use FFI for native platforms
     if (useFfi) {
@@ -2230,11 +2259,31 @@ class ApiService {
     required String secret,
     required String ip,
   }) async {
-    final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'));
-    return await localDio.post(
-      '/api/auth/pairing/code',
-      data: {'uuid': uuid, 'secret': secret, 'ip': ip},
-    );
+    // Try 127.0.0.1 first (standard IPv4)
+    try {
+      final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'));
+      return await localDio.post(
+        '/api/auth/pairing/code',
+        data: {'uuid': uuid, 'secret': secret, 'ip': ip},
+      );
+    } catch (e) {
+      // If 127.0.0.1 fails, try localhost (might resolve to ::1 IPv6)
+      debugPrint(
+        '⚠️ generatePairingCode: 127.0.0.1 failed ($e), trying localhost...',
+      );
+      try {
+        final localDioFallback = Dio(
+          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+        );
+        return await localDioFallback.post(
+          '/api/auth/pairing/code',
+          data: {'uuid': uuid, 'secret': secret, 'ip': ip},
+        );
+      } catch (e2) {
+        debugPrint('❌ generatePairingCode: localhost also failed: $e2');
+        rethrow;
+      }
+    }
   }
 
   /// Verify a pairing code on a remote peer (Target wants to join Source).
@@ -2247,8 +2296,8 @@ class ApiService {
       final remoteDio = Dio(
         BaseOptions(
           baseUrl: 'http://$host',
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          connectTimeout: const Duration(minutes: 5),
+          receiveTimeout: const Duration(minutes: 5),
         ),
       );
       final response = await remoteDio.post(

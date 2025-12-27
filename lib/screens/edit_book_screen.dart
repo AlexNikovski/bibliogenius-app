@@ -35,6 +35,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
   late Book _book;
   List<String> _selectedTags = []; // Add this
   List<String> _authors = []; // Multiple authors support
+  List<String> _allAuthors = []; // For autocomplete
+
   String _readingStatus = 'to_read';
   String?
   _originalReadingStatus; // Track original status to detect changes to 'read'
@@ -99,7 +101,24 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
     // Get profile type from ThemeProvider after first frame
     // Add listener for ISBN changes
+    // Add listener for ISBN changes
     _isbnController.addListener(_onIsbnChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAuthors());
+  }
+
+  Future<void> _loadAuthors() async {
+    try {
+      final api = Provider.of<ApiService>(context, listen: false);
+      final authors = await api.getAllAuthors();
+      if (mounted) {
+        setState(() {
+          _allAuthors = authors;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading authors for autocomplete: $e');
+    }
   }
 
   @override
@@ -614,7 +633,14 @@ class _EditBookScreenState extends State<EditBookScreen> {
               ),
               Autocomplete<String>(
                 optionsBuilder: (TextEditingValue textEditingValue) {
-                  return const Iterable<String>.empty();
+                  if (textEditingValue.text.isEmpty) {
+                    return const Iterable<String>.empty();
+                  }
+                  return _allAuthors.where((String option) {
+                    return option.toLowerCase().contains(
+                      textEditingValue.text.toLowerCase(),
+                    );
+                  });
                 },
                 fieldViewBuilder:
                     (

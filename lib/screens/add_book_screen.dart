@@ -44,6 +44,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
   bool _isDuplicate = false;
   late TextEditingController _tagsController;
   final FocusNode _titleFocusNode = FocusNode();
+  List<String> _allAuthors = []; // For autocomplete
 
   @override
   void initState() {
@@ -53,7 +54,23 @@ class _AddBookScreenState extends State<AddBookScreen> {
       _fetchBookDetails(widget.isbn!);
     }
     _isbnController.addListener(_onIsbnChanged);
+    _isbnController.addListener(_onIsbnChanged);
     _tagsController = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAuthors());
+  }
+
+  Future<void> _loadAuthors() async {
+    try {
+      final api = Provider.of<ApiService>(context, listen: false);
+      final authors = await api.getAllAuthors();
+      if (mounted) {
+        setState(() {
+          _allAuthors = authors;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading authors for autocomplete: $e');
+    }
   }
 
   @override
@@ -646,9 +663,14 @@ class _AddBookScreenState extends State<AddBookScreen> {
             _buildLabel(TranslationService.translate(context, 'author_label')),
             Autocomplete<String>(
               optionsBuilder: (TextEditingValue textEditingValue) {
-                return const Iterable<
-                  String
-                >.empty(); // No autocomplete for now, just manual
+                if (textEditingValue.text.isEmpty) {
+                  return const Iterable<String>.empty();
+                }
+                return _allAuthors.where((String option) {
+                  return option.toLowerCase().contains(
+                    textEditingValue.text.toLowerCase(),
+                  );
+                });
               },
               fieldViewBuilder:
                   (

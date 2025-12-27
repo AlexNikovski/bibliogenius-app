@@ -107,20 +107,11 @@ class _LoansScreenState extends State<LoansScreen>
     try {
       await api.updateRequestStatus(id, status);
       _fetchAllData();
-    } on DioException catch (e) {
+    } catch (e) {
       if (mounted) {
-        String errorMessage;
-        if (e.response?.statusCode == 409) {
-          errorMessage = TranslationService.translate(
-            context,
-            'snack_no_copies',
-          );
-        } else {
-          errorMessage = e.response?.data?['error']?.toString() ?? e.toString();
-        }
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+        ).showSnackBar(SnackBar(content: Text(_getFriendlyErrorMessage(e))));
       }
     }
   }
@@ -143,7 +134,7 @@ class _LoansScreenState extends State<LoansScreen>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(_getFriendlyErrorMessage(e))));
       }
     }
   }
@@ -571,7 +562,7 @@ class _LoansScreenState extends State<LoansScreen>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(_getFriendlyErrorMessage(e))));
       }
     }
   }
@@ -585,7 +576,7 @@ class _LoansScreenState extends State<LoansScreen>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(_getFriendlyErrorMessage(e))));
       }
     }
   }
@@ -599,9 +590,28 @@ class _LoansScreenState extends State<LoansScreen>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(_getFriendlyErrorMessage(e))));
       }
     }
+  }
+
+  String _getFriendlyErrorMessage(Object error) {
+    if (error is DioException) {
+      if (error.response?.statusCode == 409) {
+        return TranslationService.translate(context, 'error_409_conflict');
+      }
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return TranslationService.translate(context, 'error_peer_timeout');
+      }
+      if (error.type == DioExceptionType.connectionError) {
+        return TranslationService.translate(context, 'error_peer_offline');
+      }
+      return error.response?.data?['error']?.toString() ??
+          error.message ??
+          error.toString();
+    }
+    return error.toString();
   }
 }
 
