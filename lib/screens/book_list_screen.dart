@@ -382,6 +382,15 @@ class _BookListScreenState extends State<BookListScreen> {
           .toList();
     }
 
+    // Default sort: alphabetical by author, then by title
+    tempBooks.sort((a, b) {
+      final authorA = (a.author ?? '').toLowerCase();
+      final authorB = (b.author ?? '').toLowerCase();
+      final authorCompare = authorA.compareTo(authorB);
+      if (authorCompare != 0) return authorCompare;
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    });
+
     setState(() {
       _filteredBooks = tempBooks;
     });
