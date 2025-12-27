@@ -1437,7 +1437,7 @@ class ApiService {
           debugPrint('📝 Got request_id from peer: $requestId');
 
           final localDio = Dio(
-            BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+            BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
           );
           await localDio.post(
             '/api/peers/requests/outgoing',
@@ -1467,7 +1467,7 @@ class ApiService {
 
   Future<Response> getIncomingRequests() async {
     if (useFfi) {
-      final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+      final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'));
       return await localDio.get('/api/peers/requests');
     }
     return await _dio.get('/api/peers/requests');
@@ -1475,7 +1475,7 @@ class ApiService {
 
   Future<Response> getOutgoingRequests() async {
     if (useFfi) {
-      final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+      final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'));
       return await localDio.get('/api/peers/requests/outgoing');
     }
     return await _dio.get('/api/peers/requests/outgoing');
@@ -1489,7 +1489,7 @@ class ApiService {
       // In FFI mode, call the local HTTP server directly
       try {
         final localDio = Dio(
-          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
         );
         final res = await localDio.put(
           '/api/peers/requests/$requestId',
@@ -1512,7 +1512,7 @@ class ApiService {
     if (useFfi) {
       try {
         final localDio = Dio(
-          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
         );
         return await localDio.delete('/api/peers/requests/$requestId');
       } catch (e) {
@@ -1527,7 +1527,7 @@ class ApiService {
     if (useFfi) {
       try {
         final localDio = Dio(
-          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
         );
         return await localDio.delete('/api/peers/requests/outgoing/$requestId');
       } catch (e) {
@@ -1871,7 +1871,7 @@ class ApiService {
 
         // Call local HTTP server to persist in database (creates library_config AND library entries)
         final localDio = Dio(
-          BaseOptions(baseUrl: 'http://localhost:$httpPort'),
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
         );
         final response = await localDio.post(
           '/api/setup',
@@ -2168,7 +2168,7 @@ class ApiService {
   Future<Response> getMcpConfig() async {
     if (useFfi) {
       // In FFI mode, call the local HTTP server
-      final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+      final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'));
       return await localDio.get('/api/integrations/mcp-config');
     }
     return await _dio.get('/api/integrations/mcp-config');
@@ -2230,7 +2230,7 @@ class ApiService {
     required String secret,
     required String ip,
   }) async {
-    final localDio = Dio(BaseOptions(baseUrl: 'http://localhost:$httpPort'));
+    final localDio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'));
     return await localDio.post(
       '/api/auth/pairing/code',
       data: {'uuid': uuid, 'secret': secret, 'ip': ip},
