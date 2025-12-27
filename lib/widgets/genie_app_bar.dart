@@ -55,55 +55,66 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       elevation: 0,
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-            ),
-            child: const Icon(
-              Icons.auto_awesome, // "Spark" / Magic
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: title is Widget
-                ? title
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (displaySubtitle != null && displaySubtitle.isNotEmpty)
-                        Text(
-                          displaySubtitle,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w400,
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.8),
-                            letterSpacing: 0.3,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
+      title: LayoutBuilder(
+        builder: (context, constraints) {
+          // On mobile, reduce logo size and give more space to title text
+          final isMobile = constraints.maxWidth < 200;
+          final logoSize = isMobile ? 22.0 : 28.0;
+
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(isMobile ? 4 : 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
                   ),
-          ),
-        ],
+                ),
+                child: Icon(
+                  Icons.auto_awesome, // "Spark" / Magic
+                  color: Colors.white,
+                  size: logoSize,
+                ),
+              ),
+              SizedBox(width: isMobile ? 8 : 12),
+              Flexible(
+                child: title is Widget
+                    ? title
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isMobile ? 16 : 20,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (displaySubtitle != null &&
+                              displaySubtitle.isNotEmpty)
+                            Text(
+                              displaySubtitle,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w400,
+                                fontSize: isMobile ? 11 : 13,
+                                color: Colors.white.withValues(alpha: 0.8),
+                                letterSpacing: 0.3,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
       ),
       actions: [
         if (actions != null) ...actions!,
