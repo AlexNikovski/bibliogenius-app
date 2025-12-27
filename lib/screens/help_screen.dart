@@ -310,7 +310,7 @@ class _HelpScreenState extends State<HelpScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: Text(
-                '🧪 Tests',
+                '🧪 ${TranslationService.translate(context, 'help_tests_title')}',
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -319,7 +319,10 @@ class _HelpScreenState extends State<HelpScreen> {
             _buildActionCard(
               context,
               icon: Icons.animation,
-              label: 'Animation Tests',
+              label: TranslationService.translate(
+                context,
+                'help_animation_tests',
+              ),
               gradient: AppDesign.accentGradient,
               onTap: () => context.push('/animations-test'),
             ),
