@@ -24,6 +24,10 @@ class ThemeProvider with ChangeNotifier {
   AvatarConfig? _avatarConfig;
   AvatarConfig? get avatarConfig => _avatarConfig;
 
+  // Currency
+  String _currency = 'EUR';
+  String get currency => _currency;
+
   // Profile type: 'librarian', 'individual', 'kid', 'bookseller'
   String _profileType = 'individual';
   String get profileType => _profileType;
@@ -36,8 +40,12 @@ class ThemeProvider with ChangeNotifier {
       _profileType == 'individual' || _profileType == 'kid';
 
   // New: Bookseller-specific modules
-  bool get hasCommerce => isBookseller; // Commerce module (pricing) active
-  bool get hasSales => isBookseller; // Sales/transactions module active
+  bool _commerceEnabled = false; // Commerce module toggle
+  bool get commerceEnabled => _commerceEnabled;
+  bool get hasCommerce =>
+      isBookseller && _commerceEnabled; // Commerce module (pricing) active
+  bool get hasSales =>
+      isBookseller && _commerceEnabled; // Sales/transactions module active
   bool get hasLoans =>
       !isBookseller; // Loans disabled by default for booksellers
 
@@ -84,6 +92,7 @@ class ThemeProvider with ChangeNotifier {
     }
 
     _currentAvatarId = prefs.getString('avatarId') ?? 'individual';
+    _currency = prefs.getString('currency') ?? 'EUR';
     _profileType = prefs.getString('profileType') ?? 'individual';
 
     // Load borrowing capability setting (default based on profile type)
@@ -92,8 +101,11 @@ class ThemeProvider with ChangeNotifier {
       _canBorrowBooks = savedCanBorrow;
     } else {
       // Default: disabled for librarians (they lend, not borrow), enabled for others
+      // Default: disabled for librarians (they lend, not borrow), enabled for others
       _canBorrowBooks = !isLibrarian;
     }
+
+    _commerceEnabled = prefs.getBool('commerceEnabled') ?? false;
 
     // Load gamification setting (default based on profile type)
     final savedGamification = prefs.getBool('gamificationEnabled');
@@ -157,6 +169,13 @@ class ThemeProvider with ChangeNotifier {
     _gamificationEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('gamificationEnabled', enabled);
+    notifyListeners();
+  }
+
+  Future<void> setCurrency(String currency) async {
+    _currency = currency;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('currency', currency);
     notifyListeners();
   }
 
@@ -346,6 +365,13 @@ class ThemeProvider with ChangeNotifier {
     _setupProfileType = 'individual';
     _setupAvatarConfig = AvatarConfig.defaultConfig;
     _setupImportDemo = false;
+    notifyListeners();
+  }
+
+  Future<void> setCommerceEnabled(bool enabled) async {
+    _commerceEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('commerceEnabled', enabled);
     notifyListeners();
   }
 }

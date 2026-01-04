@@ -743,13 +743,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             children: [
               _buildMetadataItem(
                 context,
-                TranslationService.translate(context, 'year_label') ?? 'Year',
+                TranslationService.translate(context, 'year_label'),
                 book.publicationYear?.toString() ?? '-',
               ),
               _buildMetadataItem(
                 context,
-                TranslationService.translate(context, 'publisher_label') ??
-                    'Publisher',
+                TranslationService.translate(context, 'publisher_label'),
                 book.publisher ?? '-',
               ),
             ],
@@ -796,6 +795,21 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               ),
             ],
           ),
+          if (Provider.of<ThemeProvider>(context).isBookseller &&
+              book.price != null &&
+              book.price! > 0 &&
+              !_copies.any((c) => c['price'] != null)) ...[
+            const Divider(height: 32),
+            Row(
+              children: [
+                _buildMetadataItem(
+                  context,
+                  TranslationService.translate(context, 'price'),
+                  '${book.price!.toStringAsFixed(2)} ${Provider.of<ThemeProvider>(context).currency}',
+                ),
+              ],
+            ),
+          ],
           if ((book.readingStatus == 'reading' ||
                   book.readingStatus == 'read') &&
               book.startedReadingAt != null) ...[

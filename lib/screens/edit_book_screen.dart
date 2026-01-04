@@ -825,7 +825,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
                       ),
                       TextFormField(
                         controller: _priceController,
-                        decoration: _buildInputDecoration(hint: '0.00'),
+                        decoration: _buildInputDecoration(
+                          hint: '0.00',
+                        ).copyWith(suffixText: themeProvider.currency),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),

@@ -166,6 +166,9 @@ class ApiService {
               : null,
           readingStatus: bookData['reading_status'],
           owned: bookData['owned'] ?? true, // Default to owned
+          price: bookData['price'] is num
+              ? (bookData['price'] as num).toDouble()
+              : null,
         );
 
         final createdBook = await FfiService().createBook(frbBookInput);
@@ -253,6 +256,11 @@ class ApiService {
           owned: bookData.containsKey('owned')
               ? bookData['owned'] as bool
               : currentBook.owned,
+          price: bookData.containsKey('price')
+              ? (bookData['price'] is num
+                    ? (bookData['price'] as num).toDouble()
+                    : null)
+              : currentBook.price,
         );
 
         final result = await FfiService().updateBook(id, updatedFrbBook);

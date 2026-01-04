@@ -1149,8 +1149,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   FrbBook dco_decode_frb_book(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 18)
-      throw Exception('unexpected arr length: expect 18 but see ${arr.length}');
+    if (arr.length != 19)
+      throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
     return FrbBook(
       id: dco_decode_opt_box_autoadd_i_32(arr[0]),
       title: dco_decode_String(arr[1]),
@@ -1170,6 +1170,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       finishedReadingAt: dco_decode_opt_String(arr[15]),
       startedReadingAt: dco_decode_opt_String(arr[16]),
       owned: dco_decode_bool(arr[17]),
+      price: dco_decode_opt_box_autoadd_f_64(arr[18]),
     );
   }
 
@@ -1417,6 +1418,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_finishedReadingAt = sse_decode_opt_String(deserializer);
     var var_startedReadingAt = sse_decode_opt_String(deserializer);
     var var_owned = sse_decode_bool(deserializer);
+    var var_price = sse_decode_opt_box_autoadd_f_64(deserializer);
     return FrbBook(
       id: var_id,
       title: var_title,
@@ -1436,6 +1438,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       finishedReadingAt: var_finishedReadingAt,
       startedReadingAt: var_startedReadingAt,
       owned: var_owned,
+      price: var_price,
     );
   }
 
@@ -1768,6 +1771,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_String(self.finishedReadingAt, serializer);
     sse_encode_opt_String(self.startedReadingAt, serializer);
     sse_encode_bool(self.owned, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.price, serializer);
   }
 
   @protected

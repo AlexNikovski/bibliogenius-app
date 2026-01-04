@@ -31,6 +31,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
   final _publicationYearController = TextEditingController();
   final _isbnController = TextEditingController();
   final _summaryController = TextEditingController();
+  final _priceController = TextEditingController(); // For Bookseller profile
   final _authorController = TextEditingController();
   String? _readingStatus; // Initialized in didChangeDependencies
   String? _coverUrl;
@@ -91,6 +92,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
     _publicationYearController.dispose();
     _isbnController.dispose();
     _summaryController.dispose();
+    _priceController.dispose();
     _titleFocusNode.dispose();
     // _tagsController is managed by Autocomplete
     super.dispose();
@@ -275,6 +277,9 @@ class _AddBookScreenState extends State<AddBookScreen> {
       summary: _summaryController.text,
       coverUrl: _coverUrl,
       subjects: _selectedTags.isNotEmpty ? _selectedTags : null,
+      price: _priceController.text.isNotEmpty
+          ? double.tryParse(_priceController.text)
+          : null,
     );
 
     try {
@@ -972,6 +977,32 @@ class _AddBookScreenState extends State<AddBookScreen> {
               maxLines: 4,
             ),
             const SizedBox(height: 24),
+
+            // Price field (Bookseller profile only)
+            Consumer<ThemeProvider>(
+              builder: (context, themeProvider, child) {
+                if (!themeProvider.hasCommerce) return const SizedBox.shrink();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel(
+                      TranslationService.translate(context, 'price_label'),
+                    ),
+                    TextFormField(
+                      controller: _priceController,
+                      decoration: _buildInputDecoration(
+                        hint: '0.00',
+                      ).copyWith(suffixText: themeProvider.currency),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
 
             // Status
             _buildLabel(TranslationService.translate(context, 'status_label')),

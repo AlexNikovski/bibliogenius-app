@@ -1372,11 +1372,11 @@ class TranslationService {
       'borrowed_label': 'Prêté',
       'status_wanted': 'Souhaité',
       'lend_book_label': 'Prêter le livre',
-      'no_copies_title': 'Aucune copie trouvée',
+      'no_copies_title': 'Aucun exemplaire trouvé',
       'no_copies_confirm':
-          'Ce livre n\'a pas de copie. Créer une nouvelle copie pour le prêter ?',
+          'Ce livre n\'a pas d\'exemplaire. En créer un nouveau pour le prêter ?',
       'create_lend_btn': 'Créer & Prêter',
-      'failed_create_copy': 'Échec de la création de la copie.',
+      'failed_create_copy': 'Échec de la création de l\'exemplaire.',
       'sales_statistics': 'Statistiques de ventes',
       'total_revenue': 'Revenu total',
       'average_price': 'Prix moyen',
@@ -1385,7 +1385,9 @@ class TranslationService {
       // Sales recording
       'record_sale_title': 'Enregistrer une vente',
       'select_book': 'Sélectionner un livre',
-      'select_copy': 'Sélectionner un exempl aire',
+      'select_copy': 'Sélectionner un exemplaire',
+      'currency_label': 'Devise',
+      'select_currency': 'Sélectionner une devise',
       'sale_date': 'Date de vente',
       'sale_notes': 'Notes (optionnel)',
       'sale_recorded': 'Vente enregistrée avec succès',
@@ -1402,6 +1404,7 @@ class TranslationService {
       'sell_book_btn': 'Vendre ce livre',
 
       // Book copies
+      'copy_label': 'Exemplaire',
       'book_lent_to': 'Livre prêté à',
       'error_lending_book': 'Erreur lors du prêt du livre',
       'currently_reading': 'En cours de lecture',
@@ -1442,8 +1445,11 @@ class TranslationService {
       'book_not_found': 'Livre non trouvé dans la base de données',
       'isbn_already_exists': 'Ce livre est déjà dans votre collection',
       'view_existing': 'Voir le livre',
-      'add_copy': 'Ajouter une copie',
-      'copy_added': 'Copie ajoutée avec succès',
+      'add_copy': 'Ajouter un exemplaire',
+      'add_copy_title': 'Ajouter un exemplaire',
+      'edit_copy_title': 'Modifier l\'exemplaire',
+      'price_label': 'Prix',
+      'copy_added': 'Exemplaire ajouté avec succès',
       'error_fetching_isbn':
           'Erreur lors de la recherche de l\'ISBN. Veuillez saisir les détails manuellement.',
       'book_details_found': 'Détails du livre trouvés !',

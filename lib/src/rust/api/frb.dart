@@ -209,6 +209,7 @@ sealed class FrbBook with _$FrbBook {
     String? finishedReadingAt,
     String? startedReadingAt,
     required bool owned,
+    double? price,
   }) = _FrbBook;
 }
 

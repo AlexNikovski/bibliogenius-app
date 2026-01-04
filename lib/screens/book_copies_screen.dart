@@ -275,6 +275,19 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
+                if (Provider.of<ThemeProvider>(context).isBookseller &&
+                    copy.price != null &&
+                    copy.price! > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '${copy.price!.toStringAsFixed(2)} ${Provider.of<ThemeProvider>(context).currency}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
                 if (copy.notes != null && copy.notes!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -768,6 +781,40 @@ class _Book3DState extends State<_Book3D> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // Price tag
+                        if (Provider.of<ThemeProvider>(context).isBookseller &&
+                            widget.copy.price != null &&
+                            widget.copy.price! > 0)
+                          Positioned(
+                            bottom: 12,
+                            left: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD4AF37),
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 2,
+                                    offset: const Offset(1, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                '${widget.copy.price!.toStringAsFixed(2)} ${Provider.of<ThemeProvider>(context).currency}',
+                                style: TextStyle(
+                                  color: _bookColors[0],
+                                  fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -1486,7 +1533,8 @@ class _StandardAddCopySheetState extends State<_StandardAddCopySheet> {
                     context,
                     'price_label',
                   ),
-                  prefixText: '€ ',
+                  suffixText:
+                      ' ${Provider.of<ThemeProvider>(context).currency}',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
