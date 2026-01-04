@@ -1314,6 +1314,7 @@ class _StandardAddCopySheet extends StatefulWidget {
 class _StandardAddCopySheetState extends State<_StandardAddCopySheet> {
   late TextEditingController _notesController;
   late TextEditingController _dateController;
+  late TextEditingController _priceController;
   String _selectedStatus = 'available';
   bool _isTemporary = false;
 
@@ -1326,6 +1327,9 @@ class _StandardAddCopySheetState extends State<_StandardAddCopySheet> {
     _dateController = TextEditingController(
       text: widget.existingCopy?.acquisitionDate ?? '',
     );
+    _priceController = TextEditingController(
+      text: widget.existingCopy?.price?.toString() ?? '',
+    );
     _selectedStatus = widget.existingCopy?.status ?? 'available';
     _isTemporary = widget.existingCopy?.isTemporary ?? false;
   }
@@ -1334,6 +1338,7 @@ class _StandardAddCopySheetState extends State<_StandardAddCopySheet> {
   void dispose() {
     _notesController.dispose();
     _dateController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -1398,6 +1403,11 @@ class _StandardAddCopySheetState extends State<_StandardAddCopySheet> {
                           : _notesController.text,
                       'status': _selectedStatus,
                       'is_temporary': _isTemporary,
+                      'price': _priceController.text.isNotEmpty
+                          ? double.tryParse(
+                              _priceController.text.replaceAll(',', '.'),
+                            )
+                          : null,
                     });
                   },
                   child: Text(
@@ -1468,6 +1478,25 @@ class _StandardAddCopySheetState extends State<_StandardAddCopySheet> {
               onChanged: (v) => setState(() => _selectedStatus = v!),
             ),
             const SizedBox(height: 16),
+            if (Provider.of<ThemeProvider>(context).isBookseller) ...[
+              TextFormField(
+                controller: _priceController,
+                decoration: InputDecoration(
+                  labelText: TranslationService.translate(
+                    context,
+                    'price_label',
+                  ),
+                  prefixText: '€ ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             TextFormField(
               controller: _dateController,
               decoration: InputDecoration(

@@ -366,7 +366,7 @@ class TranslationService {
       'copy_added': 'Copy added successfully',
       'error_fetching_isbn':
           'Error looking up ISBN. Please enter details manually.',
-      'book_details_found': 'Book details found!',
+
       'copies_title': 'Copies of',
       'copy_number': 'Copy #',
       'copy_label': 'Copy',

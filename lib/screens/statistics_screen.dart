@@ -10,6 +10,7 @@ import '../widgets/genie_app_bar.dart';
 import '../theme/app_design.dart';
 import '../widgets/gamification_widgets.dart';
 import '../providers/theme_provider.dart';
+import 'package:intl/intl.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -24,6 +25,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   List<dynamic> _loans = [];
   Map<int, Contact> _contactsMap = {};
   GamificationStatus? _userStatus;
+  Map<String, dynamic>? _salesStats;
   bool _isLoading = true;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -92,8 +94,18 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             }
           }
         }
-      } catch (e) {
-        debugPrint('Error fetching contacts for stats: $e');
+      } catch (e) {}
+
+      Map<String, dynamic>? salesStats;
+      if (Provider.of<ThemeProvider>(context, listen: false).isBookseller) {
+        try {
+          final statsRes = await api.getSalesStatistics();
+          if (statsRes.statusCode == 200) {
+            salesStats = statsRes.data;
+          }
+        } catch (e) {
+          debugPrint('Error fetching sales stats: $e');
+        }
       }
 
       if (mounted) {
@@ -102,6 +114,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           _loans = loans;
           _contactsMap = contactsMap;
           _userStatus = status;
+          _salesStats = salesStats;
           _isLoading = false;
         });
         _animController.forward();
@@ -141,6 +154,19 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildSummaryCards(),
+                    if (_salesStats != null) ...[
+                      const SizedBox(height: 32),
+                      _buildSectionTitle(
+                        TranslationService.translate(
+                          context,
+                          'sales_statistics',
+                        ),
+                        Icons.monetization_on,
+                        AppDesign.successGradient,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSalesStatisticsSection(),
+                    ],
                     const SizedBox(height: 32),
                     if (_userStatus != null) ...[
                       _buildSectionTitle(
@@ -1320,6 +1346,52 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildSalesStatisticsSection() {
+    if (_salesStats == null) return const SizedBox.shrink();
+
+    final totalRevenue =
+        (_salesStats!['total_revenue'] as num?)?.toDouble() ?? 0.0;
+    final totalSales = (_salesStats!['total_sales'] as num?)?.toInt() ?? 0;
+    final avgPrice = (_salesStats!['average_price'] as num?)?.toDouble() ?? 0.0;
+
+    final currencyFormat = NumberFormat.currency(locale: 'fr_FR', symbol: '€');
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'total_revenue'),
+                currencyFormat.format(totalRevenue),
+                Icons.euro,
+                AppDesign.successGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'sales_count'),
+                totalSales.toString(),
+                Icons.shopping_cart,
+                AppDesign.primaryGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'average_price'),
+                currencyFormat.format(avgPrice),
+                Icons.price_check,
+                AppDesign.oceanGradient,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
