@@ -107,6 +107,12 @@ void main() {
     final fakeAuthService = FakeAuthService();
 
     // 2. Pump Widget
+    // Set a large screen size to avoid layout issues with the Stepper
+    // Logical size = 1080 / 3.0 = 360 width
+    // Logical height = 4000 / 3.0 = 1333 height (covering offsets > 1000)
+    tester.view.physicalSize = const Size(1080, 4000);
+    tester.view.devicePixelRatio = 3.0;
+
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -243,5 +249,7 @@ void main() {
     // Note: Default username in controller is 'admin' unless changed
     expect(fakeAuthService.savedUsername, 'admin');
     expect(fakeAuthService.savedPassword, 'password123');
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
   });
 }

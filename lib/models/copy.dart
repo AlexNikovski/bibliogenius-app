@@ -6,6 +6,7 @@ class Copy {
   final String? notes;
   final String status; // available, borrowed, wanted, lost
   final bool isTemporary;
+  final double? price; // Copy-specific price (overrides book price)
 
   Copy({
     this.id,
@@ -15,6 +16,7 @@ class Copy {
     this.notes,
     this.status = 'available',
     this.isTemporary = false,
+    this.price,
   });
 
   factory Copy.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class Copy {
       notes: json['notes'],
       status: json['status'] ?? 'available',
       isTemporary: json['is_temporary'] ?? false,
+      price: json['price'] != null ? (json['price'] as num).toDouble() : null,
     );
   }
 
@@ -38,6 +41,7 @@ class Copy {
       'notes': notes,
       'status': status,
       'is_temporary': isTemporary,
+      'price': price,
       'created_at': now,
       'updated_at': now,
     };

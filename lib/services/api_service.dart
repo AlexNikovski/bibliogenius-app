@@ -453,6 +453,103 @@ class ApiService {
     return await _dio.put('/api/copies/$copyId', data: data);
   }
 
+  // Sales management methods (Bookseller profile)
+
+  /// Record a new sale
+  Future<Response> recordSale({
+    required int copyId,
+    required double salePrice,
+    int? contactId,
+    String? notes,
+  }) async {
+    final data = {
+      'copy_id': copyId,
+      'sale_price': salePrice,
+      'contact_id': contactId,
+      'notes': notes,
+    };
+
+    if (useFfi) {
+      try {
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
+        );
+        return await localDio.post('/api/sales', data: data);
+      } catch (e) {
+        debugPrint('❌ recordSale error: $e');
+        rethrow;
+      }
+    }
+    return await _dio.post('/api/sales', data: data);
+  }
+
+  /// Get all sales with optional filters
+  Future<Response> getSales({
+    int? limit,
+    int? offset,
+    String? status,
+    String? search,
+  }) async {
+    final params = <String, dynamic>{};
+    if (limit != null) params['limit'] = limit;
+    if (offset != null) params['offset'] = offset;
+    if (status != null) params['status'] = status;
+    if (search != null) params['search'] = search;
+
+    if (useFfi) {
+      try {
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
+        );
+        return await localDio.get('/api/sales', queryParameters: params);
+      } catch (e) {
+        debugPrint('❌ getSales error: $e');
+        return Response(
+          requestOptions: RequestOptions(path: '/api/sales'),
+          statusCode: 200,
+          data: {'sales': [], 'total': 0},
+        );
+      }
+    }
+    return await _dio.get('/api/sales', queryParameters: params);
+  }
+
+  /// Cancel a sale
+  Future<Response> cancelSale(int saleId) async {
+    if (useFfi) {
+      try {
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
+        );
+        return await localDio.delete('/api/sales/$saleId');
+      } catch (e) {
+        debugPrint('❌ cancelSale error: $e');
+        rethrow;
+      }
+    }
+    return await _dio.delete('/api/sales/$saleId');
+  }
+
+  /// Get sales statistics
+  Future<Response> getSalesStatistics() async {
+    if (useFfi) {
+      try {
+        final localDio = Dio(
+          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
+        );
+        return await localDio.get('/api/statistics/sales');
+      } catch (e) {
+        debugPrint('❌ getSalesStatistics error: $e');
+        return Response(
+          requestOptions: RequestOptions(path: '/api/statistics/sales'),
+          statusCode: 200,
+          data: {'sales_count': 0, 'total_revenue': 0.0, 'average_price': 0.0},
+        );
+      }
+    }
+    return await _dio.get('/api/statistics/sales');
+  }
+
   // Contact methods
   Future<Response> getContacts({int? libraryId, String? type}) async {
     // In FFI mode, use FfiService and return mock Response

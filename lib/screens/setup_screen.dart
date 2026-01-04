@@ -220,7 +220,11 @@ class _SetupScreenState extends State<SetupScreen> {
               }
             },
             onStepTapped: (step) {
-              themeProvider.setSetupStep(step);
+              // Only allow tapping valid past/current steps or next step
+              // But strictly prevent jumping way ahead (like from 1 to 6)
+              if (step <= themeProvider.setupStep + 1) {
+                themeProvider.setSetupStep(step);
+              }
             },
             onStepCancel: () {
               if (currentStep > 0) {
@@ -242,9 +246,6 @@ class _SetupScreenState extends State<SetupScreen> {
                       child: InkWell(
                         key: Key('setupNextButton_${details.stepIndex}'),
                         onTap: () {
-                          debugPrint(
-                            'SetupNextButton tapped - currentStep: $currentStep, isLastStep: $isLastStep',
-                          );
                           details.onStepContinue?.call();
                         },
                         borderRadius: BorderRadius.circular(8),
