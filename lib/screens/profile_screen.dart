@@ -162,10 +162,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _importBackup() async {
     try {
-      // Pick a JSON file
+      // Pick a file (JSON for backup, CSV/TXT for book list)
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json'],
+        allowedExtensions: ['json', 'csv', 'txt'],
+        withData: kIsWeb,
       );
 
       if (result == null || result.files.isEmpty) {
@@ -173,19 +174,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       final file = result.files.first;
-      List<int> bytes;
+      final extension = file.extension?.toLowerCase();
 
-      if (kIsWeb) {
-        // Web: use bytes directly
-        if (file.bytes == null) {
-          throw Exception('Could not read file');
+      // If it's a CSV or TXT, redirect to book import
+      if (extension == 'csv' || extension == 'txt') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                TranslationService.translate(context, 'importing_books'),
+              ),
+            ),
+          );
         }
+
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        late final Response response;
+
+        if (kIsWeb) {
+          // On web, bytes are loaded into memory
+          if (file.bytes == null) throw Exception('No file data');
+          response = await apiService.importBooks(
+            file.bytes!,
+            filename: file.name,
+          );
+        } else {
+          // On native, use path
+          if (file.path == null) throw Exception('No file path');
+          response = await apiService.importBooks(file.path!);
+        }
+
+        if (mounted) {
+          if (response.statusCode == 200) {
+            final imported = response.data['imported'];
+            // Refresh status to update book counts
+            _fetchStatus();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${TranslationService.translate(context, 'import_success')} $imported ${TranslationService.translate(context, 'books')}',
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            throw Exception(response.data['error'] ?? 'Import failed');
+          }
+        }
+        return;
+      }
+
+      // JSON Backup Import Logic
+      List<int> bytes;
+      if (kIsWeb) {
+        if (file.bytes == null) throw Exception('Could not read file');
         bytes = file.bytes!;
       } else {
-        // Native: read from path
-        if (file.path == null) {
-          throw Exception('File path is null');
-        }
+        if (file.path == null) throw Exception('File path is null');
         final ioFile = io.File(file.path!);
         bytes = await ioFile.readAsBytes();
       }
@@ -209,6 +255,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final message = data['message'] ?? 'Import successful';
 
         if (mounted) {
+          // Refresh data after restore (important!)
+          _fetchStatus();
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -226,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${TranslationService.translate(context, 'import_backup_fail')}: $e',
+              '${TranslationService.translate(context, 'import_fail')}: $e',
             ),
             backgroundColor: Colors.red,
           ),
