@@ -967,7 +967,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
                       ),
                     ),
                     DropdownMenuItem(
-                      value: 'lent',
+                      value: 'loaned',
                       child: Row(
                         children: [
                           const Icon(
