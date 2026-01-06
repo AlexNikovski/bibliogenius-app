@@ -26,69 +26,74 @@ class BookSpine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      width: width,
-      margin: const EdgeInsets.symmetric(horizontal: 1),
-      decoration: BoxDecoration(
-        color: _getColorFromId(book.id ?? 0),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(4),
-          topRight: Radius.circular(4),
-          bottomLeft: Radius.circular(2),
-          bottomRight: Radius.circular(2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            offset: const Offset(1, 1),
-            blurRadius: 2,
+    final isOwned = book.owned;
+
+    return Opacity(
+      opacity: isOwned ? 1.0 : 0.5,
+      child: Container(
+        height: height,
+        width: width,
+        margin: const EdgeInsets.symmetric(horizontal: 1),
+        decoration: BoxDecoration(
+          color: _getColorFromId(book.id ?? 0),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(4),
+            topRight: Radius.circular(4),
+            bottomLeft: Radius.circular(2),
+            bottomRight: Radius.circular(2),
           ),
-        ],
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            _getColorFromId(book.id ?? 0).withOpacity(0.8),
-            _getColorFromId(book.id ?? 0),
-            _getColorFromId(book.id ?? 0).withOpacity(0.9),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              offset: const Offset(1, 1),
+              blurRadius: 2,
+            ),
           ],
-          stops: const [0.0, 0.2, 0.9],
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              _getColorFromId(book.id ?? 0).withOpacity(0.8),
+              _getColorFromId(book.id ?? 0),
+              _getColorFromId(book.id ?? 0).withOpacity(0.9),
+            ],
+            stops: const [0.0, 0.2, 0.9],
+          ),
         ),
-      ),
-      child: Center(
-        child: RotatedBox(
-          quarterTurns: 3, // Rotate 270 degrees (bottom to top)
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  book.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (book.publisher != null) ...[
-                  const SizedBox(width: 4),
+        child: Center(
+          child: RotatedBox(
+            quarterTurns: 3, // Rotate 270 degrees (bottom to top)
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    book.publisher!,
-                    maxLines: 1,
+                    book.title,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 10,
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (book.publisher != null) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      book.publisher!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

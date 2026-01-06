@@ -42,6 +42,12 @@ const List<BookStatus> individualStatuses = [
     color: Colors.red,
   ),
   BookStatus(
+    value: 'wanting',
+    label: 'wishlist_status',
+    icon: Icons.favorite_border,
+    color: Colors.red,
+  ),
+  BookStatus(
     value: 'owned',
     label: 'owned_status',
     icon: Icons.inventory_2_outlined,

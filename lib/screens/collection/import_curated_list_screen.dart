@@ -16,10 +16,9 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
   bool _isImporting = false;
 
   Future<void> _importList(CuratedList list) async {
-    bool markAsOwned =
-        false; // This variable will be captured by the dialog's closure
+    String selectedStatus = 'wanting'; // Default to "Wishlist"
 
-    final bool? confirmedAndMarkAsOwned = await showDialog<bool?>(
+    final String? confirmedStatus = await showDialog<String?>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -28,36 +27,82 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
               title: Text('Importer "${list.title}" ?'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Cela va créer une nouvelle collection avec ${list.books.length} livres.',
                   ),
                   const SizedBox(height: 16),
-                  CheckboxListTile(
-                    title: const Text('Marquer comme possédés'),
-                    subtitle: const Text(
-                      'Cochez si vous possédez ces livres. Créera des exemplaires.',
+                  const Text(
+                    'Statut des livres importés :',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
-                    value: markAsOwned,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'owned',
+                        child: Row(
+                          children: [
+                            Icon(Icons.inventory_2_outlined, size: 20),
+                            SizedBox(width: 8),
+                            Text('Dans ma bibliothèque'),
+                          ],
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'to_read',
+                        child: Row(
+                          children: [
+                            Icon(Icons.bookmark_border, size: 20),
+                            SizedBox(width: 8),
+                            Text('À lire'),
+                          ],
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'wanting',
+                        child: Row(
+                          children: [
+                            Icon(Icons.favorite_border, size: 20),
+                            SizedBox(width: 8),
+                            Text('Wishlist'),
+                          ],
+                        ),
+                      ),
+                    ],
                     onChanged: (val) {
                       setState(() {
-                        markAsOwned = val ?? false;
+                        selectedStatus = val ?? 'owned';
                       });
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    selectedStatus == 'wanting'
+                        ? 'Les livres seront ajoutés à votre wishlist.'
+                        : 'Des exemplaires seront créés automatiquement.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                   ),
                 ],
               ),
               actions: [
                 TextButton(
-                  onPressed: () =>
-                      Navigator.pop(context, null), // Cancel, return null
+                  onPressed: () => Navigator.pop(context, null),
                   child: const Text('Annuler'),
                 ),
                 FilledButton(
-                  onPressed: () => Navigator.pop(
-                    context,
-                    markAsOwned,
-                  ), // Confirm, return the value of markAsOwned
+                  onPressed: () => Navigator.pop(context, selectedStatus),
                   child: const Text('Importer'),
                 ),
               ],
@@ -67,15 +112,12 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
       },
     );
 
-    // If dialog was cancelled (returned null) or if confirmed but markAsOwned was false,
-    // and we only want to proceed if confirmed and markAsOwned is true,
-    // or if we just want to proceed if confirmed (not null).
-    if (confirmedAndMarkAsOwned == null) return; // Dialog was cancelled
+    if (confirmedStatus == null) return; // Dialog was cancelled
 
-    // Now, `markAsOwned` here will be the value returned by the dialog if confirmed.
-    // So, if confirmedAndMarkAsOwned is true, then markAsOwned was true.
-    // If confirmedAndMarkAsOwned is false, then markAsOwned was false.
-    final bool shouldMarkAsOwned = confirmedAndMarkAsOwned;
+    final bool shouldMarkAsOwned = confirmedStatus != 'wanting';
+    final String readingStatus = confirmedStatus == 'owned'
+        ? 'to_read'
+        : confirmedStatus;
 
     if (!mounted) return;
 
@@ -103,7 +145,7 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
             'title': book.title,
             'author': book.author,
             'isbn': book.isbn,
-            'reading_status': shouldMarkAsOwned ? 'to_read' : 'wanting',
+            'reading_status': readingStatus,
             'owned': shouldMarkAsOwned,
           };
 

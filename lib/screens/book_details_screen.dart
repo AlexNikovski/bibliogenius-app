@@ -556,7 +556,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           ),
         ],
         // Lend book button - only visible when there are available copies and book is owned
-        if (_hasAvailableCopies && book.owned) ...[
+        if (_hasAvailableCopies && book.owned && _copies.length == 1) ...[
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,

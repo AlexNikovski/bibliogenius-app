@@ -1952,6 +1952,24 @@ class ApiService {
     return await _dio.delete('$hubUrl/api/peers/$id');
   }
 
+  /// Check if a peer is reachable by performing a quick health check
+  /// Returns true if the peer responds within the timeout, false otherwise
+  Future<bool> checkPeerConnectivity(String url, {int timeoutMs = 2000}) async {
+    try {
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: Duration(milliseconds: timeoutMs),
+          receiveTimeout: Duration(milliseconds: timeoutMs),
+        ),
+      );
+      final response = await dio.get('$url/api/books?limit=1');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('⚠️ Peer connectivity check failed for $url: $e');
+      return false;
+    }
+  }
+
   // ============================================
   // mDNS Local Discovery
   // ============================================

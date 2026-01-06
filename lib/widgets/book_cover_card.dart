@@ -42,69 +42,75 @@ class BookCoverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOwned = book.owned;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              offset: const Offset(0, 2),
-              blurRadius: 4,
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background / Cover (Layered for robust fallback)
-            _buildFallbackCover(context),
-
-            if (book.coverUrl != null && book.coverUrl!.isNotEmpty)
-              CachedBookCover(
-                imageUrl: book.coverUrl!,
-                fit: BoxFit.cover,
-                placeholder:
-                    const SizedBox.shrink(), // Show fallback while loading
-                errorWidget: const SizedBox.shrink(), // Show fallback on error
+      child: Opacity(
+        opacity: isOwned ? 1.0 : 0.5,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                offset: const Offset(0, 2),
+                blurRadius: 4,
               ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background / Cover (Layered for robust fallback)
+              _buildFallbackCover(context),
 
-            // Gradient overlay for text readability (only if using fallback or if needed)
-            if (book.coverUrl == null || book.coverUrl!.isEmpty)
-              Container(
-                // Fallback cover already has color, but we can add specific styling here if needed
-              ),
+              if (book.coverUrl != null && book.coverUrl!.isNotEmpty)
+                CachedBookCover(
+                  imageUrl: book.coverUrl!,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      const SizedBox.shrink(), // Show fallback while loading
+                  errorWidget:
+                      const SizedBox.shrink(), // Show fallback on error
+                ),
 
-            // Reading Status Indicator
-            if (book.readingStatus != null)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    TranslationService.translate(
-                      context,
-                      'reading_status_${book.readingStatus}',
-                    ).toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+              // Gradient overlay for text readability (only if using fallback or if needed)
+              if (book.coverUrl == null || book.coverUrl!.isEmpty)
+                Container(
+                  // Fallback cover already has color, but we can add specific styling here if needed
+                ),
+
+              // Reading Status Indicator
+              if (book.readingStatus != null)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      TranslationService.translate(
+                        context,
+                        'reading_status_${book.readingStatus}',
+                      ).toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

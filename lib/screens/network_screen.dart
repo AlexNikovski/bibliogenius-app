@@ -43,6 +43,7 @@ class _NetworkScreenState extends State<NetworkScreen>
   bool _isWifiConnected = true; // Default to true to avoid flashing warning
   NetworkFilter _filter = NetworkFilter.all;
   Timer? _refreshTimer;
+  Map<int, bool> _peerConnectivity = {}; // Track online status per peer ID
 
   // QR State
   String? _localIp;
@@ -266,10 +267,38 @@ class _NetworkScreenState extends State<NetworkScreen>
           _mdnsActive = mdnsActive;
           _isLoading = false;
         });
+        // Check connectivity for network peers in parallel
+        _checkPeersConnectivity(allMembers);
       }
     } catch (e) {
       debugPrint('Error loading network members: $e');
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Check connectivity for all network peers in parallel
+  Future<void> _checkPeersConnectivity(List<NetworkMember> members) async {
+    final api = Provider.of<ApiService>(context, listen: false);
+    final networkPeers = members
+        .where((m) => m.source == NetworkMemberSource.network && m.url != null)
+        .toList();
+
+    if (networkPeers.isEmpty) return;
+
+    // Check all peers in parallel with a reasonable concurrency limit
+    final futures = networkPeers.map((peer) async {
+      final isOnline = await api.checkPeerConnectivity(peer.url!);
+      return MapEntry(peer.id, isOnline);
+    });
+
+    final results = await Future.wait(futures);
+
+    if (mounted) {
+      setState(() {
+        for (final entry in results) {
+          _peerConnectivity[entry.key] = entry.value;
+        }
+      });
     }
   }
 
@@ -1226,24 +1255,46 @@ class _NetworkScreenState extends State<NetworkScreen>
                 ),
                 if (!isPending && isNetwork) ...[
                   const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withAlpha(26),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'ACTIVE',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      // Check actual connectivity status
+                      final isOnline = _peerConnectivity[member.id];
+                      final isChecking = isOnline == null;
+                      final statusText = isChecking
+                          ? 'CHECKING...'
+                          : (isOnline
+                                ? TranslationService.translate(
+                                    context,
+                                    'status_active',
+                                  )
+                                : TranslationService.translate(
+                                    context,
+                                    'status_offline',
+                                  ));
+                      final statusColor = isChecking
+                          ? Colors.grey
+                          : (isOnline ? Colors.green : Colors.grey);
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withAlpha(26),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          statusText.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
                 if (isPending) ...[
@@ -1276,24 +1327,34 @@ class _NetworkScreenState extends State<NetworkScreen>
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ElevatedButton(
-                  onPressed: () => _onMemberTap(member),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Browse',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
+                Builder(
+                  builder: (context) {
+                    final isOnline = _peerConnectivity[member.id] ?? false;
+                    return ElevatedButton(
+                      onPressed: isOnline ? () => _onMemberTap(member) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isOnline
+                            ? Colors.indigo
+                            : Colors.grey[400],
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Browse',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(width: 4),
                 IconButton(

@@ -13,6 +13,7 @@ import '../widgets/book_cover_grid.dart';
 import '../widgets/premium_book_card.dart';
 import '../theme/app_design.dart';
 import '../providers/theme_provider.dart';
+import '../utils/book_status.dart';
 
 enum ViewMode {
   coverGrid, // Netflix style
@@ -628,55 +629,6 @@ class _BookListScreenState extends State<BookListScreen>
           ),
           const SizedBox(width: 12),
 
-          // Show All Toggle
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ScaleOnTap(
-              onTap: () {
-                setState(() {
-                  _showAllBooks = !_showAllBooks;
-                  _filterBooks();
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: _showAllBooks
-                      ? Theme.of(context).primaryColor
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _showAllBooks
-                        ? Colors.transparent
-                        : Colors.grey.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _showAllBooks ? Icons.visibility : Icons.visibility_off,
-                      size: 16,
-                      color: _showAllBooks ? Colors.white : Colors.grey,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Tout afficher',
-                      style: TextStyle(
-                        color: _showAllBooks ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           // Tag Filter (if active)
           if (_tagFilter != null) ...[
             _buildFilterPill(
@@ -727,11 +679,57 @@ class _BookListScreenState extends State<BookListScreen>
               ),
             ),
 
-          // Status Filters
-          _buildFilterPill(
-            status: null,
-            label: TranslationService.translate(context, 'filter_all'),
+          // Show All Toggle (before status filters)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ScaleOnTap(
+              onTap: () {
+                setState(() {
+                  _showAllBooks = !_showAllBooks;
+                  _filterBooks();
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: _showAllBooks
+                      ? Theme.of(context).primaryColor
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _showAllBooks
+                        ? Colors.transparent
+                        : Colors.grey.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _showAllBooks ? Icons.visibility : Icons.visibility_off,
+                      size: 16,
+                      color: _showAllBooks ? Colors.white : Colors.grey,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      TranslationService.translate(context, 'filter_all'),
+                      style: TextStyle(
+                        color: _showAllBooks ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
+
+          // Status Filters
+          _buildFilterPillIcon(status: null, icon: Icons.library_books),
           _buildFilterPill(
             status: 'reading',
             label: TranslationService.translate(
@@ -806,6 +804,20 @@ class _BookListScreenState extends State<BookListScreen>
     final bool isSelected = _selectedStatus == status;
     final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
+    // Get icon for reading status if applicable
+    IconData? statusIcon;
+    Color? statusColor;
+    if (status != null && !isClearAction) {
+      final statusObj = individualStatuses.cast<BookStatus?>().firstWhere(
+        (s) => s?.value == status,
+        orElse: () => null,
+      );
+      if (statusObj != null) {
+        statusIcon = statusObj.icon;
+        statusColor = statusObj.color;
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ScaleOnTap(
@@ -857,6 +869,13 @@ class _BookListScreenState extends State<BookListScreen>
               if (isClearAction) ...[
                 const Icon(Icons.close, size: 16, color: Colors.white),
                 const SizedBox(width: 6),
+              ] else if (statusIcon != null) ...[
+                Icon(
+                  statusIcon,
+                  size: 16,
+                  color: isSelected ? Colors.white : statusColor,
+                ),
+                const SizedBox(width: 6),
               ],
               Text(
                 label,
@@ -872,6 +891,63 @@ class _BookListScreenState extends State<BookListScreen>
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterPillIcon({
+    required String? status,
+    required IconData icon,
+  }) {
+    final bool isSelected = _selectedStatus == status;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ScaleOnTap(
+        onTap: () {
+          setState(() {
+            _selectedStatus = isSelected ? null : status;
+            _filterBooks();
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).primaryColor
+                : isDarkTheme
+                ? Theme.of(context).cardColor.withOpacity(0.8)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected
+                  ? Colors.transparent
+                  : isDarkTheme
+                  ? Theme.of(context).colorScheme.outline
+                  : Colors.grey.withOpacity(0.3),
+              width: isDarkTheme ? 1.5 : 1.0,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: isSelected
+                ? Colors.white
+                : isDarkTheme
+                ? Colors.white70
+                : Colors.black54,
           ),
         ),
       ),
