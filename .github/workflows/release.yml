@@ -205,6 +205,15 @@ jobs:
           # Store keychain path for later
           echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
 
+      - name: Install Installer Certificate
+        env:
+          MACOS_INSTALLER_CERT_BASE64: ${{ secrets.MACOS_INSTALLER_CERT_BASE64 }}
+          MACOS_INSTALLER_CERT_PASSWORD: ${{ secrets.MACOS_INSTALLER_CERT_PASSWORD }}
+        run: |
+          echo "$MACOS_INSTALLER_CERT_BASE64" | base64 --decode > $RUNNER_TEMP/installer_cert.p12
+          security import $RUNNER_TEMP/installer_cert.p12 -P "$MACOS_INSTALLER_CERT_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
       - name: Install Provisioning Profile
         env:
           APPLE_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 }}
@@ -337,9 +346,18 @@ jobs:
           spctl --assess --verbose "$APP_PATH" || echo "spctl assessment failed, but continuing..."
           
           # Create PKG for upload (required for App Store / TestFlight)
-          # We use the same identity for installer signing if possible, or fallback
+          echo "Finding Installer Identity..."
+          INSTALLER_IDENTITY=$(security find-identity -v -p codesigning | grep "Mac Developer Installer\|3rd Party Mac Developer Installer\|Developer ID Installer" | head -1 | awk -F '"' '{print $2}')
+          
+          if [ -z "$INSTALLER_IDENTITY" ]; then
+            echo "Error: No Installer identity found."
+            security find-identity -v -p codesigning
+            exit 1
+          fi
+          
+          echo "Found Installer Identity: $INSTALLER_IDENTITY"
           echo "Building signed package..."
-          productbuild --component "$APP_PATH" /Applications --sign "$IDENTITY" "build/macos/Build/Products/Release/bibliogenius.pkg"
+          productbuild --component "$APP_PATH" /Applications --sign "$INSTALLER_IDENTITY" "build/macos/Build/Products/Release/bibliogenius.pkg"
 
       - name: Find macOS Archive
         run: |
