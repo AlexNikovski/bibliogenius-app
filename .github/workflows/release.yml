@@ -457,7 +457,8 @@ jobs:
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
         with:
-          app-path: build/ios/ipa/BiblioGenius.ipa
+          # Use a glob/wildcard or find the file first because casing might vary (BiblioGenius.ipa vs bibliogenius.ipa)
+          app-path: build/ios/ipa/*.ipa
           issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           api-key-id: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           api-private-key: private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
