@@ -324,7 +324,9 @@ jobs:
           
           if [ -z "$IDENTITY" ]; then
             echo "Error: No Apple Distribution identity found."
-            security find-identity -v -p codesigning
+            # Debug: List all identities to confirm import (checking all policies)
+            echo "Listing all identities after import (no policy filter):"
+            security find-identity -v
             exit 1
           fi
           
