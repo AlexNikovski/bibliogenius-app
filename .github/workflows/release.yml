@@ -135,7 +135,7 @@ jobs:
           packageName: com.bibliogenius.app
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           track: internal
-          status: completed
+          status: draft
 
   build-macos:
     needs: build-rust
@@ -310,10 +310,16 @@ jobs:
           echo "Listing compiled directory:"
           ls -R build/macos/Build/Products/Release/
           
-          # Decode certificate to find the identity
-          # (We rely on the keychain from previous steps, but let's be explicit about identity)
-          # Assuming "Apple Distribution" or similar is available.
-          IDENTITY="Apple Distribution: Federico Vitale ($APPLE_TEAM_ID)"
+          # Find the identity dynamically
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Apple Distribution" | head -1 | awk -F '"' '{print $2}')
+          
+          if [ -z "$IDENTITY" ]; then
+            echo "Error: No Apple Distribution identity found."
+            security find-identity -v -p codesigning
+            exit 1
+          fi
+          
+          echo "Found Identity: $IDENTITY"
           
           echo "Signing backend binary with entitlements..."
           codesign --force --verbose --sign "$IDENTITY" --entitlements macos/Runner/Release.entitlements "$BACKEND_PATH"
