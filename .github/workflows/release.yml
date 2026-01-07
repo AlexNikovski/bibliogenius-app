@@ -352,11 +352,12 @@ jobs:
           echo "Finding Installer Identity..."
           
           # Debug: Show what we are parsing
-          echo "Raw security output:"
-          security find-identity -v -p codesigning
+          # Debug: Show what we are parsing (without restrictive policy)
+          echo "Raw security output (all valid identities):"
+          security find-identity -v
           
           # Extract the SHA-1 Hash (2nd column) of the first identity containing "Installer"
-          INSTALLER_IDENTITY=$(security find-identity -v -p codesigning | grep "Installer" | head -1 | awk '{print $2}')
+          INSTALLER_IDENTITY=$(security find-identity -v | grep "Installer" | head -1 | awk '{print $2}')
           
           if [ -z "$INSTALLER_IDENTITY" ]; then
             echo "Error: No Installer identity found."
