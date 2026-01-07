@@ -349,7 +349,7 @@ jobs:
           
           # Create PKG for upload (required for App Store / TestFlight)
           echo "Finding Installer Identity..."
-          INSTALLER_IDENTITY=$(security find-identity -v -p codesigning | grep "Mac Developer Installer\|3rd Party Mac Developer Installer\|Developer ID Installer" | head -1 | awk -F '"' '{print $2}')
+          INSTALLER_IDENTITY=$(security find-identity -v -p codesigning | grep -E "Mac Developer Installer|3rd Party Mac Developer Installer|Developer ID Installer" | head -1 | awk -F '"' '{print $2}')
           
           if [ -z "$INSTALLER_IDENTITY" ]; then
             echo "Error: No Installer identity found."
