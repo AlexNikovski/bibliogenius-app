@@ -34,6 +34,7 @@ class ScaffoldWithNav extends StatelessWidget {
                     ),
                     child: IntrinsicHeight(
                       child: NavigationRail(
+                        minWidth: 88, // Slightly wider for larger font
                         selectedIndex: _calculateSelectedIndex(
                           context,
                           navItems,
@@ -41,6 +42,15 @@ class ScaffoldWithNav extends StatelessWidget {
                         onDestinationSelected: (int index) =>
                             _onItemTapped(index, context, navItems),
                         labelType: NavigationRailLabelType.all,
+                        selectedLabelTextStyle: TextStyle(
+                          fontSize: 14, // 2px larger than default 12
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        unselectedLabelTextStyle: TextStyle(
+                          fontSize: 14, // 2px larger than default 12
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                         destinations: navItems
                             .map((item) => item.destination)
                             .toList(),

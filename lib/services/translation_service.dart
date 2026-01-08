@@ -1042,6 +1042,19 @@ class TranslationService {
       // Borrowing Module
       'enable_borrowing_module': 'Enable Borrowing',
       'borrowing_module_desc': 'Lend and borrow books with friends',
+      // Modules Section
+      'modules': 'Modules',
+      'module_collections': 'Collections',
+      'module_collections_desc':
+          'Enable or disable collection management features.',
+      'module_quotes': 'Daily Quotes',
+      'module_quotes_desc': 'Display an inspiring quote on the dashboard.',
+      'module_network': 'Network Discovery (mDNS)',
+      'module_network_desc':
+          'Make your library visible to other users on the local network.',
+      'module_gamification': 'Gamification',
+      'module_gamification_desc':
+          'Enable badges, levels, and progress tracking.',
       // Gamification
       'enable_gamification': 'Enable Gamification',
       'gamification_desc':
@@ -1744,6 +1757,9 @@ class TranslationService {
       'module_collections': 'Collections',
       'module_collections_desc':
           'Activez ou désactivez les fonctionnalités de gestion de collections.',
+      'module_quotes': 'Citations du jour',
+      'module_quotes_desc':
+          'Affiche une citation inspirante sur le tableau de bord.',
       'module_network': 'Découverte Réseau (mDNS)',
       'module_network_desc':
           'Rend votre bibliothèque visible par les autres utilisateurs sur le réseau local.',

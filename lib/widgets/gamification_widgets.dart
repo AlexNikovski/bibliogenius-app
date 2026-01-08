@@ -713,7 +713,7 @@ class TracksProgressRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Use Row for wide screens, Wrap for narrow ones
+        // Use Row for wide screens (>400px), 2x2 grid for narrow ones
         if (constraints.maxWidth > 400) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -765,47 +765,55 @@ class TracksProgressRow extends StatelessWidget {
             ],
           );
         } else {
-          // Wrap for narrow screens
-          return Wrap(
-            alignment: WrapAlignment.spaceEvenly,
-            spacing: 16,
-            runSpacing: 12,
+          // 2x2 grid for narrow screens - avoids 3+1 awkward layout
+          return Column(
             children: [
-              TrackProgressWidget(
-                track: status.collector,
-                trackName: TranslationService.translate(
-                  context,
-                  'track_collector',
-                ),
-                icon: Icons.library_books,
-                color: Colors.blue,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TrackProgressWidget(
+                    track: status.collector,
+                    trackName: TranslationService.translate(
+                      context,
+                      'track_collector',
+                    ),
+                    icon: Icons.library_books,
+                    color: Colors.blue,
+                  ),
+                  TrackProgressWidget(
+                    track: status.reader,
+                    trackName: TranslationService.translate(
+                      context,
+                      'track_reader',
+                    ),
+                    icon: Icons.menu_book,
+                    color: Colors.green,
+                  ),
+                ],
               ),
-              TrackProgressWidget(
-                track: status.reader,
-                trackName: TranslationService.translate(
-                  context,
-                  'track_reader',
-                ),
-                icon: Icons.menu_book,
-                color: Colors.green,
-              ),
-              TrackProgressWidget(
-                track: status.lender,
-                trackName: TranslationService.translate(
-                  context,
-                  'track_lender',
-                ),
-                icon: Icons.handshake,
-                color: Colors.orange,
-              ),
-              TrackProgressWidget(
-                track: status.cataloguer,
-                trackName: TranslationService.translate(
-                  context,
-                  'track_cataloguer',
-                ),
-                icon: Icons.sort,
-                color: Colors.purple,
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TrackProgressWidget(
+                    track: status.lender,
+                    trackName: TranslationService.translate(
+                      context,
+                      'track_lender',
+                    ),
+                    icon: Icons.handshake,
+                    color: Colors.orange,
+                  ),
+                  TrackProgressWidget(
+                    track: status.cataloguer,
+                    trackName: TranslationService.translate(
+                      context,
+                      'track_cataloguer',
+                    ),
+                    icon: Icons.sort,
+                    color: Colors.purple,
+                  ),
+                ],
               ),
             ],
           );

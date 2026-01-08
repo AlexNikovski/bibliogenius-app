@@ -800,6 +800,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               },
                             ),
                             const Divider(),
+                            // Daily Quotes Toggle
+                            SwitchListTile(
+                              title: Text(
+                                TranslationService.translate(
+                                  context,
+                                  'module_quotes',
+                                ),
+                              ),
+                              subtitle: Text(
+                                TranslationService.translate(
+                                  context,
+                                  'module_quotes_desc',
+                                ),
+                              ),
+                              secondary: const Icon(Icons.format_quote),
+                              value: themeProvider.quotesEnabled,
+                              onChanged: (bool value) {
+                                themeProvider.setQuotesEnabled(value);
+                              },
+                            ),
+                            const Divider(),
                             // Network Discovery Toggle (mDNS)
                             SwitchListTile(
                               secondary: const Icon(Icons.wifi_tethering),

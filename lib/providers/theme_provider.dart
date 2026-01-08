@@ -112,6 +112,7 @@ class ThemeProvider with ChangeNotifier {
     _commerceEnabled = prefs.getBool('commerceEnabled') ?? false;
     _networkDiscoveryEnabled = prefs.getBool('networkDiscoveryEnabled') ?? true;
     _collectionsEnabled = prefs.getBool('collectionsEnabled') ?? true;
+    _quotesEnabled = prefs.getBool('quotesEnabled') ?? true;
 
     // Load gamification setting (default based on profile type)
     final savedGamification = prefs.getBool('gamificationEnabled');
@@ -396,6 +397,17 @@ class ThemeProvider with ChangeNotifier {
     _collectionsEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('collectionsEnabled', enabled);
+    notifyListeners();
+  }
+
+  // Daily Quotes Module
+  bool _quotesEnabled = true;
+  bool get quotesEnabled => _quotesEnabled;
+
+  Future<void> setQuotesEnabled(bool enabled) async {
+    _quotesEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('quotesEnabled', enabled);
     notifyListeners();
   }
 }

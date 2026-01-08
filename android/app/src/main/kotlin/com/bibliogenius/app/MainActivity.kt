@@ -1,4 +1,4 @@
-package org.bibliogenius.app
+package com.bibliogenius.app
 
 import io.flutter.embedding.android.FlutterActivity
 

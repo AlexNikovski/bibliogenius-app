@@ -34,6 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Book? _heroBook;
   GamificationStatus? _gamificationStatus;
   String? _libraryName;
+  bool _quoteExpanded = false;
 
   final GlobalKey _addKey = GlobalKey(debugLabel: 'dashboard_add');
   final GlobalKey _searchKey = GlobalKey(debugLabel: 'dashboard_search');
@@ -137,7 +138,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (mounted) {
           setState(() {
             _stats['total_books'] = books.length;
-            _stats['borrowed_count'] = books.where((b) => !b.owned).length;
+            _stats['borrowed_count'] = books
+                .where((b) => b.readingStatus == 'borrowed')
+                .length;
 
             final readingListCandidates = books
                 .where((b) => ['reading', 'to_read'].contains(b.readingStatus))
@@ -210,9 +213,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       // Fetch quote separate from main data to allow localized refresh
-      print('Dashboard: Fetching quote...');
-      await _fetchQuote();
-      print('Dashboard: Quote fetched.');
+      // Only fetch if quotes module is enabled
+      if (themeProvider.quotesEnabled) {
+        print('Dashboard: Fetching quote...');
+        await _fetchQuote();
+        print('Dashboard: Quote fetched.');
+      }
 
       if (mounted) {
         print('Dashboard: Loading complete. Setting _isLoading = false');
@@ -331,9 +337,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 1. Header with Quote
-                            _buildHeader(context),
-                            const SizedBox(height: 24),
+                            // 1. Header with Quote (if enabled)
+                            if (themeProvider.quotesEnabled) ...[
+                              _buildHeader(context),
+                              const SizedBox(height: 24),
+                            ],
 
                             // Stats Row - Full Width
                             Row(
@@ -688,32 +696,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? const Color(0xFFC4A35A)
         : const Color(0xFF8B5A2B); // Richer brown
 
+    // Check if quote is long (more than ~100 chars typically needs expansion)
+    final isLongQuote = _dailyQuote!.text.length > 120;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradientColors,
-            ),
-            borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
-            border: isDark
-                ? Border.all(color: const Color(0xFF5D3A1A), width: 1)
-                : Border.all(color: const Color(0xFFE8D4C4), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: SizedBox(
+        GestureDetector(
+          onTap: isLongQuote
+              ? () => setState(() => _quoteExpanded = !_quoteExpanded)
+              : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
             width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: gradientColors,
+              ),
+              borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+              border: isDark
+                  ? Border.all(color: const Color(0xFF5D3A1A), width: 1)
+                  : Border.all(color: const Color(0xFFE8D4C4), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: [
@@ -736,39 +751,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        _dailyQuote!.text,
-                        style: TextStyle(
-                          fontSize: 16,
-                          height: 1.4,
-                          fontStyle: FontStyle.italic,
-                          color: textColor,
-                          fontWeight: FontWeight.w500,
+                      AnimatedCrossFade(
+                        duration: const Duration(milliseconds: 200),
+                        crossFadeState: _quoteExpanded || !isLongQuote
+                            ? CrossFadeState.showSecond
+                            : CrossFadeState.showFirst,
+                        firstChild: Text(
+                          _dailyQuote!.text,
+                          style: TextStyle(
+                            fontSize: 16,
+                            height: 1.4,
+                            fontStyle: FontStyle.italic,
+                            color: textColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        secondChild: Text(
+                          _dailyQuote!.text,
+                          style: TextStyle(
+                            fontSize: 16,
+                            height: 1.4,
+                            fontStyle: FontStyle.italic,
+                            color: textColor,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 16,
-                              height: 1,
-                              color: textColor.withValues(alpha: 0.3),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _dailyQuote!.author,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
-                                letterSpacing: 0.3,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Expand/collapse indicator for long quotes
+                          if (isLongQuote)
+                            AnimatedRotation(
+                              duration: const Duration(milliseconds: 200),
+                              turns: _quoteExpanded ? 0.5 : 0,
+                              child: Icon(
+                                Icons.keyboard_arrow_down,
+                                size: 20,
+                                color: textColor.withValues(alpha: 0.6),
                               ),
+                            )
+                          else
+                            const SizedBox.shrink(),
+                          // Author attribution
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  width: 16,
+                                  height: 1,
+                                  color: textColor.withValues(alpha: 0.3),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    _dailyQuote!.author,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor,
+                                      letterSpacing: 0.3,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
