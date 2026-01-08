@@ -317,7 +317,7 @@ jobs:
           mkdir -p private_keys
           echo "${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}" | base64 --decode > private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
 
-      - name: Sign macOS App
+      - name: Sign macOS App for Distribution
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -327,27 +327,36 @@ jobs:
           echo "Listing compiled directory:"
           ls -R build/macos/Build/Products/Release/
           
-          # Find the Developer ID Application identity
-          # CRITICAL: For Notarization (DMG distribution), we MUST use "Developer ID Application".
-          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F '"' '{print $2}')
+          # Check for Developer ID Application certificate (for notarized DMG)
+          DEVELOPER_ID=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | awk -F '"' '{print $2}')
           
-          if [ -z "$IDENTITY" ]; then
-            echo "❌ Error: 'Developer ID Application' certificate not found in keychain."
-            echo "For macOS Notarization (DMG), you MUST use a Developer ID Application certificate."
-            echo "Please ensure APPLE_CERTIFICATE_BASE64 contains a 'Developer ID Application' certificate, not 'Apple Distribution'."
-            echo "Available identities:"
-            security find-identity -v
+          # Check for Apple Distribution certificate (for TestFlight/App Store)
+          APPLE_DIST=$(security find-identity -v -p codesigning | grep "Apple Distribution" | head -1 | awk -F '"' '{print $2}')
+          
+          echo "Available identities:"
+          security find-identity -v -p codesigning
+          
+          if [ -n "$DEVELOPER_ID" ]; then
+            echo "✅ Found Developer ID: $DEVELOPER_ID"
+            echo "Will create notarized DMG for direct distribution"
+            IDENTITY="$DEVELOPER_ID"
+            echo "HAS_DEVELOPER_ID=true" >> $GITHUB_ENV
+          elif [ -n "$APPLE_DIST" ]; then
+            echo "⚠️ Developer ID not found, using Apple Distribution: $APPLE_DIST"
+            echo "DMG will NOT be notarized (use TestFlight for distribution)"
+            IDENTITY="$APPLE_DIST"
+            echo "HAS_DEVELOPER_ID=false" >> $GITHUB_ENV
+          else
+            echo "❌ No valid signing identity found!"
             exit 1
           fi
           
-          echo "Found Identity: $IDENTITY"
+          echo "Using identity: $IDENTITY"
           
           echo "Prepare entitlements..."
           sed "s/\$(AppIdentifierPrefix)/$APPLE_TEAM_ID./g" macos/Runner/Release.entitlements > macos/Runner/Release.processed.entitlements
           
           echo "Signing inner libraries and frameworks..."
-          # Sign all frameworks and dylibs deep inside the bundle first (depth-first order)
-          # We explicitly add timestamp and runtime options to everything to be safe
           find "$APP_PATH/Contents/Frameworks" -depth \( -name "*.framework" -o -name "*.dylib" \) | while read file; do
              echo "Signing $file..."
              codesign --force --verbose --timestamp --options runtime --sign "$IDENTITY" "$file"
@@ -357,14 +366,12 @@ jobs:
           codesign --force --verbose --timestamp --options runtime --sign "$IDENTITY" --entitlements macos/Runner/Release.processed.entitlements "$BACKEND_PATH"
           
           echo "Signing main app bundle with hardened runtime and entitlements..."
-          # Explicitly sign the bundle (covers simple structure and main executable) without --deep
-          # This preserves the specific signatures we just applied to nested content
           codesign --force --verbose --timestamp --options runtime --sign "$IDENTITY" --entitlements macos/Runner/Release.processed.entitlements "$APP_PATH"
           
           # Verify signing
           echo "Verifying signature..."
           codesign --verify --verbose --deep --strict "$APP_PATH"
-          spctl --assess --verbose "$APP_PATH" || echo "spctl assessment failed (expected before notarization), continuing..."
+          spctl --assess --verbose "$APP_PATH" || echo "spctl assessment note: may require notarization for Gatekeeper"
 
       - name: Create DMG
         run: |
@@ -390,6 +397,13 @@ jobs:
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
+          if [ "$HAS_DEVELOPER_ID" != "true" ]; then
+            echo "⚠️ Skipping notarization - Developer ID Application certificate not available"
+            echo "DMG will be uploaded unsigned. Users can run: xattr -cr /Applications/bibliogenius.app"
+            echo "For notarized DMG, add Developer ID Application certificate to MACOS_DEVELOPER_ID_CERT_BASE64"
+            exit 0
+          fi
+          
           if [ -f "BiblioGenius-macOS.dmg" ]; then
             echo "Notarizing DMG..."
             
