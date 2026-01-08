@@ -344,14 +344,47 @@ jobs:
         run: |
           if [ -f "BiblioGenius-macOS.dmg" ]; then
             echo "Notarizing DMG..."
-            xcrun notarytool submit "BiblioGenius-macOS.dmg" \
+            
+            # Submit and capture output to get submission ID
+            SUBMIT_OUTPUT=$(xcrun notarytool submit "BiblioGenius-macOS.dmg" \
               --key-id "$API_KEY_ID" \
               --issuer "$ISSUER_ID" \
               --key "private_keys/AuthKey_$API_KEY_ID.p8" \
-              --wait
+              --wait \
+              --output-format json 2>&1) || true
             
-            echo "Stapling ticket to DMG..."
-            xcrun stapler staple "BiblioGenius-macOS.dmg"
+            echo "Submission output:"
+            echo "$SUBMIT_OUTPUT"
+            
+            # Extract submission ID and status
+            SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+            STATUS=$(echo "$SUBMIT_OUTPUT" | grep -o '"status":"[^"]*"' | tail -1 | cut -d'"' -f4)
+            
+            echo "Submission ID: $SUBMISSION_ID"
+            echo "Status: $STATUS"
+            
+            if [ "$STATUS" == "Accepted" ]; then
+              echo "✅ Notarization successful!"
+              echo "Stapling ticket to DMG..."
+              xcrun stapler staple "BiblioGenius-macOS.dmg"
+            else
+              echo "❌ Notarization failed with status: $STATUS"
+              echo "Fetching detailed log..."
+              
+              if [ -n "$SUBMISSION_ID" ]; then
+                xcrun notarytool log "$SUBMISSION_ID" \
+                  --key-id "$API_KEY_ID" \
+                  --issuer "$ISSUER_ID" \
+                  --key "private_keys/AuthKey_$API_KEY_ID.p8" \
+                  notarization_log.json || true
+                
+                echo "=== NOTARIZATION LOG ==="
+                cat notarization_log.json || echo "Could not read log"
+                echo "========================"
+              fi
+              
+              echo "⚠️ Continuing without stapling (DMG will still work with xattr -cr)"
+            fi
           else
             echo "Skipping Notarization (DMG not found)"
           fi
