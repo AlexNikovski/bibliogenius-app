@@ -255,18 +255,17 @@ jobs:
           # Export UUID for next step
           echo "PROFILE_UUID=$UUID" >> $GITHUB_ENV
 
-      - name: Build macOS app (signed)
+      - name: Build macOS app (unsigned - will sign manually)
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Update project with correct team ID
+          # Update project with correct team ID but DISABLE code signing during build
+          # We will sign manually with Developer ID Application certificate after build
           sed -i '' "s/DEVELOPMENT_TEAM = RF374CUSUZ/DEVELOPMENT_TEAM = $APPLE_TEAM_ID/g" macos/Runner.xcodeproj/project.pbxproj
-          sed -i '' 's/"Apple Development"/"Apple Distribution"/g' macos/Runner.xcodeproj/project.pbxproj
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' macos/Runner.xcodeproj/project.pbxproj
-          sed -i '' "s/PROVISIONING_PROFILE_SPECIFIER = \"\";/PROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_UUID\";/g" macos/Runner.xcodeproj/project.pbxproj
           
-          # Build the app
-          flutter build macos --release
+          # Build the app without code signing - we'll sign later with Developer ID
+          flutter build macos --release --no-codesign
       
       - name: Validate app bundle
         run: |
