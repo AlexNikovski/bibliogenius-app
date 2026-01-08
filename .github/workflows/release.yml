@@ -259,15 +259,17 @@ jobs:
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Update project with correct team ID but DISABLE code signing during build
-          # We will sign manually with Developer ID Application certificate after build
+          # Update project with correct team ID
           sed -i '' "s/DEVELOPMENT_TEAM = RF374CUSUZ/DEVELOPMENT_TEAM = $APPLE_TEAM_ID/g" macos/Runner.xcodeproj/project.pbxproj
-          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' macos/Runner.xcodeproj/project.pbxproj
-          # Set CODE_SIGN_IDENTITY to empty to disable signing during build
-          sed -i '' 's/CODE_SIGN_IDENTITY = ".*";/CODE_SIGN_IDENTITY = "";/g' macos/Runner.xcodeproj/project.pbxproj
           
-          # Build the app - xcodebuild will see empty CODE_SIGN_IDENTITY and skip signing
-          flutter build macos --release
+          # Build the app with code signing completely disabled via xcodebuild args
+          # We will sign manually with Developer ID Application certificate after build
+          flutter build macos --release \
+            --dart-define=CODESIGNING_DISABLED=true \
+            -- \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
       
       - name: Validate app bundle
         run: |
