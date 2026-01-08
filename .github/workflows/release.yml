@@ -221,10 +221,10 @@ jobs:
           curl -LO https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer
           curl -LO https://www.apple.com/certificateauthority/DeveloperIDCA.cer
           
-          # Import trusted intermediates
-          security import AppleWWDRCAG3.cer -k $KEYCHAIN_PATH -t agg
-          security import AppleWWDRCAG4.cer -k $KEYCHAIN_PATH -t agg
-          security import DeveloperIDCA.cer -k $KEYCHAIN_PATH -t agg
+          # Import trusted intermediates (ignore errors if already present)
+          security import AppleWWDRCAG3.cer -k $KEYCHAIN_PATH -t agg || true
+          security import AppleWWDRCAG4.cer -k $KEYCHAIN_PATH -t agg || true
+          security import DeveloperIDCA.cer -k $KEYCHAIN_PATH -t agg || true
 
       - name: Install Installer Certificate
         env:
