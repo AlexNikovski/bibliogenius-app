@@ -5,6 +5,7 @@ import '../../services/api_service.dart';
 import '../../services/translation_service.dart';
 import '../../models/collection.dart';
 import 'import_curated_list_screen.dart' as import_curated;
+import '../../widgets/genie_app_bar.dart';
 
 class CollectionListScreen extends StatefulWidget {
   const CollectionListScreen({super.key});
@@ -105,8 +106,9 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(TranslationService.translate(context, 'collections')),
+      extendBodyBehindAppBar: true,
+      appBar: GenieAppBar(
+        title: TranslationService.translate(context, 'collections'),
         actions: [
           TextButton.icon(
             style: TextButton.styleFrom(foregroundColor: Colors.white),
