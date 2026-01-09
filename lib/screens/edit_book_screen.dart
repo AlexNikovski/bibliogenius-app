@@ -358,8 +358,20 @@ class _EditBookScreenState extends State<EditBookScreen> {
       }
       await apiService.updateBook(widget.book.id!, bookData);
 
-      // Also update copy status if changed
-      if (_copyId != null) {
+      // If not owned anymore, delete all copies. Otherwise update copy status.
+      if (!_owned) {
+        try {
+          final copiesRes = await apiService.getBookCopies(widget.book.id!);
+          final List copies = copiesRes.data['copies'] ?? [];
+          for (var copy in copies) {
+            if (copy['id'] != null) {
+              await apiService.deleteCopy(copy['id']);
+            }
+          }
+        } catch (e) {
+          debugPrint('Error cleaning up copies for un-owned book: $e');
+        }
+      } else if (_copyId != null) {
         await apiService.updateCopy(_copyId!, {'status': _copyStatus});
       }
 

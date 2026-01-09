@@ -391,6 +391,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
       await api.updateBook(book.bookId, {'owned': newStatus});
 
       // 2. If becoming owned, check/create copy
+      // 2. If becoming owned, check/create copy
       if (newStatus) {
         final copiesRes = await api.getBookCopies(book.bookId);
         final List copies = copiesRes.data['copies'] ?? [];
@@ -406,6 +407,19 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             // Optional: Show specific message about copy creation or just rely on generic status update
             // Ideally we just inform the user that it's now owned.
           }
+        }
+      } else {
+        // If becoming un-owned, delete all existing copies
+        try {
+          final copiesRes = await api.getBookCopies(book.bookId);
+          final List copies = copiesRes.data['copies'] ?? [];
+          for (var copy in copies) {
+            if (copy['id'] != null) {
+              await api.deleteCopy(copy['id']);
+            }
+          }
+        } catch (e) {
+          debugPrint('Error deleting copies when un-owning book: $e');
         }
       }
 
