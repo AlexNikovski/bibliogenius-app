@@ -184,18 +184,31 @@ class _ScanScreenState extends State<ScanScreen> {
       }
 
       // 3. Add to collection if specified
-      if (bookId != null && widget.preSelectedCollectionId != null) {
-        try {
-          // Use addBookToCollection to append, not replace!
-          await api.addBookToCollection(
-            widget.preSelectedCollectionId!.toString(),
-            bookId,
-          );
-        } catch (e) {
-          // Ignore if already in collection or other minor error,
-          // but log it.
-          debugPrint('Error adding to collection: $e');
+      if (bookId != null) {
+        if (widget.preSelectedCollectionId != null) {
+          try {
+            // Use addBookToCollection to append, not replace!
+            await api.addBookToCollection(
+              widget.preSelectedCollectionId!.toString(),
+              bookId,
+            );
+          } catch (e) {
+            // Ignore if already in collection or other minor error,
+            // but log it.
+            debugPrint('Error adding to collection: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erreur ajout collection: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
+      } else {
+        // Book ID is null!
+        throw Exception("Impossible de créer ou récupérer le livre (ID null)");
       }
 
       setState(() {
