@@ -481,35 +481,84 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen>
             onExpansionChanged: (val) => setState(() => _showOptions = val),
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${TranslationService.translate(context, 'add_tags')} :',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    HierarchicalTagSelector(
-                      selectedTags: _selectedTags,
-                      onTagsChanged: (list) {
-                        setState(() => _selectedTags = list);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '${TranslationService.translate(context, 'add_to_collections_label')} :',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    CollectionSelector(
-                      selectedCollections: _selectedCollections,
-                      onChanged: (list) {
-                        setState(() => _selectedCollections = list);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth > 700;
+                    final tagSection = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.label_outline, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              TranslationService.translate(context, 'add_tags'),
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        HierarchicalTagSelector(
+                          selectedTags: _selectedTags,
+                          onTagsChanged: (list) {
+                            setState(() => _selectedTags = list);
+                          },
+                        ),
+                      ],
+                    );
+
+                    final collectionSection = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.collections_bookmark_outlined,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              TranslationService.translate(
+                                context,
+                                'add_to_collections_label',
+                              ),
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        CollectionSelector(
+                          selectedCollections: _selectedCollections,
+                          onChanged: (list) {
+                            setState(() => _selectedCollections = list);
+                          },
+                        ),
+                      ],
+                    );
+
+                    if (isWide) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: tagSection),
+                          const SizedBox(width: 32),
+                          Expanded(child: collectionSection),
+                        ],
+                      );
+                    } else {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          tagSection,
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          collectionSection,
+                        ],
+                      );
+                    }
+                  },
                 ),
               ),
             ],
