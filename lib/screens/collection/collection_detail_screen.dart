@@ -5,9 +5,10 @@ import '../../services/translation_service.dart';
 import '../../widgets/cached_book_cover.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../widgets/genie_app_bar.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   final Collection collection;
@@ -211,12 +212,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.collection.name),
+      extendBodyBehindAppBar: true, // 🌟 Immersive Header
+      appBar: GenieAppBar(
+        title: widget.collection.name,
+        transparent: true, // 🌟 Transparent AppBar
         actions: [
-          // Batch scan for this collection
           IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
+            icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
             onPressed: () async {
               await context.push(
                 '/scan',
@@ -226,7 +228,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                   'batch': true,
                 },
               );
-              // Refresh books when returning from scan
               _refreshBooks();
             },
             tooltip: TranslationService.translate(
@@ -235,154 +236,398 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.upload_file),
+            icon: const Icon(Icons.upload_file, color: Colors.white),
             onPressed: _importBooks,
             tooltip: 'Import Books',
           ),
           IconButton(
-            icon: const Icon(Icons.delete),
+            icon: const Icon(Icons.delete, color: Colors.white),
             onPressed: _deleteCollection,
             tooltip: 'Delete Collection',
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (widget.collection.description != null)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                widget.collection.description!,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          Expanded(
-            child: FutureBuilder<List<CollectionBook>>(
-              future: _booksFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('No books in this collection yet.'),
-                  );
-                }
+      body: FutureBuilder<List<CollectionBook>>(
+        future: _booksFuture,
+        builder: (context, snapshot) {
+          final books = snapshot.data ?? [];
+          final loading = snapshot.connectionState == ConnectionState.waiting;
 
-                final books = snapshot.data!;
-                return ListView.builder(
-                  itemCount: books.length,
-                  itemBuilder: (context, index) {
-                    final book = books[index];
-                    return Dismissible(
-                      key: Key('collection_book_${book.bookId}'),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      confirmDismiss: (direction) async {
-                        return await showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Remove Book?'),
-                            content: Text(
-                              'Remove "${book.title}" from this collection?',
+          // Stats Calculation
+          final totalCount = books.length;
+          final ownedCount = books.where((b) => b.isOwned).length;
+          final wantedCount = totalCount - ownedCount;
+
+          return Column(
+            children: [
+              // 🎨 Immersive Hero Banner
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF6BB0A9),
+                      Color(0xFF5C8C9F),
+                    ], // Matches GenieAppBar (Teal/Blue-Grey)
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF5C8C9F).withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + kToolbarHeight + 8,
+                  bottom: 32,
+                  left: 16,
+                  right: 16,
+                ),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(
+                      alpha: 0.1,
+                    ), // Glassy background
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Description
+                      if (widget.collection.description != null &&
+                          widget.collection.description!.isNotEmpty)
+                        Text(
+                          widget.collection.description!,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.95),
+                                height: 1.5,
+                                fontSize: 16,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+
+                      const SizedBox(height: 24),
+
+                      // ✨ Stats Row
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 24,
+                        runSpacing: 16,
+                        children: [
+                          _buildStatCard(
+                            context,
+                            totalCount.toString(),
+                            TranslationService.translate(context, 'books'),
+                            Icons.library_books,
+                            Colors.white,
+                          ),
+                          if (totalCount > 0) ...[
+                            _buildStatCard(
+                              context,
+                              ownedCount.toString(),
+                              TranslationService.translate(
+                                context,
+                                'status_owned',
+                              ),
+                              Icons.check_circle,
+                              Colors.greenAccent,
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancel'),
+                            _buildStatCard(
+                              context,
+                              wantedCount.toString(),
+                              TranslationService.translate(
+                                context,
+                                'status_wanted',
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Remove'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      onDismissed: (direction) {
-                        _removeBook(book);
-                      },
-                      child: ListTile(
-                        leading: CachedBookCover(
-                          imageUrl: book.coverUrl,
-                          width: 40,
-                          height: 60,
-                        ),
-                        title: Text(
-                          book.title,
-                          style: TextStyle(
-                            decoration: book.isOwned
-                                ? null
-                                : TextDecoration.none, // Maybe strike? No.
-                            color: book.isOwned ? null : Colors.grey,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                              Icons.bookmark_border,
+                              Colors.orangeAccent,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 📚 Book List
+              Expanded(
+                child: loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : snapshot.hasError
+                    ? Center(child: Text('Error: ${snapshot.error}'))
+                    : books.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (book.author != null) Text(book.author!),
+                            Icon(
+                              Icons.auto_stories_outlined,
+                              size: 64,
+                              color: Colors.grey[300],
+                            ),
+                            const SizedBox(height: 16),
                             Text(
-                              '${TranslationService.translate(context, 'added_date_label')} ${DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(book.addedAt)}',
-                              style: Theme.of(context).textTheme.bodySmall,
+                              'No books yet',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            FilledButton.icon(
+                              onPressed: _importBooks,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Books'),
                             ),
                           ],
                         ),
-                        trailing: InkWell(
-                          onTap: () => _toggleBookStatus(book),
-                          borderRadius: BorderRadius.circular(12),
-                          child: book.isOwned
-                              ? Tooltip(
-                                  message:
-                                      '${TranslationService.translate(context, 'status_owned')} (Tap to toggle)',
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(
+                          top: 16,
+                          left: 16,
+                          right: 16,
+                          bottom: 100,
+                        ),
+                        itemCount: books.length,
+                        itemBuilder: (context, index) {
+                          final book = books[index];
+                          return Dismissible(
+                            key: Key('collection_book_${book.bookId}'),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade400,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                            // ... confirmDismiss logic ...
+                            confirmDismiss: (direction) async {
+                              return await showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Remove Book?'),
+                                  content: Text(
+                                    'Remove "${book.title}" from this collection?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('Cancel'),
                                     ),
-                                  ),
-                                )
-                              : Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    TranslationService.translate(
-                                      context,
-                                      'status_wanted',
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                      ),
+                                      child: const Text('Remove'),
                                     ),
-                                    style: const TextStyle(
-                                      color: Colors.orange,
-                                      fontSize: 12,
+                                  ],
+                                ),
+                              );
+                            },
+                            onDismissed: (_) => _removeBook(book),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                                child: InkWell(
+                                  // ... existing inkwell ...
+                                  onTap: () =>
+                                      context.push('/books/${book.bookId}'),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Row(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: CachedBookCover(
+                                            imageUrl: book.coverUrl,
+                                            width: 50,
+                                            height: 75,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                book.title,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleSmall
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 15,
+                                                      decoration: book.isOwned
+                                                          ? null
+                                                          : TextDecoration.none,
+                                                      color: book.isOwned
+                                                          ? null
+                                                          : Colors.grey[700],
+                                                    ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (book.author != null) ...[
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  book.author!,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: Colors.grey,
+                                                      ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        // Status Logic
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () =>
+                                                _toggleBookStatus(book),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: book.isOwned
+                                                    ? Colors.green.withValues(
+                                                        alpha: 0.1,
+                                                      )
+                                                    : Colors.orange.withValues(
+                                                        alpha: 0.1,
+                                                      ),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: book.isOwned
+                                                      ? Colors.green.withValues(
+                                                          alpha: 0.3,
+                                                        )
+                                                      : Colors.orange
+                                                            .withValues(
+                                                              alpha: 0.3,
+                                                            ),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    book.isOwned
+                                                        ? Icons.check_circle
+                                                        : Icons.bookmark_border,
+                                                    size: 14,
+                                                    color: book.isOwned
+                                                        ? Colors.green
+                                                        : Colors.orange,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
-                        ),
-                        onTap: () {
-                          // Navigate to book details
-                          context.push('/books/${book.bookId}');
+                              ),
+                            ),
+                          );
                         },
                       ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildStatCard(
+    BuildContext context,
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+          ),
+          child: Icon(icon, color: color, size: 28),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 

@@ -21,7 +21,10 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.bottom,
     this.leading,
     this.automaticallyImplyLeading = true,
+    this.transparent = false,
   });
+
+  final bool transparent;
 
   @override
   Widget build(BuildContext context) {
@@ -53,16 +56,24 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
             const Color(0xFF764ba2),
           ]; // Blue-purple (fallback)
 
+    if (transparent) {
+      // Use a transparent gradient/color if requested
+      // We can just empty the list or use transparent colors
+    }
+
     return AppBar(
       automaticallyImplyLeading: automaticallyImplyLeading,
       leading: leading,
       flexibleSpace: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: transparent
+              ? null
+              : LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          color: transparent ? Colors.transparent : null,
         ),
       ),
       elevation: 0,
