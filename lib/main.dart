@@ -359,9 +359,7 @@ class _AppRouterState extends State<AppRouter> {
                     final collectionIdStr =
                         extra?['collectionId']?.toString() ??
                         queryParams['collectionId'];
-                    final preSelectedCollectionId = collectionIdStr != null
-                        ? int.tryParse(collectionIdStr)
-                        : null;
+                    final preSelectedCollectionId = collectionIdStr;
 
                     final preSelectedShelfId =
                         extra?['shelfId'] ?? queryParams['shelfId'];
@@ -477,21 +475,41 @@ class _AppRouterState extends State<AppRouter> {
             GoRoute(
               path: '/scan',
               builder: (context, state) {
+                // Safely cast extra to Map
+                final extra = state.extra is Map ? state.extra as Map : null;
+
                 // Support batch mode with pre-selected destination
-                final shelfId = state.uri.queryParameters['shelfId'];
-                final shelfName = state.uri.queryParameters['shelfName'];
-                final collectionIdStr =
-                    state.uri.queryParameters['collectionId'];
+                final shelfId =
+                    extra?['shelfId'] as String? ??
+                    state.uri.queryParameters['shelfId'];
+                final shelfName =
+                    extra?['shelfName'] as String? ??
+                    state.uri.queryParameters['shelfName'];
+
+                // Handle collectionId (String)
+                String? collectionId;
+                if (extra != null && extra.containsKey('collectionId')) {
+                  collectionId = extra['collectionId']?.toString();
+                } else {
+                  collectionId = state.uri.queryParameters['collectionId'];
+                }
+
                 final collectionName =
+                    extra?['collectionName'] as String? ??
                     state.uri.queryParameters['collectionName'];
-                final batch = state.uri.queryParameters['batch'] == 'true';
+
+                // Batch mode check
+                bool batch = false;
+                if (extra != null && extra.containsKey('batch')) {
+                  batch = extra['batch'] == true;
+                } else {
+                  batch = state.uri.queryParameters['batch'] == 'true';
+                }
 
                 return ScanScreen(
                   preSelectedShelfId: shelfId,
                   preSelectedShelfName: shelfName,
-                  preSelectedCollectionId: collectionIdStr != null
-                      ? int.tryParse(collectionIdStr)
-                      : null,
+                  preSelectedCollectionId: collectionId,
                   preSelectedCollectionName: collectionName,
                   batchMode: batch,
                 );

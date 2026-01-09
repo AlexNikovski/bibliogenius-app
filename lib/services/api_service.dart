@@ -2279,10 +2279,14 @@ class ApiService {
   Future<Response> updateProfile({
     required String profileType,
     Map<String, dynamic>? avatarConfig,
+    Map<String, bool>? fallbackPreferences,
   }) async {
     final Map<String, dynamic> data = {'profile_type': profileType};
     if (avatarConfig != null) {
       data['avatar_config'] = avatarConfig;
+    }
+    if (fallbackPreferences != null) {
+      data['fallback_preferences'] = fallbackPreferences;
     }
     // In FFI/offline mode, profile is stored locally only
     if (useFfi) {

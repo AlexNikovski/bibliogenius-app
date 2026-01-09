@@ -218,11 +218,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
             onPressed: () async {
-              final collectionName = Uri.encodeComponent(
-                widget.collection.name,
-              );
               await context.push(
-                '/scan?collectionId=${widget.collection.id}&collectionName=$collectionName&batch=true',
+                '/scan',
+                extra: {
+                  'collectionId': widget.collection.id,
+                  'collectionName': widget.collection.name,
+                  'batch': true,
+                },
               );
               // Refresh books when returning from scan
               _refreshBooks();

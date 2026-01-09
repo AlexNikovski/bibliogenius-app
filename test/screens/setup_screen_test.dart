@@ -45,8 +45,9 @@ class FakeApiService implements ApiService {
   // ThemeProvider might call updateProfile in setProfileType, so let's mock it just in case.
   @override
   Future<Response> updateProfile({
-    String? profileType,
+    required String profileType,
     Map<String, dynamic>? avatarConfig,
+    Map<String, bool>? fallbackPreferences,
   }) async {
     return Response(
       requestOptions: RequestOptions(path: '/api/profile'),

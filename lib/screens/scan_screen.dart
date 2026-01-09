@@ -15,7 +15,7 @@ import '../models/book.dart';
 class ScanScreen extends StatefulWidget {
   final String? preSelectedShelfId;
   final String? preSelectedShelfName;
-  final int? preSelectedCollectionId;
+  final String? preSelectedCollectionId;
   final String? preSelectedCollectionName;
   final bool batchMode;
 
@@ -50,19 +50,6 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.preSelectedCollectionId != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Collection active: ${widget.preSelectedCollectionName ?? widget.preSelectedCollectionId}',
-            ),
-            backgroundColor: Colors.blue,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    });
   }
 
   @override
@@ -448,8 +435,8 @@ class _ScanScreenState extends State<ScanScreen> {
         children: [
           MobileScanner(
             controller: controller,
+            // fit: BoxFit.cover, // Ensure it covers screen
             onDetect: _onDetect,
-            // scanWindow removed to allow full screen detection
             errorBuilder: (context, error, child) {
               return Center(
                 child: Text(
@@ -459,6 +446,7 @@ class _ScanScreenState extends State<ScanScreen> {
               );
             },
           ),
+
           CustomPaint(
             painter: ScannerOverlayPainter(scanWindow),
             child: Container(),

@@ -1433,6 +1433,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildProfileTypeSummary(),
               const SizedBox(height: 32),
 
+              _buildSearchFallbackSection(),
+              const SizedBox(height: 32),
+
               // Security Settings (MFA)
               Text(
                 TranslationService.translate(context, 'security_settings') ??
@@ -3030,5 +3033,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
+  }
+
+  Widget _buildSearchFallbackSection() {
+    if (_config == null) return const SizedBox.shrink();
+
+    final List<dynamic> modules = _config!['enabled_modules'] ?? [];
+    final bool openLibraryEnabled = !modules.contains(
+      'disable_fallback:openlibrary',
+    );
+    final bool googleBooksEnabled = modules.contains('enable_google_books');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          TranslationService.translate(context, 'search_sources') ??
+              'Search Sources',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Column(
+            children: [
+              SwitchListTile(
+                title: const Text('OpenLibrary'),
+                subtitle: Text(
+                  TranslationService.translate(
+                        context,
+                        'source_openlibrary_desc',
+                      ) ??
+                      'Broad coverage, especially for English books',
+                ),
+                secondary: const Icon(Icons.public),
+                value: openLibraryEnabled,
+                onChanged: (val) =>
+                    _updateFallbackPreference('openlibrary', val),
+              ),
+              const Divider(),
+              SwitchListTile(
+                title: const Text('Google Books'),
+                subtitle: Text(
+                  TranslationService.translate(context, 'source_google_desc') ??
+                      'Excellent for covers and modern metadata',
+                ),
+                secondary: const Icon(Icons.search),
+                value: googleBooksEnabled,
+                onChanged: (val) =>
+                    _updateFallbackPreference('google_books', val),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _updateFallbackPreference(String provider, bool enabled) async {
+    try {
+      final api = Provider.of<ApiService>(context, listen: false);
+      // We must pass the current profile type to updateProfile as it is required
+      final profileType = _config?['profile_type'] ?? 'individual';
+
+      await api.updateProfile(
+        profileType: profileType,
+        fallbackPreferences: {provider: enabled},
+      );
+
+      await _fetchStatus(); // Refresh to reflect changes
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              TranslationService.translate(context, 'settings_saved') ??
+                  'Settings saved',
+            ),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${TranslationService.translate(context, 'error')}: $e',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

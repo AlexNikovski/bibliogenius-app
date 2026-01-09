@@ -18,7 +18,7 @@ import '../models/collection.dart';
 
 class AddBookScreen extends StatefulWidget {
   final String? isbn;
-  final int? preSelectedCollectionId;
+  final String? preSelectedCollectionId;
   final String? preSelectedShelfId;
 
   const AddBookScreen({
