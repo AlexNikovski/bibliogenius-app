@@ -464,18 +464,25 @@ class _NetworkScreenState extends State<NetworkScreen>
     }
   }
 
+  bool _isProcessingScan = false;
+
   void _onDetect(BarcodeCapture capture) async {
+    if (_isProcessingScan) return;
+
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
       if (barcode.rawValue != null) {
         try {
           final data = jsonDecode(barcode.rawValue!);
           if (data['name'] != null && data['url'] != null) {
-            _connect(data['name'], data['url']);
+            setState(() {
+              _isProcessingScan = true;
+            });
+            await _connect(data['name'], data['url']);
             break;
           }
         } catch (e) {
-          // invalid json
+          // invalid json, ignore and keep scanning
         }
       }
     }
@@ -493,7 +500,7 @@ class _NetworkScreenState extends State<NetworkScreen>
       await apiService.connectPeer(name, url);
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -504,10 +511,19 @@ class _NetworkScreenState extends State<NetworkScreen>
         );
         _tabController.animateTo(0);
         _loadAllMembers();
+
+        // Reset scanning state after a slight delay to allow navigation
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            setState(() {
+              _isProcessingScan = false;
+            });
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -515,6 +531,10 @@ class _NetworkScreenState extends State<NetworkScreen>
             ),
           ),
         );
+        // Reset state immediately on error so user can retry
+        setState(() {
+          _isProcessingScan = false;
+        });
       }
     }
   }

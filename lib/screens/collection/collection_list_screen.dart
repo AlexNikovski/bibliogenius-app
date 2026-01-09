@@ -110,9 +110,28 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
       appBar: GenieAppBar(
         title: TranslationService.translate(context, 'collections'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              // TODO: Implement collection search
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    TranslationService.translate(context, 'coming_soon'),
+                  ),
+                ),
+              );
+            },
+          ),
           TextButton.icon(
-            style: TextButton.styleFrom(foregroundColor: Colors.white),
-            icon: const Icon(Icons.auto_awesome),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            icon: const Icon(Icons.auto_awesome, size: 16),
             label: Text(TranslationService.translate(context, 'discover')),
             onPressed: () async {
               final result = await Navigator.push(
@@ -127,6 +146,7 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
               }
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: FutureBuilder<List<Collection>>(
@@ -246,66 +266,213 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
             itemCount: collections.length,
             itemBuilder: (context, index) {
               final collection = collections[index];
-              return ListTile(
-                leading: const Icon(Icons.folder),
-                title: Text(collection.name),
-                subtitle: Text(
-                  '${collection.totalBooks} ${TranslationService.translate(context, "books")}',
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(
-                          TranslationService.translate(
-                            context,
-                            'confirm_delete',
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    onTap: () {
+                      context.push(
+                        '/collections/${collection.id}',
+                        extra: collection,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          // Collection Icon / Avatar
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.blue.shade400,
+                                  Colors.blue.shade700,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.folder_special,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
-                        ),
-                        content: Text(
-                          TranslationService.translate(
-                            context,
-                            'delete_collection_confirm',
+                          const SizedBox(width: 16),
+                          // Content
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  collection.name,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (collection.description != null &&
+                                    collection.description!.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    collection.description!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: Colors.grey),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${collection.totalBooks} ${TranslationService.translate(context, "books")}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Delete'),
+                          // Actions
+                          MenuAnchor(
+                            builder:
+                                (
+                                  BuildContext context,
+                                  MenuController controller,
+                                  Widget? child,
+                                ) {
+                                  return IconButton(
+                                    onPressed: () {
+                                      if (controller.isOpen) {
+                                        controller.close();
+                                      } else {
+                                        controller.open();
+                                      }
+                                    },
+                                    icon: const Icon(Icons.more_vert),
+                                    tooltip: 'Options',
+                                  );
+                                },
+                            menuChildren: [
+                              MenuItemButton(
+                                onPressed: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text(
+                                        TranslationService.translate(
+                                          context,
+                                          'confirm_delete',
+                                        ),
+                                      ),
+                                      content: Text(
+                                        TranslationService.translate(
+                                          context,
+                                          'delete_collection_confirm',
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: Text(
+                                            TranslationService.translate(
+                                              context,
+                                              'cancel',
+                                            ),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                          ),
+                                          child: Text(
+                                            TranslationService.translate(
+                                              context,
+                                              'delete',
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirm == true && context.mounted) {
+                                    try {
+                                      await Provider.of<ApiService>(
+                                        context,
+                                        listen: false,
+                                      ).deleteCollection(collection.id);
+                                      _refreshCollections();
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(content: Text('Error: $e')),
+                                        );
+                                      }
+                                    }
+                                  }
+                                },
+                                leadingIcon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                child: Text(
+                                  TranslationService.translate(
+                                    context,
+                                    'delete',
+                                  ),
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    );
-
-                    if (confirm == true && context.mounted) {
-                      try {
-                        await Provider.of<ApiService>(
-                          context,
-                          listen: false,
-                        ).deleteCollection(collection.id);
-                        _refreshCollections();
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                        }
-                      }
-                    }
-                  },
+                    ),
+                  ),
                 ),
-                onTap: () {
-                  context.push(
-                    '/collections/${collection.id}',
-                    extra: collection,
-                  );
-                },
               );
             },
           );
