@@ -217,13 +217,15 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
           // Batch scan for this collection
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () {
+            onPressed: () async {
               final collectionName = Uri.encodeComponent(
                 widget.collection.name,
               );
-              context.push(
+              await context.push(
                 '/scan?collectionId=${widget.collection.id}&collectionName=$collectionName&batch=true',
               );
+              // Refresh books when returning from scan
+              _refreshBooks();
             },
             tooltip: TranslationService.translate(
               context,
