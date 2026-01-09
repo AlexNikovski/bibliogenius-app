@@ -1170,6 +1170,10 @@ class ApiService {
               'reading_goal_yearly': readingGoalYearly,
               'reading_goal_monthly': readingGoalMonthly,
               'reading_goal_progress': booksRead,
+              'fallback_preferences':
+                  prefs.getString('ffi_fallback_preferences') != null
+                  ? jsonDecode(prefs.getString('ffi_fallback_preferences')!)
+                  : <String, dynamic>{},
             },
             'level': 'Member',
             'loans_count': activeLoans,
@@ -1217,6 +1221,7 @@ class ApiService {
             'achievements_style': 'minimal',
             'reading_goal_yearly': 12,
             'reading_goal_progress': 0,
+            'fallback_preferences': <String, dynamic>{},
           },
           'level': 'Member',
           'loans_count': 0,
@@ -2290,6 +2295,13 @@ class ApiService {
     }
     // In FFI/offline mode, profile is stored locally only
     if (useFfi) {
+      if (fallbackPreferences != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          'ffi_fallback_preferences',
+          jsonEncode(fallbackPreferences),
+        );
+      }
       return Response(
         requestOptions: RequestOptions(path: '/api/profile'),
         statusCode: 200,
@@ -2446,6 +2458,11 @@ class ApiService {
           'author': data['authors'] != null
               ? (data['authors'] as List)
                     .map((a) => a is String ? a : a['name'])
+                    .where((a) {
+                      if (a == null) return false;
+                      final lower = a.toString().toLowerCase();
+                      return lower != 'unknown author' && lower != 'unknown';
+                    })
                     .join(', ')
               : null,
           'authors_data': data['authors'], // Pass full data for UI

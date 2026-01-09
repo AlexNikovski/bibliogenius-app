@@ -776,142 +776,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildReadingGoalsSection(),
               const SizedBox(height: 32),
               // Module Management
-              Text(
-                TranslationService.translate(context, 'modules'),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: Column(
-                  children: [
-                    Consumer<ThemeProvider>(
-                      builder: (context, themeProvider, _) {
-                        return Column(
-                          children: [
-                            SwitchListTile(
-                              title: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_collections',
-                                ),
-                              ),
-                              subtitle: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_collections_desc',
-                                ),
-                              ),
-                              secondary: const Icon(Icons.collections_bookmark),
-                              value: themeProvider.collectionsEnabled,
-                              onChanged: (bool value) {
-                                themeProvider.setCollectionsEnabled(value);
-                              },
-                            ),
-                            const Divider(),
-                            // Daily Quotes Toggle
-                            SwitchListTile(
-                              title: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_quotes',
-                                ),
-                              ),
-                              subtitle: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_quotes_desc',
-                                ),
-                              ),
-                              secondary: const Icon(Icons.format_quote),
-                              value: themeProvider.quotesEnabled,
-                              onChanged: (bool value) {
-                                themeProvider.setQuotesEnabled(value);
-                              },
-                            ),
-                            const Divider(),
-                            // Network Discovery Toggle (mDNS)
-                            SwitchListTile(
-                              secondary: const Icon(Icons.wifi_tethering),
-                              title: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_network',
-                                ),
-                              ),
-                              subtitle: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_network_desc',
-                                ),
-                              ),
-                              value: themeProvider.networkDiscoveryEnabled,
-                              onChanged: (value) async {
-                                await themeProvider.setNetworkDiscoveryEnabled(
-                                  value,
-                                );
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        TranslationService.translate(
-                                              context,
-                                              'restart_required_for_changes',
-                                            ) ??
-                                            'Please restart the app for changes to take full effect',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                            const Divider(),
-                            // Gamification Toggle
-                            SwitchListTile(
-                              secondary: const Icon(Icons.emoji_events),
-                              title: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_gamification',
-                                ),
-                              ),
-                              subtitle: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'module_gamification_desc',
-                                ),
-                              ),
-                              value: themeProvider.gamificationEnabled,
-                              onChanged: (value) =>
-                                  themeProvider.setGamificationEnabled(value),
-                            ),
-                            const Divider(),
-                            // Borrowing Module Toggle
-                            SwitchListTile(
-                              secondary: const Icon(Icons.swap_horiz),
-                              title: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'enable_borrowing_module',
-                                ),
-                              ),
-                              subtitle: Text(
-                                TranslationService.translate(
-                                  context,
-                                  'borrowing_module_desc',
-                                ),
-                              ),
-                              value: themeProvider.canBorrowBooks,
-                              onChanged: (value) =>
-                                  themeProvider.setCanBorrowBooks(value),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
               // Profile Settings
               Text(
                 TranslationService.translate(context, 'profile_settings'),
@@ -1187,28 +1051,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     if (Provider.of<ThemeProvider>(context).isBookseller) ...[
                       const Divider(),
-                      SwitchListTile(
-                        title: Text(
-                          TranslationService.translate(
-                            context,
-                            'commerce_module_label',
-                          ),
-                        ),
-                        subtitle: Text(
-                          TranslationService.translate(
-                            context,
-                            'commerce_module_subtitle',
-                          ),
-                        ),
-                        value: Provider.of<ThemeProvider>(
-                          context,
-                        ).commerceEnabled,
-                        activeColor: Theme.of(context).primaryColor,
-                        onChanged: (value) => Provider.of<ThemeProvider>(
-                          context,
-                          listen: false,
-                        ).setCommerceEnabled(value),
-                      ),
                     ],
                     if (Provider.of<ThemeProvider>(context).hasCommerce) ...[
                       const Divider(),
@@ -1433,6 +1275,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildProfileTypeSummary(),
               const SizedBox(height: 32),
 
+              _buildModulesSection(),
+              const SizedBox(height: 32),
+
               _buildSearchFallbackSection(),
               const SizedBox(height: 32),
 
@@ -1511,10 +1356,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-
-              // Audio Module Settings (decoupled - can be removed without breaking the app)
-              const AudioSettingsCard(),
               const SizedBox(height: 32),
 
               // Integrations (MCP for Claude Desktop)
@@ -3035,21 +2876,227 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSearchFallbackSection() {
-    if (_config == null) return const SizedBox.shrink();
-
-    final List<dynamic> modules = _config!['enabled_modules'] ?? [];
-    final bool openLibraryEnabled = !modules.contains(
-      'disable_fallback:openlibrary',
+  Widget _buildModulesSection() {
+    return Consumer2<ThemeProvider, AudioProvider>(
+      builder: (context, theme, audio, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              TranslationService.translate(context, 'modules'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Column(
+                children: [
+                  // Audio Toggle
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(
+                        context,
+                        'audio_module_title',
+                      ),
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                        context,
+                        'audiobooks_auto_search',
+                      ),
+                    ),
+                    secondary: const Icon(Icons.audiotrack),
+                    value: audio.isEnabled,
+                    onChanged: (val) => audio.setEnabled(val),
+                  ),
+                  const Divider(),
+                  // Collections
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_collections',
+                      ),
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_collections_desc',
+                      ),
+                    ),
+                    secondary: const Icon(Icons.collections_bookmark),
+                    value: theme.collectionsEnabled,
+                    onChanged: (val) => theme.setCollectionsEnabled(val),
+                  ),
+                  const Divider(),
+                  // Daily Quotes
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(context, 'module_quotes'),
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_quotes_desc',
+                      ),
+                    ),
+                    secondary: const Icon(Icons.format_quote),
+                    value: theme.quotesEnabled,
+                    onChanged: (val) => theme.setQuotesEnabled(val),
+                  ),
+                  const Divider(),
+                  // Network Discovery
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(context, 'module_network'),
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_network_desc',
+                      ),
+                    ),
+                    secondary: const Icon(Icons.wifi_tethering),
+                    value: theme.networkDiscoveryEnabled,
+                    onChanged: (val) async {
+                      await theme.setNetworkDiscoveryEnabled(val);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              TranslationService.translate(
+                                context,
+                                'restart_required_for_changes',
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const Divider(),
+                  // Gamification
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_gamification',
+                      ),
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_gamification_desc',
+                      ),
+                    ),
+                    secondary: const Icon(Icons.emoji_events),
+                    value: theme.gamificationEnabled,
+                    onChanged: (val) => theme.setGamificationEnabled(val),
+                  ),
+                  const Divider(),
+                  // Edition Browser
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_edition_browser',
+                      ),
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                        context,
+                        'module_edition_browser_desc',
+                      ),
+                    ),
+                    secondary: const Icon(Icons.layers),
+                    value: theme.editionBrowserEnabled,
+                    onChanged: (val) => theme.setEditionBrowserEnabled(val),
+                  ),
+                  const Divider(),
+                  // Borrowing
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(
+                        context,
+                        'enable_borrowing_module',
+                      ),
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                        context,
+                        'borrowing_module_desc',
+                      ),
+                    ),
+                    secondary: const Icon(Icons.swap_horiz),
+                    value: theme.canBorrowBooks,
+                    onChanged: (val) => theme.setCanBorrowBooks(val),
+                  ),
+                  if (theme.isBookseller) ...[
+                    const Divider(),
+                    // Commerce
+                    SwitchListTile(
+                      title: Text(
+                        TranslationService.translate(
+                          context,
+                          'commerce_module_label',
+                        ),
+                      ),
+                      subtitle: Text(
+                        TranslationService.translate(
+                          context,
+                          'commerce_module_subtitle',
+                        ),
+                      ),
+                      secondary: const Icon(Icons.sell),
+                      value: theme.commerceEnabled,
+                      activeColor: Theme.of(context).primaryColor,
+                      onChanged: (val) => theme.setCommerceEnabled(val),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
-    final bool googleBooksEnabled = modules.contains('enable_google_books');
+  }
+
+  Widget _buildSearchFallbackSection() {
+    final config = _config;
+    if (config == null) return const SizedBox.shrink();
+
+    // Try to find fallback preferences in user status or user info first
+    final Map<String, dynamic> userStatusConfig = _userStatus?['config'] ?? {};
+    final Map<String, dynamic> userPrefs =
+        userStatusConfig['fallback_preferences'] ??
+        _userInfo?['fallback_preferences'] ??
+        {};
+
+    // Determine OpenLibrary state (default: enabled)
+    bool openLibraryEnabled;
+    if (userPrefs.containsKey('openlibrary')) {
+      openLibraryEnabled = userPrefs['openlibrary'] == true;
+    } else {
+      // Fallback to old modules logic (deprecated)
+      final List<dynamic> modules = config['enabled_modules'] ?? [];
+      openLibraryEnabled = !modules.contains('disable_fallback:openlibrary');
+    }
+
+    // Determine Google Books state (default: disabled)
+    bool googleBooksEnabled;
+    if (userPrefs.containsKey('google_books')) {
+      googleBooksEnabled = userPrefs['google_books'] == true;
+    } else {
+      // Fallback to old modules logic (deprecated)
+      final List<dynamic> modules = config['enabled_modules'] ?? [];
+      googleBooksEnabled = modules.contains('enable_google_books');
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          TranslationService.translate(context, 'search_sources') ??
-              'Search Sources',
+          TranslationService.translate(context, 'search_sources'),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 16),
@@ -3060,10 +3107,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text('OpenLibrary'),
                 subtitle: Text(
                   TranslationService.translate(
-                        context,
-                        'source_openlibrary_desc',
-                      ) ??
-                      'Broad coverage, especially for English books',
+                    context,
+                    'source_openlibrary_desc',
+                  ),
                 ),
                 secondary: const Icon(Icons.public),
                 value: openLibraryEnabled,
@@ -3074,8 +3120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SwitchListTile(
                 title: const Text('Google Books'),
                 subtitle: Text(
-                  TranslationService.translate(context, 'source_google_desc') ??
-                      'Excellent for covers and modern metadata',
+                  TranslationService.translate(context, 'source_google_desc'),
                 ),
                 secondary: const Icon(Icons.search),
                 value: googleBooksEnabled,
@@ -3095,9 +3140,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // We must pass the current profile type to updateProfile as it is required
       final profileType = _config?['profile_type'] ?? 'individual';
 
+      // Get current preferences to merge
+      final Map<String, dynamic> config = _userStatus?['config'] ?? {};
+      final Map<String, dynamic> currentPrefs = Map<String, dynamic>.from(
+        config['fallback_preferences'] ??
+            _userInfo?['fallback_preferences'] ??
+            {},
+      );
+
+      // Update the correctly keyed preference
+      currentPrefs[provider] = enabled;
+
+      // Ensure we have values for both if they weren't present (to avoid partial updates if backend replaces map)
+      if (!currentPrefs.containsKey('openlibrary')) {
+        final List<dynamic> modules = _config!['enabled_modules'] ?? [];
+        currentPrefs['openlibrary'] = !modules.contains(
+          'disable_fallback:openlibrary',
+        );
+      }
+      if (!currentPrefs.containsKey('google_books')) {
+        final List<dynamic> modules = _config!['enabled_modules'] ?? [];
+        currentPrefs['google_books'] = modules.contains('enable_google_books');
+      }
+
+      // Ensure the one we just changed is definitely set (redundant but safe)
+      currentPrefs[provider] = enabled;
+
+      // Convert to Map<String, bool> as expected by API
+      final Map<String, bool> finalPrefs = currentPrefs.map(
+        (key, value) => MapEntry(key, value == true),
+      );
+
       await api.updateProfile(
         profileType: profileType,
-        fallbackPreferences: {provider: enabled},
+        fallbackPreferences: finalPrefs,
       );
 
       await _fetchStatus(); // Refresh to reflect changes
@@ -3106,8 +3182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              TranslationService.translate(context, 'settings_saved') ??
-                  'Settings saved',
+              TranslationService.translate(context, 'settings_saved'),
             ),
             duration: const Duration(seconds: 1),
           ),

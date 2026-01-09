@@ -8,7 +8,7 @@ import '../models/book.dart';
 import '../models/gamification_status.dart';
 // import 'genie_chat_screen.dart'; // Removed as we use route string
 import '../providers/theme_provider.dart';
-import '../services/wizard_service.dart';
+
 import '../widgets/premium_book_card.dart';
 import '../services/quote_service.dart';
 import '../models/quote.dart';
@@ -564,6 +564,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           isPrimary: true,
                                           key: _addKey,
                                           testKey: const Key('addBookButton'),
+                                        ),
+                                        _buildActionButton(
+                                          context,
+                                          TranslationService.translate(
+                                            context,
+                                            'action_search_online',
+                                          ),
+                                          Icons.travel_explore,
+                                          () =>
+                                              context.push('/search/external'),
                                         ),
                                         _buildActionButton(
                                           context,

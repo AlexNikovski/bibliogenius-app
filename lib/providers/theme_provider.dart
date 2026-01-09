@@ -60,8 +60,11 @@ class ThemeProvider with ChangeNotifier {
 
   // Gamification: disabled by default for librarians and booksellers
   bool _gamificationEnabled = true;
-  bool get gamificationEnabled =>
-      _gamificationEnabled && !isLibrarian && !isBookseller;
+  bool get gamificationEnabled => _gamificationEnabled;
+
+  // Edition Browser: allows grouping search results by work with swipeable editions
+  bool _editionBrowserEnabled = true;
+  bool get editionBrowserEnabled => _editionBrowserEnabled;
 
   ThemeData get themeData {
     // Initialize registry if needed
@@ -113,6 +116,7 @@ class ThemeProvider with ChangeNotifier {
     _networkDiscoveryEnabled = prefs.getBool('networkDiscoveryEnabled') ?? true;
     _collectionsEnabled = prefs.getBool('collectionsEnabled') ?? true;
     _quotesEnabled = prefs.getBool('quotesEnabled') ?? true;
+    _editionBrowserEnabled = prefs.getBool('editionBrowserEnabled') ?? true;
 
     // Load gamification setting (default based on profile type)
     final savedGamification = prefs.getBool('gamificationEnabled');
@@ -179,6 +183,13 @@ class ThemeProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setEditionBrowserEnabled(bool enabled) async {
+    _editionBrowserEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('editionBrowserEnabled', enabled);
+    notifyListeners();
+  }
+
   Future<void> setCurrency(String currency) async {
     _currency = currency;
     final prefs = await SharedPreferences.getInstance();
@@ -187,6 +198,7 @@ class ThemeProvider with ChangeNotifier {
   }
 
   Future<void> setProfileType(String type, {ApiService? apiService}) async {
+    final bool wasBookseller = _profileType == 'bookseller';
     _profileType = type;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('profileType', type);
@@ -197,8 +209,8 @@ class ThemeProvider with ChangeNotifier {
       _canBorrowBooks = !isLibrarian;
     }
 
-    // Auto-enable commerce module for bookseller profile
-    if (type == 'bookseller') {
+    // Auto-enable commerce module only if switching TO bookseller for the first time
+    if (type == 'bookseller' && !wasBookseller) {
       _commerceEnabled = true;
       await prefs.setBool('commerceEnabled', true);
     }

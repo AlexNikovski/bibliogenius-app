@@ -4,37 +4,40 @@ import '../../models/collection.dart';
 
 import '../../services/translation_service.dart';
 import '../../services/api_service.dart';
-import '../../services/open_library_service.dart';
+import '../../providers/theme_provider.dart';
 import '../../widgets/cached_book_cover.dart';
 import '../../widgets/hierarchical_tag_selector.dart';
 import '../../widgets/collection_selector.dart';
+import '../../widgets/work_edition_card.dart';
 
 class ImportFromSearchScreen extends StatefulWidget {
   final Collection? initialCollection;
 
-  const ImportFromSearchScreen({Key? key, this.initialCollection})
-    : super(key: key);
+  const ImportFromSearchScreen({super.key, this.initialCollection});
 
   @override
-  _ImportFromSearchScreenState createState() => _ImportFromSearchScreenState();
+  State<ImportFromSearchScreen> createState() => _ImportFromSearchScreenState();
 }
 
-class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
+class _ImportFromSearchScreenState extends State<ImportFromSearchScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  final OpenLibraryService _openLibraryService = OpenLibraryService();
 
-  List<OpenLibraryBook> _searchResults = [];
-  final Set<OpenLibraryBook> _selectedBooks = {};
+  // Now using unified search results (Map) instead of OpenLibraryBook
+  List<Map<String, dynamic>> _searchResults = [];
+  List<Map<String, dynamic>> _groupedWorks = [];
+  final Set<int> _selectedIndices = {}; // Track by index for Map results
 
-  // New state for multi-selection
   List<String> _selectedTags = [];
   List<Collection> _selectedCollections = [];
 
   bool _isLoading = false;
   bool _isImporting = false;
   bool _importAsOwned = false;
-  bool _showOptions = true; // To toggle visibility of tags/collections
+  bool _showOptions = true;
   String? _errorMessage;
+
+  TabController? _tabController;
 
   @override
   void initState() {
@@ -42,6 +45,135 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
     if (widget.initialCollection != null) {
       _selectedCollections.add(widget.initialCollection!);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final theme = Provider.of<ThemeProvider>(context, listen: false);
+    if (theme.editionBrowserEnabled && _tabController == null) {
+      _tabController = TabController(length: 2, vsync: this);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Normalize a title for grouping purposes
+  String _normalizeTitle(String title) {
+    return title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\w\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  /// Group search results by work (title + author combination)
+  List<Map<String, dynamic>> _groupResultsByWork(
+    List<Map<String, dynamic>> results,
+  ) {
+    final Map<String, Map<String, dynamic>> workMap = {};
+    final userLang = Localizations.localeOf(context).languageCode.toLowerCase();
+
+    for (final book in results) {
+      final title = book['title'] as String? ?? '';
+      final author = book['author'] as String? ?? '';
+      final normalizedTitle = _normalizeTitle(title);
+      final normalizedAuthor = author.toLowerCase().trim();
+
+      final workKey = '$normalizedTitle|$normalizedAuthor';
+
+      if (workMap.containsKey(workKey)) {
+        (workMap[workKey]!['editions'] as List).add(book);
+      } else {
+        workMap[workKey] = {
+          'work_id': workKey,
+          'title': title,
+          'author': author.isNotEmpty ? author : null,
+          'editions': [book],
+        };
+      }
+    }
+
+    // Sort editions: completeness + language first, then year
+    for (final work in workMap.values) {
+      final editions = work['editions'] as List<Map<String, dynamic>>;
+      editions.sort((a, b) {
+        final scoreA = _calculateEditionScore(a, userLang);
+        final scoreB = _calculateEditionScore(b, userLang);
+        if (scoreA != scoreB) return scoreB.compareTo(scoreA);
+
+        final yearA = a['publication_year'] as int?;
+        final yearB = b['publication_year'] as int?;
+        if (yearA == null && yearB == null) return 0;
+        if (yearA == null) return 1;
+        if (yearB == null) return -1;
+        return yearB.compareTo(yearA);
+      });
+    }
+
+    // Sort works by best edition score
+    final worksList = workMap.values.toList();
+    worksList.sort((a, b) {
+      final editionsA = a['editions'] as List<Map<String, dynamic>>;
+      final editionsB = b['editions'] as List<Map<String, dynamic>>;
+      final scoreA = editionsA.isNotEmpty
+          ? _calculateEditionScore(editionsA.first, userLang)
+          : 0;
+      final scoreB = editionsB.isNotEmpty
+          ? _calculateEditionScore(editionsB.first, userLang)
+          : 0;
+      return scoreB.compareTo(scoreA);
+    });
+
+    return worksList;
+  }
+
+  /// Calculate score for edition sorting (higher = better)
+  int _calculateEditionScore(Map<String, dynamic> edition, String userLang) {
+    int score = 0;
+
+    if (edition['cover_url'] != null) score += 10;
+    if (edition['isbn'] != null) score += 5;
+    if (edition['publisher'] != null) score += 3;
+    if (edition['publication_year'] != null) score += 2;
+    if (edition['summary'] != null &&
+        (edition['summary'] as String).isNotEmpty) {
+      score += 4;
+    }
+
+    // Source bonus - Inventaire often has better French data
+    final source = (edition['source'] as String?)?.toLowerCase() ?? '';
+    if (source.contains('inventaire')) {
+      score += 8; // Inventaire bonus
+    }
+
+    // Language boost based on publisher
+    final publisher = (edition['publisher'] as String?)?.toLowerCase() ?? '';
+    if (userLang == 'fr' &&
+        (publisher.contains('gallimard') ||
+            publisher.contains('folio') ||
+            publisher.contains('poche') ||
+            publisher.contains('hachette') ||
+            publisher.contains('flammarion') ||
+            publisher.contains('seuil') ||
+            publisher.contains('actes sud') ||
+            publisher.contains('livre de poche'))) {
+      score += 15;
+    } else if (userLang == 'en' &&
+        (publisher.contains('penguin') ||
+            publisher.contains('harper') ||
+            publisher.contains('random house') ||
+            publisher.contains('oxford') ||
+            publisher.contains('vintage'))) {
+      score += 15;
+    }
+
+    return score;
   }
 
   Future<void> _search() async {
@@ -52,18 +184,25 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
       _isLoading = true;
       _errorMessage = null;
       _searchResults = [];
-      _selectedBooks.clear();
-      FocusScope.of(context).unfocus(); // Hide keyboard
+      _groupedWorks = [];
+      _selectedIndices.clear();
+      FocusScope.of(context).unfocus();
     });
 
     try {
-      final results = await _openLibraryService.searchBooks(query);
+      // Use unified search via ApiService (Inventaire + OpenLibrary)
+      final api = Provider.of<ApiService>(context, listen: false);
+      final userLang = Localizations.localeOf(context).languageCode;
+
+      final results = await api.searchBooks(query: query, lang: userLang);
+
       if (mounted) {
         setState(() {
           _searchResults = results;
+          _groupedWorks = _groupResultsByWork(results);
           _isLoading = false;
           if (results.isEmpty) {
-            _errorMessage = 'Aucun résultat trouvé.';
+            _errorMessage = TranslationService.translate(context, 'no_results');
           }
         });
       }
@@ -71,54 +210,122 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Erreur de recherche : $e';
+          _errorMessage =
+              '${TranslationService.translate(context, 'search_failed')}: $e';
         });
       }
     }
   }
 
-  void _toggleSelection(OpenLibraryBook book) {
+  void _toggleSelection(int index) {
     setState(() {
-      if (_selectedBooks.contains(book)) {
-        _selectedBooks.remove(book);
+      if (_selectedIndices.contains(index)) {
+        _selectedIndices.remove(index);
       } else {
-        _selectedBooks.add(book);
+        _selectedIndices.add(index);
       }
     });
   }
 
-  Future<void> _importSelected() async {
-    if (_selectedBooks.isEmpty) return;
+  /// Add a single book from the edition browser
+  Future<void> _addBookFromEdition(Map<String, dynamic> editionData) async {
+    setState(() => _isImporting = true);
 
-    setState(() {
-      _isImporting = true;
-    });
+    final apiService = Provider.of<ApiService>(context, listen: false);
+
+    try {
+      final bookData = {
+        'title': editionData['title'],
+        'author': editionData['author'],
+        'isbn': editionData['isbn'],
+        'publisher': editionData['publisher'],
+        'publication_year': editionData['publication_year'],
+        'cover_url': editionData['cover_url'],
+        'summary': editionData['summary'],
+        'reading_status': _importAsOwned ? 'to_read' : 'wanting',
+        'owned': _importAsOwned,
+        'subjects': _selectedTags.map((t) => t.split(' > ').last).toList(),
+      };
+
+      final response = await apiService.createBook(bookData);
+      int? bookId;
+
+      if (response.statusCode == 201) {
+        final data = response.data;
+        if (data is Map && data.containsKey('book')) {
+          bookId = data['book']['id'];
+        } else {
+          bookId = data['id'];
+        }
+      }
+
+      if (bookId != null) {
+        for (final collection in _selectedCollections) {
+          try {
+            if (collection.id.isNotEmpty) {
+              await apiService.addBookToCollection(collection.id, bookId);
+            }
+          } catch (e) {
+            debugPrint('Failed to add to collection ${collection.name}: $e');
+          }
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '"${editionData['title']}" ${TranslationService.translate(context, 'added_to_library')}',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${TranslationService.translate(context, 'failed_add_book')}: $e',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isImporting = false);
+      }
+    }
+  }
+
+  Future<void> _importSelected() async {
+    if (_selectedIndices.isEmpty) return;
+
+    setState(() => _isImporting = true);
 
     final apiService = Provider.of<ApiService>(context, listen: false);
     int successCount = 0;
     int failCount = 0;
 
-    for (final olBook in _selectedBooks) {
+    for (final index in _selectedIndices) {
+      final book = _searchResults[index];
       try {
-        // 1. Prepare book data
         int? bookId;
 
         final bookData = {
-          'title': olBook.title,
-          'author': olBook.author,
-          'isbn': olBook.isbn,
-          'publisher': olBook.publisher,
-          'publication_year': olBook.year,
-          'cover_url': olBook.coverUrl,
-          'summary': olBook.summary,
+          'title': book['title'],
+          'author': book['author'],
+          'isbn': book['isbn'],
+          'publisher': book['publisher'],
+          'publication_year': book['publication_year'],
+          'cover_url': book['cover_url'],
+          'summary': book['summary'],
           'reading_status': _importAsOwned ? 'to_read' : 'wanting',
           'owned': _importAsOwned,
-          'subjects': _selectedTags
-              .map((t) => t.split(' > ').last)
-              .toList(), // Add tags
+          'subjects': _selectedTags.map((t) => t.split(' > ').last).toList(),
         };
 
-        // 2. Create/Find Book
         final response = await apiService.createBook(bookData);
 
         if (response.statusCode == 201) {
@@ -129,26 +336,27 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
             bookId = data['id'];
           }
         } else {
-          // If creation failed (duplicate), try to find
-          if (olBook.isbn != null && olBook.isbn!.isNotEmpty) {
-            final existing = await apiService.findBookByIsbn(olBook.isbn!);
+          final isbn = book['isbn'] as String?;
+          if (isbn != null && isbn.isNotEmpty) {
+            final existing = await apiService.findBookByIsbn(isbn);
             if (existing != null) {
               bookId = existing.id;
             }
           }
 
           if (bookId == null) {
-            // Try by title
-            final books = await apiService.getBooks(title: olBook.title);
-            if (books.isNotEmpty) {
-              bookId = books.first.id;
+            final title = book['title'] as String?;
+            if (title != null) {
+              final books = await apiService.getBooks(title: title);
+              if (books.isNotEmpty) {
+                bookId = books.first.id;
+              }
             }
           }
         }
 
-        // 3. Link to Collections
         if (bookId != null) {
-          successCount++; // Count as success even if collection linking fails slightly
+          successCount++;
 
           for (final collection in _selectedCollections) {
             try {
@@ -161,18 +369,16 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
           }
         } else {
           failCount++;
-          debugPrint('Failed to import/find book: ${olBook.title}');
+          debugPrint('Failed to import/find book: ${book['title']}');
         }
       } catch (e) {
-        debugPrint('Error importing ${olBook.title}: $e');
+        debugPrint('Error importing ${book['title']}: $e');
         failCount++;
       }
     }
 
     if (mounted) {
-      setState(() {
-        _isImporting = false;
-      });
+      setState(() => _isImporting = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -181,18 +387,45 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
       );
 
       if (successCount > 0) {
-        Navigator.pop(context, true); // Return true to refresh
+        Navigator.pop(context, true);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Provider.of<ThemeProvider>(context);
+    final useEditionBrowser = theme.editionBrowserEnabled;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           TranslationService.translate(context, 'external_search_title'),
         ),
+        bottom: useEditionBrowser && _tabController != null
+            ? TabBar(
+                controller: _tabController,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
+                tabs: [
+                  Tab(
+                    text: TranslationService.translate(
+                      context,
+                      'search_tab_list',
+                    ),
+                    icon: const Icon(Icons.list),
+                  ),
+                  Tab(
+                    text: TranslationService.translate(
+                      context,
+                      'search_tab_editions',
+                    ),
+                    icon: const Icon(Icons.layers),
+                  ),
+                ],
+              )
+            : null,
       ),
       body: Column(
         children: [
@@ -213,8 +446,8 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
                         context,
                         'search_hint_example',
                       ),
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: const Icon(Icons.search),
                     ),
                     onSubmitted: (_) => _search(),
                   ),
@@ -239,7 +472,7 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
             ),
           ),
 
-          // Collapsible Options Panel (Tags & Collections)
+          // Collapsible Options Panel
           ExpansionTile(
             title: Text(
               TranslationService.translate(context, 'import_options'),
@@ -252,7 +485,6 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tags
                     Text(
                       '${TranslationService.translate(context, 'add_tags')} :',
                       style: Theme.of(context).textTheme.titleSmall,
@@ -265,8 +497,6 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-
-                    // Collections
                     Text(
                       '${TranslationService.translate(context, 'add_to_collections_label')} :',
                       style: Theme.of(context).textTheme.titleSmall,
@@ -294,8 +524,11 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
               ),
             ),
 
-          // Search Results Control Bar
-          if (_searchResults.isNotEmpty)
+          // Control Bar (only for list view)
+          if (_searchResults.isNotEmpty &&
+              (!useEditionBrowser ||
+                  _tabController == null ||
+                  _tabController!.index == 0))
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Container(
@@ -313,7 +546,7 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
                       TranslationService.translate(
                         context,
                         'selected_books_count',
-                        params: {'count': _selectedBooks.length.toString()},
+                        params: {'count': _selectedIndices.length.toString()},
                       ),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -334,34 +567,21 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
 
           const Divider(),
 
-          // Results List
+          // Results Area
           Expanded(
-            child: ListView.builder(
-              itemCount: _searchResults.length,
-              itemBuilder: (context, index) {
-                final book = _searchResults[index];
-                final isSelected = _selectedBooks.contains(book);
-
-                return ListTile(
-                  leading: CachedBookCover(
-                    imageUrl: book.coverUrl,
-                    width: 40,
-                    height: 60,
-                  ),
-                  title: Text(book.title),
-                  subtitle: Text('${book.author} (${book.year})'),
-                  trailing: Checkbox(
-                    value: isSelected,
-                    onChanged: (val) => _toggleSelection(book),
-                  ),
-                  onTap: () => _toggleSelection(book),
-                );
-              },
-            ),
+            child: useEditionBrowser && _tabController != null
+                ? TabBarView(
+                    controller: _tabController,
+                    children: [_buildListView(), _buildEditionView()],
+                  )
+                : _buildListView(),
           ),
 
-          // Floating Action Button for Import (visible when books are selected)
-          if (_selectedBooks.isNotEmpty)
+          // Import Button (only for list view)
+          if (_selectedIndices.isNotEmpty &&
+              (!useEditionBrowser ||
+                  _tabController == null ||
+                  _tabController!.index == 0))
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -373,7 +593,7 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
                     label: Text(
                       _isImporting
                           ? 'Importation...'
-                          : 'Importer ${_selectedBooks.length} livre(s)',
+                          : 'Importer ${_selectedIndices.length} livre(s)',
                     ),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -384,6 +604,85 @@ class _ImportFromSearchScreenState extends State<ImportFromSearchScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildListView() {
+    return ListView.builder(
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final book = _searchResults[index];
+        final isSelected = _selectedIndices.contains(index);
+        final source = book['source'] as String?;
+
+        return ListTile(
+          leading: Stack(
+            children: [
+              CachedBookCover(
+                imageUrl: book['cover_url'],
+                width: 40,
+                height: 60,
+              ),
+              // Source indicator
+              if (source != null)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: source.contains('Inventaire')
+                          ? Colors.green
+                          : Colors.blue,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      source.contains('Inventaire') ? 'INV' : 'OL',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          title: Text(book['title'] ?? 'Unknown'),
+          subtitle: Text(
+            '${book['author'] ?? ''} (${book['publication_year'] ?? '?'})',
+          ),
+          trailing: Checkbox(
+            value: isSelected,
+            onChanged: (val) => _toggleSelection(index),
+          ),
+          onTap: () => _toggleSelection(index),
+        );
+      },
+    );
+  }
+
+  Widget _buildEditionView() {
+    if (_groupedWorks.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return ListView.builder(
+      itemCount: _groupedWorks.length,
+      itemBuilder: (context, index) {
+        final work = _groupedWorks[index];
+        final editions = List<Map<String, dynamic>>.from(
+          work['editions'] as List,
+        );
+
+        return WorkEditionCard(
+          workId: work['work_id'] as String,
+          title: work['title'] as String,
+          author: work['author'] as String?,
+          editions: editions,
+          onAddBook: _addBookFromEdition,
+        );
+      },
     );
   }
 }

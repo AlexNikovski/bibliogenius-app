@@ -170,6 +170,28 @@ class _BookListScreenState extends State<BookListScreen>
               },
             ),
           ] else ...[
+            // Batch Scan Button (Only when Tag Filter is Active)
+            if (_tagFilter != null && !_isSearching)
+              IconButton(
+                icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+                tooltip: TranslationService.translate(
+                  context,
+                  'scan_into_shelf',
+                ),
+                onPressed: () async {
+                  final shelfId = _currentShelf?.id ?? _tagFilter;
+                  final shelfName = _currentShelf?.fullPath ?? _tagFilter;
+                  await context.push(
+                    '/scan',
+                    extra: {
+                      'shelfId': shelfId,
+                      'shelfName': shelfName,
+                      'batch': true,
+                    },
+                  );
+                  _fetchBooks(); // Refresh after scan
+                },
+              ),
             // Reorder Button (Only when Tag Filter is Active)
             if (_tagFilter != null && !_isSearching)
               IconButton(

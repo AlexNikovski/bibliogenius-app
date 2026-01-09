@@ -23,7 +23,7 @@ class OpenLibraryBook {
 
   factory OpenLibraryBook.fromJson(Map<String, dynamic> json) {
     // Extract author
-    String author = 'Unknown Author';
+    String author = '';
     if (json['author_name'] != null &&
         (json['author_name'] as List).isNotEmpty) {
       author = json['author_name'][0];
@@ -134,7 +134,7 @@ class OpenLibraryService {
 
           // Inventaire doesn't return author in search results directly
           // but description often contains author info
-          String author = 'Unknown Author';
+          String author = '';
           if (description != null && description.contains(' by ')) {
             author = description.split(' by ').last.trim();
           }
@@ -202,7 +202,7 @@ class OpenLibraryService {
         }
 
         // Extract author
-        String author = 'Unknown Author';
+        String author = '';
         if (data['authors'] != null && (data['authors'] as List).isNotEmpty) {
           try {
             final authorRef = data['authors'][0];
@@ -226,7 +226,7 @@ class OpenLibraryService {
           }
         }
 
-        if (author == 'Unknown Author' && data['by_statement'] != null) {
+        if (author.isEmpty && data['by_statement'] != null) {
           author = data['by_statement'] as String;
         }
 
@@ -268,7 +268,7 @@ class OpenLibraryService {
           (response.data['items'] as List).isNotEmpty) {
         final item = response.data['items'][0]['volumeInfo'];
         final title = item['title'] ?? 'Unknown Title';
-        final authors = (item['authors'] as List?)?.join(', ') ?? 'Unknown Author';
+        final authors = (item['authors'] as List?)?.join(', ') ?? '';
         final publisher = item['publisher'];
         final publishedDate = item['publishedDate'] as String?;
         int? year;
@@ -276,7 +276,10 @@ class OpenLibraryService {
           final match = RegExp(r'\d{4}').firstMatch(publishedDate);
           if (match != null) year = int.tryParse(match.group(0)!);
         }
-        final coverUrl = item['imageLinks']?['thumbnail']?.replaceFirst('http:', 'https:');
+        final coverUrl = item['imageLinks']?['thumbnail']?.replaceFirst(
+          'http:',
+          'https:',
+        );
 
         return OpenLibraryBook(
           title: title,
@@ -300,10 +303,7 @@ class OpenLibraryService {
       final cleanIsbn = isbn.replaceAll(RegExp(r'[^0-9X]'), '');
       final response = await _dio.get(
         'https://inventaire.io/api/entities',
-        queryParameters: {
-          'action': 'by-isbn',
-          'isbn': cleanIsbn,
-        },
+        queryParameters: {'action': 'by-isbn', 'isbn': cleanIsbn},
         options: Options(receiveTimeout: const Duration(seconds: 8)),
       );
 
@@ -321,7 +321,7 @@ class OpenLibraryService {
           // but let's take what we can get from the summary entity
           return OpenLibraryBook(
             title: label,
-            author: 'Unknown Author', // Hard to get without further fetch
+            author: '', // Hard to get without further fetch
             isbn: isbn,
             key: entity['uri'],
           );

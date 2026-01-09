@@ -550,7 +550,9 @@ class TranslationService {
       'scan_into_shelf': 'Scan into this shelf',
       'btn_enter_manually': 'Enter Manually',
       // External Search
-      'external_search_title': 'External Book Search',
+      'external_search_title': 'Online Search',
+      'search_tab_list': 'List',
+      'search_tab_editions': 'By Edition',
       'enter_search_term': 'Please enter at least one search term',
       'failed_add_book': 'Failed to add book',
       'preparing_backup': 'Preparing backup...',
@@ -667,6 +669,8 @@ class TranslationService {
       'borrowers': 'Borrowers',
       'search_failed': 'Search failed',
       'added_to_library': 'added to library',
+      'add_to_library': 'Add to Library',
+      'editions': 'EDITIONS',
       // Statistics
       'library_insights': 'Library Insights',
       'your_progress': 'Your Progress',
@@ -1066,6 +1070,9 @@ class TranslationService {
       'module_gamification': 'Gamification',
       'module_gamification_desc':
           'Enable badges, levels, and progress tracking.',
+      'module_edition_browser': 'Edition Browser',
+      'module_edition_browser_desc':
+          'Browse and select from multiple editions when adding books.',
       // Gamification
       'enable_gamification': 'Enable Gamification',
       'gamification_desc':
@@ -1112,6 +1119,9 @@ class TranslationService {
       'view': 'View',
       'added_date_label': 'Added:',
       'status_owned': 'Owned',
+      'search_sources': 'Search Sources',
+      'source_openlibrary_desc': 'Broad coverage, especially for English books',
+      'source_google_desc': 'Excellent for covers and modern metadata',
     },
     'fr': {
       'app_title': 'BiblioGenius',
@@ -1691,7 +1701,9 @@ class TranslationService {
       'scan_into_shelf': 'Scanner dans cette étagère',
       'btn_enter_manually': 'Saisir manuellement',
       // External Search
-      'external_search_title': 'Recherche de livre externe',
+      'external_search_title': 'Recherche en ligne',
+      'search_tab_list': 'Liste',
+      'search_tab_editions': 'Par édition',
       'enter_search_term': 'Veuillez entrer au moins un terme de recherche',
       'failed_add_book': 'Échec de l\'ajout du livre',
       'search_open_library': 'Rechercher en ligne',
@@ -1791,6 +1803,9 @@ class TranslationService {
       'module_gamification': 'Ludification',
       'module_gamification_desc':
           'Activez les badges, niveaux et le suivi de progression.',
+      'module_edition_browser': "Navigateur d'éditions",
+      'module_edition_browser_desc':
+          "Parcourir et sélectionner parmi plusieurs éditions lors de l'ajout de livres.",
       'enable_borrowing_module': 'Activer les emprunts',
       'borrowing_module_desc': 'Prêter et emprunter des livres avec vos amis',
 
@@ -1817,7 +1832,8 @@ class TranslationService {
       'borrowers': 'Emprunteurs',
       'search_failed': 'La recherche a échoué',
       'added_to_library': 'ajouté à la bibliothèque',
-      // Statistics
+      'add_to_library': 'Ajouter à la bibliothèque',
+      'editions': 'ÉDITIONS',
       'library_insights': 'Statistiques',
       'your_progress': 'Votre Progression',
       'track_cataloguer': 'Catalogueur',
@@ -2221,6 +2237,11 @@ class TranslationService {
       'action_reject': 'Refuser',
       'action_cancel': 'Annuler la demande',
       'view': 'Voir',
+      'search_sources': 'Sources de recherche',
+      'source_openlibrary_desc':
+          'Large couverture, surtout pour les livres en anglais',
+      'source_google_desc':
+          'Excellent pour les couvertures et métadonnées modernes',
     },
     'es': {
       'app_title': 'BiblioGenius',
