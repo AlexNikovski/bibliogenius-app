@@ -547,6 +547,7 @@ class TranslationService {
       'btn_enter_manually': 'Enter Manually',
       // External Search
       'external_search_title': 'Online Search',
+      'language_filter': 'Language',
       'search_tab_list': 'List',
       'search_tab_editions': 'By Edition',
       'enter_search_term': 'Please enter at least one search term',
@@ -1711,6 +1712,7 @@ class TranslationService {
       'btn_enter_manually': 'Saisir manuellement',
       // External Search
       'external_search_title': 'Recherche en ligne',
+      'language_filter': 'Langue',
       'search_tab_list': 'Liste',
       'search_tab_editions': 'Par édition',
       'enter_search_term': 'Veuillez entrer au moins un terme de recherche',
@@ -2637,6 +2639,7 @@ class TranslationService {
       'scan_isbn_title': 'Escanear ISBN',
       // External Search
       'external_search_title': 'Búsqueda externa de libros',
+      'language_filter': 'Idioma',
       'enter_search_term':
           'Por favor, introduce al menos un término de búsqueda',
       'failed_add_book': 'Error al añadir libro',
@@ -3159,6 +3162,7 @@ class TranslationService {
       'scan_isbn_title': 'ISBN scannen',
       // External Search
       'external_search_title': 'Externe Buchsuche',
+      'language_filter': 'Sprache',
       'enter_search_term': 'Bitte geben Sie mindestens einen Suchbegriff ein',
       'failed_add_book': 'Fehler beim Hinzufügen des Buches',
       'search_open_library': 'Online suchen',
