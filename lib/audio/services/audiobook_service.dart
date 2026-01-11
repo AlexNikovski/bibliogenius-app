@@ -101,15 +101,20 @@ class AudiobookService {
       }
     }
 
-    // Try Internet Archive as fallback
-    try {
-      final archiveResult = await _searchInternetArchive(bookId, title, author);
-      if (archiveResult != null) {
-        debugPrint('[AudiobookService] Found on Internet Archive: $title');
-        return archiveResult;
+    // Try Internet Archive as fallback (only if no preferred language,
+    // since Archive doesn't provide language info)
+    if (preferredLanguage == null || preferredLanguage.isEmpty) {
+      try {
+        final archiveResult = await _searchInternetArchive(bookId, title, author);
+        if (archiveResult != null) {
+          debugPrint('[AudiobookService] Found on Internet Archive: $title');
+          return archiveResult;
+        }
+      } catch (e) {
+        debugPrint('[AudiobookService] Internet Archive error: $e');
       }
-    } catch (e) {
-      debugPrint('[AudiobookService] Internet Archive error: $e');
+    } else {
+      debugPrint('[AudiobookService] Skipping Internet Archive (language filter active)');
     }
 
     // Cache negative result
@@ -305,7 +310,7 @@ class AudiobookService {
         }
       }
 
-      // If no match, log what languages were available
+      // If no match in preferred language, don't fallback - return null
       if (book == null) {
         final availableLangs = books
             .whereType<Map<String, dynamic>>()
@@ -313,13 +318,14 @@ class AudiobookService {
             .where((l) => l != null)
             .toSet();
         debugPrint(
-          '[AudiobookService] No book in "$targetLang". Available: $availableLangs',
+          '[AudiobookService] No book in "$targetLang". Available: $availableLangs. Skipping.',
         );
+        return null; // Don't show audiobooks in other languages
       }
+    } else {
+      // No preferred language specified - use first result
+      book = books.first as Map<String, dynamic>;
     }
-
-    // Fall back to first result if no language match
-    book ??= books.first as Map<String, dynamic>;
 
     // Fetch chapters from RSS if available
     List<AudioChapter>? chapters;

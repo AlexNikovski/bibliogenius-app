@@ -51,6 +51,24 @@ class _WorkEditionCardState extends State<WorkEditionCard> {
     return 'OL';
   }
 
+  String _getLanguageLabel(String? langCode) {
+    if (langCode == null || langCode.isEmpty) return '';
+    final code = langCode.toLowerCase();
+    const langMap = {
+      'fr': 'FR', 'fre': 'FR', 'fra': 'FR', 'french': 'FR',
+      'en': 'EN', 'eng': 'EN', 'english': 'EN',
+      'es': 'ES', 'spa': 'ES', 'spanish': 'ES',
+      'de': 'DE', 'ger': 'DE', 'deu': 'DE', 'german': 'DE',
+      'it': 'IT', 'ita': 'IT', 'italian': 'IT',
+      'pt': 'PT', 'por': 'PT', 'portuguese': 'PT',
+      'nl': 'NL', 'dut': 'NL', 'nld': 'NL', 'dutch': 'NL',
+      'ru': 'RU', 'rus': 'RU', 'russian': 'RU',
+      'ja': 'JA', 'jpn': 'JA', 'japanese': 'JA',
+      'zh': 'ZH', 'chi': 'ZH', 'zho': 'ZH', 'chinese': 'ZH',
+    };
+    return langMap[code] ?? code.toUpperCase().substring(0, 2);
+  }
+
   Color _getCoverColor(String title) {
     if (title.isEmpty) return Colors.grey;
     final random = Random(title.hashCode);
@@ -176,8 +194,8 @@ class _WorkEditionCardState extends State<WorkEditionCard> {
           // Add Button
           Padding(
             padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
+            child: Align(
+              alignment: Alignment.centerRight,
               child: FilledButton.icon(
                 onPressed: () =>
                     widget.onAddBook(widget.editions[_currentPage]),
@@ -186,7 +204,10 @@ class _WorkEditionCardState extends State<WorkEditionCard> {
                   TranslationService.translate(context, 'add_to_library'),
                 ),
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -202,6 +223,8 @@ class _WorkEditionCardState extends State<WorkEditionCard> {
   Widget _buildEditionSlide(Map<String, dynamic> edition, ThemeData theme) {
     final coverUrl = edition['cover_url'] as String?;
     final source = edition['source'] as String?;
+    final language = edition['language'] as String?;
+    final langLabel = _getLanguageLabel(language);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -328,6 +351,8 @@ class _WorkEditionCardState extends State<WorkEditionCard> {
                         edition['publication_year'].toString(),
                         theme,
                       ),
+                    if (langLabel.isNotEmpty)
+                      _buildDetailChip(Icons.language, langLabel, theme),
                     if (edition['isbn'] != null)
                       _buildDetailChip(Icons.qr_code, 'ISBN', theme),
                   ],

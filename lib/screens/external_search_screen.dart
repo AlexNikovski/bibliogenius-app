@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/genie_app_bar.dart';
 import '../widgets/cached_book_cover.dart';
 import '../widgets/plus_one_animation.dart';
@@ -34,14 +36,118 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
   // Source filter (upstream - before search)
   String?
   _upstreamSource; // null = all sources, "inventaire", "bnf", "openlibrary"
-  static const _sourceOptions = [
-    {'value': null, 'label': 'Toutes les sources'},
-    {'value': 'inventaire', 'label': 'Inventaire.io'},
-    {'value': 'openlibrary', 'label': 'Open Library'},
-    {'value': 'bnf', 'label': 'data.bnf.fr'},
+
+  // Dynamic source options based on enabled sources in profile
+  List<Map<String, dynamic>> _sourceOptions = [];
+  bool _sourcesLoaded = false;
+
+  // Language filter (defaults to user's language)
+  String? _selectedLanguage;
+  static const _languageOptions = [
+    {'value': null, 'label': 'Toutes les langues', 'labelKey': 'all_languages'},
+    {'value': 'fr', 'label': 'Français'},
+    {'value': 'en', 'label': 'English'},
+    {'value': 'es', 'label': 'Español'},
+    {'value': 'de', 'label': 'Deutsch'},
+    {'value': 'it', 'label': 'Italiano'},
+    {'value': 'pt', 'label': 'Português'},
+    {'value': 'nl', 'label': 'Nederlands'},
+    {'value': 'ru', 'label': 'Русский'},
+    {'value': 'ja', 'label': '日本語'},
+    {'value': 'zh', 'label': '中文'},
   ];
+
   Set<String> _availableSources =
       {}; // Populated from search results for post-filtering
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEnabledSources();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize language filter to user's language (only once)
+    if (_selectedLanguage == null) {
+      final userLang = Localizations.localeOf(context).languageCode;
+      // Check if user's language is in our options
+      final hasUserLang = _languageOptions.any((opt) => opt['value'] == userLang);
+      _selectedLanguage = hasUserLang ? userLang : null;
+    }
+  }
+
+  Future<void> _loadEnabledSources() async {
+    final api = Provider.of<ApiService>(context, listen: false);
+
+    // Default: all sources enabled except BNF (beta)
+    bool inventaireEnabled = true;
+    bool openLibraryEnabled = true;
+    bool bnfEnabled = false; // BNF is beta, disabled by default
+
+    try {
+      // Get user status which contains fallback_preferences
+      final statusRes = await api.getUserStatus();
+      if (statusRes.statusCode == 200 && statusRes.data != null) {
+        final config = statusRes.data['config'] ?? {};
+        final prefs = config['fallback_preferences'] ?? {};
+
+        if (prefs.containsKey('inventaire')) {
+          inventaireEnabled = prefs['inventaire'] == true;
+        }
+        if (prefs.containsKey('openlibrary')) {
+          openLibraryEnabled = prefs['openlibrary'] == true;
+        }
+        if (prefs.containsKey('bnf')) {
+          bnfEnabled = prefs['bnf'] == true;
+        }
+      }
+    } catch (e) {
+      // Fallback: try reading from SharedPreferences directly (FFI mode)
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final fallbackStr = prefs.getString('ffi_fallback_preferences');
+        if (fallbackStr != null) {
+          final fallbackPrefs = jsonDecode(fallbackStr) as Map<String, dynamic>;
+          if (fallbackPrefs.containsKey('inventaire')) {
+            inventaireEnabled = fallbackPrefs['inventaire'] == true;
+          }
+          if (fallbackPrefs.containsKey('openlibrary')) {
+            openLibraryEnabled = fallbackPrefs['openlibrary'] == true;
+          }
+          if (fallbackPrefs.containsKey('bnf')) {
+            bnfEnabled = fallbackPrefs['bnf'] == true;
+          }
+        }
+      } catch (_) {
+        // Use defaults
+      }
+    }
+
+    // Build source options list based on enabled sources
+    final options = <Map<String, dynamic>>[
+      {'value': null, 'label': 'Toutes les sources'},
+    ];
+
+    if (inventaireEnabled) {
+      options.add({'value': 'inventaire', 'label': 'Inventaire.io'});
+    }
+    if (openLibraryEnabled) {
+      options.add({'value': 'openlibrary', 'label': 'Open Library'});
+    }
+    if (bnfEnabled) {
+      options.add({'value': 'bnf', 'label': 'data.bnf.fr'});
+    }
+    // Note: Google Books is not supported in unified search endpoint
+
+    if (mounted) {
+      setState(() {
+        _sourceOptions = options;
+        _sourcesLoaded = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -128,15 +234,16 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
 
     try {
       final api = Provider.of<ApiService>(context, listen: false);
-      // Get user's language for relevance boosting
+      // Use selected language, or fallback to user's locale for boosting
       final userLang = Localizations.localeOf(context).languageCode;
+      final langForBoost = _selectedLanguage ?? userLang;
 
       // Use unified search (Inventaire + OpenLibrary + BNF)
       final results = await api.searchBooks(
         title: _titleController.text,
         author: _authorController.text,
         subject: _subjectController.text,
-        lang: userLang, // Boost results in user's language
+        lang: langForBoost, // Boost results in this language
         source: _upstreamSource, // Filter to specific source(s)
       );
 
@@ -412,37 +519,39 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
                     ),
                   ),
                 ),
-                // Source filter - always visible (compact horizontal row)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _sourceOptions.map((option) {
-                        final isSelected = _upstreamSource == option['value'];
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(option['label'] as String),
-                            selected: isSelected,
-                            onSelected: (_) {
-                              setState(
-                                () => _upstreamSource =
-                                    option['value'] as String?,
-                              );
-                            },
-                            selectedColor: Theme.of(context).primaryColor,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : null,
-                              fontSize: 12,
+                // Source filter - only visible when at least 2 sources are enabled
+                // (length > 2 because "Toutes les sources" is always included)
+                if (_sourcesLoaded && _sourceOptions.length > 2)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _sourceOptions.map((option) {
+                          final isSelected = _upstreamSource == option['value'];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(option['label'] as String),
+                              selected: isSelected,
+                              onSelected: (_) {
+                                setState(
+                                  () => _upstreamSource =
+                                      option['value'] as String?,
+                                );
+                              },
+                              selectedColor: Theme.of(context).primaryColor,
+                              labelStyle: TextStyle(
+                                color: isSelected ? Colors.white : null,
+                                fontSize: 12,
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              visualDensity: VisualDensity.compact,
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        );
+                          );
                       }).toList(),
                     ),
                   ),
@@ -488,6 +597,33 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
                             isDense: true,
                           ),
                           onFieldSubmitted: (_) => _search(),
+                        ),
+                        const SizedBox(height: 8),
+                        // Language filter dropdown
+                        DropdownButtonFormField<String?>(
+                          value: _selectedLanguage,
+                          decoration: InputDecoration(
+                            labelText: TranslationService.translate(
+                              context,
+                              'language_filter',
+                            ),
+                            prefixIcon: const Icon(Icons.language, size: 20),
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            isDense: true,
+                          ),
+                          items: _languageOptions.map((option) {
+                            return DropdownMenuItem<String?>(
+                              value: option['value'] as String?,
+                              child: Text(option['label'] as String),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() => _selectedLanguage = value);
+                          },
                         ),
                       ],
                     ),
@@ -549,6 +685,10 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final book = _searchResults[index];
+        final author = book['author'] ??
+            TranslationService.translate(context, 'unknown_author');
+        final language = _getLanguageLabel(book['language'] as String?);
+        final subtitle = language.isNotEmpty ? '$author • $language' : author;
 
         return ListTile(
           leading: CompactBookCover(imageUrl: book['cover_url'], size: 50),
@@ -557,8 +697,7 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
                 TranslationService.translate(context, 'unknown_title'),
           ),
           subtitle: Text(
-            book['author'] ??
-                TranslationService.translate(context, 'unknown_author'),
+            subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -572,5 +711,23 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
         );
       },
     );
+  }
+
+  String _getLanguageLabel(String? langCode) {
+    if (langCode == null || langCode.isEmpty) return '';
+    final code = langCode.toLowerCase();
+    const langMap = {
+      'fr': 'FR', 'fre': 'FR', 'fra': 'FR', 'french': 'FR',
+      'en': 'EN', 'eng': 'EN', 'english': 'EN',
+      'es': 'ES', 'spa': 'ES', 'spanish': 'ES',
+      'de': 'DE', 'ger': 'DE', 'deu': 'DE', 'german': 'DE',
+      'it': 'IT', 'ita': 'IT', 'italian': 'IT',
+      'pt': 'PT', 'por': 'PT', 'portuguese': 'PT',
+      'nl': 'NL', 'dut': 'NL', 'nld': 'NL', 'dutch': 'NL',
+      'ru': 'RU', 'rus': 'RU', 'russian': 'RU',
+      'ja': 'JA', 'jpn': 'JA', 'japanese': 'JA',
+      'zh': 'ZH', 'chi': 'ZH', 'zho': 'ZH', 'chinese': 'ZH',
+    };
+    return langMap[code] ?? code.toUpperCase().substring(0, 2);
   }
 }

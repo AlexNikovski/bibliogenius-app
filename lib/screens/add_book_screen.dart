@@ -748,17 +748,26 @@ class _AddBookScreenState extends State<AddBookScreen> {
                               final cover = option['cover_url'] as String?;
                               final author = option['author'] as String?;
                               final publisher = option['publisher'] as String?;
+                              final language = option['language'] as String?;
+                              final langLabel = _getLanguageLabel(language);
 
-                              // For adults: show "Author • Publisher"
+                              // For adults: show "Author • Publisher • Language"
                               // For kids: show just "Author" (simpler)
                               String subtitle = author ?? '';
-                              if (!isJuniorReader &&
-                                  publisher != null &&
-                                  publisher.isNotEmpty) {
-                                if (subtitle.isNotEmpty) {
-                                  subtitle += ' • $publisher';
-                                } else {
-                                  subtitle = publisher;
+                              if (!isJuniorReader) {
+                                if (publisher != null && publisher.isNotEmpty) {
+                                  if (subtitle.isNotEmpty) {
+                                    subtitle += ' • $publisher';
+                                  } else {
+                                    subtitle = publisher;
+                                  }
+                                }
+                                if (langLabel.isNotEmpty) {
+                                  if (subtitle.isNotEmpty) {
+                                    subtitle += ' • $langLabel';
+                                  } else {
+                                    subtitle = langLabel;
+                                  }
                                 }
                               }
 
@@ -1407,6 +1416,24 @@ class _AddBookScreenState extends State<AddBookScreen> {
     if (source.toLowerCase().contains('bnf')) return 'BNF';
     if (source.contains('Google')) return 'GB';
     return 'OL';
+  }
+
+  String _getLanguageLabel(String? langCode) {
+    if (langCode == null || langCode.isEmpty) return '';
+    final code = langCode.toLowerCase();
+    const langMap = {
+      'fr': 'FR', 'fre': 'FR', 'fra': 'FR', 'french': 'FR',
+      'en': 'EN', 'eng': 'EN', 'english': 'EN',
+      'es': 'ES', 'spa': 'ES', 'spanish': 'ES',
+      'de': 'DE', 'ger': 'DE', 'deu': 'DE', 'german': 'DE',
+      'it': 'IT', 'ita': 'IT', 'italian': 'IT',
+      'pt': 'PT', 'por': 'PT', 'portuguese': 'PT',
+      'nl': 'NL', 'dut': 'NL', 'nld': 'NL', 'dutch': 'NL',
+      'ru': 'RU', 'rus': 'RU', 'russian': 'RU',
+      'ja': 'JA', 'jpn': 'JA', 'japanese': 'JA',
+      'zh': 'ZH', 'chi': 'ZH', 'zho': 'ZH', 'chinese': 'ZH',
+    };
+    return langMap[code] ?? code.toUpperCase().substring(0, 2);
   }
 
   Color _getCoverColor(String title) {

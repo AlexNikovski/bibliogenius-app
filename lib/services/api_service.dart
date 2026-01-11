@@ -2548,13 +2548,19 @@ class ApiService {
       if (lang != null && lang.isNotEmpty) queryParams['lang'] = lang;
       if (source != null && source.isNotEmpty) queryParams['source'] = source;
 
-      // Use a new Dio instance to avoid FFI adapter issues with ffi:// scheme
-      // We explicitly check for useFfi to access the local HTTP server directly.
-      final searchDio = useFfi ? await _getLocalDio() : Dio();
-
-      if (!useFfi) {
-        searchDio.options.baseUrl = _dio.options.baseUrl;
-      }
+      // Use a new Dio instance with longer timeout for external search
+      // External sources (Inventaire, OpenLibrary, BNF) can take 10+ seconds
+      final searchDio = useFfi
+          ? Dio(BaseOptions(
+              baseUrl: 'http://127.0.0.1:$httpPort',
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 15),
+            ))
+          : Dio(BaseOptions(
+              baseUrl: _dio.options.baseUrl,
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 15),
+            ));
 
       final response = await searchDio.get(
         '/api/integrations/search_unified',
