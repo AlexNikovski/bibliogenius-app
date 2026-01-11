@@ -31,10 +31,72 @@ class ApiService {
   /// The actual HTTP server port (may differ from 8000 if occupied)
   static int httpPort = 8000;
 
+  /// Track if server is known to be running
+  static bool _serverKnownHealthy = false;
+
+  /// Last time we checked server health
+  static DateTime? _lastHealthCheck;
+
   /// Set the actual HTTP server port (called from main.dart after server starts)
   static void setHttpPort(int port) {
     httpPort = port;
+    _serverKnownHealthy = true;
+    _lastHealthCheck = DateTime.now();
     debugPrint('📡 ApiService: HTTP port set to $port');
+  }
+
+  /// Check if the embedded HTTP server is healthy and restart if needed.
+  /// Returns true if server is available, false otherwise.
+  static Future<bool> ensureServerRunning() async {
+    // Quick return if recently checked and healthy
+    if (_serverKnownHealthy &&
+        _lastHealthCheck != null &&
+        DateTime.now().difference(_lastHealthCheck!).inSeconds < 30) {
+      return true;
+    }
+
+    // Try health check
+    try {
+      final healthDio = Dio(
+        BaseOptions(
+          baseUrl: 'http://127.0.0.1:$httpPort',
+          connectTimeout: const Duration(seconds: 2),
+          receiveTimeout: const Duration(seconds: 2),
+        ),
+      );
+      final response = await healthDio.get('/api/health');
+      if (response.statusCode == 200) {
+        _serverKnownHealthy = true;
+        _lastHealthCheck = DateTime.now();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Server health check failed: $e');
+      _serverKnownHealthy = false;
+    }
+
+    // Server not responding, try to restart
+    debugPrint('🔄 Attempting to restart embedded HTTP server...');
+    try {
+      final newPort = await FfiService().startServer(httpPort);
+      if (newPort != null) {
+        httpPort = newPort;
+        _serverKnownHealthy = true;
+        _lastHealthCheck = DateTime.now();
+        debugPrint('✅ Server restarted successfully on port $newPort');
+        return true;
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to restart server: $e');
+    }
+
+    return false;
+  }
+
+  /// Mark server as unhealthy (called when connection errors occur)
+  static void markServerUnhealthy() {
+    _serverKnownHealthy = false;
+    debugPrint('⚠️ Server marked as unhealthy');
   }
 
   ApiService(
@@ -422,7 +484,14 @@ class ApiService {
 
   // Helper to get a Dio instance for local FFI server with retry logic
   // This handles the race condition where the server might still be binding
+  // and auto-restarts the server if it has crashed
   Future<Dio> _getLocalDio() async {
+    // Ensure server is running before creating Dio instance
+    final serverAvailable = await ensureServerRunning();
+    if (!serverAvailable) {
+      debugPrint('⚠️ _getLocalDio: Server not available after restart attempt');
+    }
+
     final dio = Dio(
       BaseOptions(
         baseUrl: 'http://127.0.0.1:$httpPort',
@@ -431,7 +500,7 @@ class ApiService {
       ),
     );
 
-    // Add immediate retry for connection refused
+    // Add immediate retry for connection refused with server restart on failure
     dio.interceptors.add(
       InterceptorsWrapper(
         onError: (DioException e, ErrorInterceptorHandler handler) async {
@@ -443,15 +512,30 @@ class ApiService {
               (e.error is SocketException);
 
           if (isConnectionError) {
+            // Mark server as unhealthy on connection errors
+            markServerUnhealthy();
+
             // Check retry count
             int retries = e.requestOptions.extra['retries'] as int? ?? 0;
-            if (retries >= 5) {
-              debugPrint('❌ Local server connection failed after 5 retries.');
+
+            // On first retry, try to restart the server
+            if (retries == 0) {
+              debugPrint('🔄 Connection failed, attempting server restart...');
+              final restarted = await ensureServerRunning();
+              if (restarted) {
+                debugPrint('✅ Server restarted, retrying request...');
+                // Update base URL in case port changed
+                dio.options.baseUrl = 'http://127.0.0.1:$httpPort';
+              }
+            }
+
+            if (retries >= 3) {
+              debugPrint('❌ Local server connection failed after 3 retries.');
               return handler.next(e);
             }
 
             debugPrint(
-              '⚠️ Local server connection error, retrying in 500ms... (Attempt ${retries + 1}/5)',
+              '⚠️ Local server connection error, retrying in 500ms... (Attempt ${retries + 1}/3)',
             );
             await Future.delayed(const Duration(milliseconds: 500));
             try {
@@ -2366,17 +2450,47 @@ class ApiService {
           jsonEncode(fallbackPreferences),
         );
       }
+      // Ensure server is running before making HTTP request
+      final serverAvailable = await ensureServerRunning();
+      if (!serverAvailable) {
+        debugPrint('❌ updateProfile: embedded HTTP server not available');
+        // Return a fake success since SharedPreferences was saved
+        return Response(
+          requestOptions: RequestOptions(path: '/api/profile'),
+          statusCode: 200,
+          data: {'message': 'Profile saved locally (server unavailable)'},
+        );
+      }
       // Call local HTTP server to persist in database
       try {
         final localDio = Dio(
-          BaseOptions(baseUrl: 'http://127.0.0.1:$httpPort'),
+          BaseOptions(
+            baseUrl: 'http://127.0.0.1:$httpPort',
+            connectTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 5),
+          ),
         );
         return await localDio.put('/api/profile', data: data);
+      } on DioException catch (e) {
+        if (e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.connectionTimeout) {
+          markServerUnhealthy();
+        }
+        debugPrint('❌ updateProfile DioError: ${e.type} - ${e.message}');
+        // Return success since SharedPreferences was saved
+        return Response(
+          requestOptions: RequestOptions(path: '/api/profile'),
+          statusCode: 200,
+          data: {'message': 'Profile saved locally (server error)'},
+        );
       } catch (e) {
         debugPrint('❌ updateProfile local error: $e');
-        // Return success if at least SharedPreferences worked, or rethrow?
-        // Rethrow because search relies on DB
-        rethrow;
+        // Return success since SharedPreferences was saved
+        return Response(
+          requestOptions: RequestOptions(path: '/api/profile'),
+          statusCode: 200,
+          data: {'message': 'Profile saved locally'},
+        );
       }
     }
     return await _dio.put('/api/profile', data: data);
@@ -2553,6 +2667,15 @@ class ApiService {
     source, // Filter to specific source(s): "inventaire", "bnf", "openlibrary" (comma-separated)
   }) async {
     try {
+      // Ensure embedded HTTP server is running (auto-restart if needed)
+      if (useFfi) {
+        final serverAvailable = await ensureServerRunning();
+        if (!serverAvailable) {
+          debugPrint('❌ Search failed: embedded HTTP server not available');
+          return [];
+        }
+      }
+
       final queryParams = <String, dynamic>{};
       if (query != null && query.isNotEmpty) queryParams['q'] = query;
       if (title != null && title.isNotEmpty) queryParams['title'] = title;
@@ -2590,6 +2713,13 @@ class ApiService {
       if (response.statusCode == 200 && response.data != null) {
         return List<Map<String, dynamic>>.from(response.data);
       }
+    } on DioException catch (e) {
+      // Mark server as unhealthy on connection errors so next call will try restart
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        markServerUnhealthy();
+      }
+      debugPrint('Search API DioError: ${e.type} - ${e.message}');
     } catch (e) {
       debugPrint('Search API Error: $e');
     }

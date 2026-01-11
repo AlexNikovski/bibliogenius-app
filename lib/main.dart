@@ -236,12 +236,13 @@ class AppRouter extends StatefulWidget {
   State<AppRouter> createState() => _AppRouterState();
 }
 
-class _AppRouterState extends State<AppRouter> {
+class _AppRouterState extends State<AppRouter> with WidgetsBindingObserver {
   late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     _router = GoRouter(
@@ -562,6 +563,28 @@ class _AppRouterState extends State<AppRouter> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When app resumes from background, check if embedded HTTP server is still running
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('📱 App resumed from background, checking server health...');
+      // Check server health asynchronously (don't block the UI)
+      ApiService.ensureServerRunning().then((available) {
+        if (available) {
+          debugPrint('✅ Server is healthy after app resume');
+        } else {
+          debugPrint('⚠️ Server unavailable after app resume');
+        }
+      });
+    }
   }
 
   @override
