@@ -435,9 +435,14 @@ class ApiService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onError: (DioException e, ErrorInterceptorHandler handler) async {
-          if (e.type == DioExceptionType.connectionError ||
-              (e.error is SocketException &&
-                  (e.error as SocketException).osError?.errorCode == 61)) {
+          // Check if this is a connection error (works across all platforms)
+          // Note: Error code 61 is macOS-specific, iOS uses different codes
+          final isConnectionError =
+              e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              (e.error is SocketException);
+
+          if (isConnectionError) {
             // Check retry count
             int retries = e.requestOptions.extra['retries'] as int? ?? 0;
             if (retries >= 5) {
@@ -445,9 +450,8 @@ class ApiService {
               return handler.next(e);
             }
 
-            // 61 = Connection refused
             debugPrint(
-              '⚠️ Local server connection refused, retrying in 500ms... (Attempt ${retries + 1}/5)',
+              '⚠️ Local server connection error, retrying in 500ms... (Attempt ${retries + 1}/5)',
             );
             await Future.delayed(const Duration(milliseconds: 500));
             try {
@@ -465,6 +469,10 @@ class ApiService {
               return handler.resolve(response);
             } catch (e2) {
               debugPrint('❌ Retry failed: $e2');
+              // Pass the NEW error, not the old one
+              if (e2 is DioException) {
+                return handler.next(e2);
+              }
               return handler.next(e);
             }
           }
