@@ -36,12 +36,6 @@ const List<BookStatus> individualStatuses = [
     color: Colors.green,
   ),
   BookStatus(
-    value: 'wanted',
-    label: 'wishlist_status',
-    icon: Icons.favorite_border,
-    color: Colors.red,
-  ),
-  BookStatus(
     value: 'wanting',
     label: 'wishlist_status',
     icon: Icons.favorite_border,

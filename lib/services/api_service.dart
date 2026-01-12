@@ -1107,9 +1107,7 @@ class ApiService {
         final activeLoans = await FfiService().countActiveLoans();
         final prefs = await SharedPreferences.getInstance();
         final totalBooks = books.length;
-        final booksRead = books
-            .where((b) => b.readingStatus == 'finished')
-            .length;
+        final booksRead = books.where((b) => b.readingStatus == 'read').length;
         final booksReading = books
             .where((b) => b.readingStatus == 'reading')
             .length;

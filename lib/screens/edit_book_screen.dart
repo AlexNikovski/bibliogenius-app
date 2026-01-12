@@ -165,7 +165,9 @@ class _EditBookScreenState extends State<EditBookScreen> {
     // Use book status if valid, else default
     // Only set if not already set (to avoid implementation overriding user changes on hot reload/rebuilds)
     if (_originalReadingStatus == null) {
-      final status = widget.book.readingStatus ?? getDefaultStatus(isLibrarian);
+      var status = widget.book.readingStatus ?? getDefaultStatus(isLibrarian);
+      // Normalize legacy 'wanted' to 'wanting' for backward compatibility
+      if (status == 'wanted') status = 'wanting';
       _readingStatus = validStatuses.contains(status)
           ? status
           : getDefaultStatus(isLibrarian);
@@ -434,6 +436,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
           BookCompleteCelebration.show(
             context,
             bookTitle: _titleController.text,
+            xpEarned: 1, // 1 book = 1 unit of progress in backend
             subtitle: TranslationService.translate(
               context,
               'book_complete_celebration',
@@ -539,8 +542,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
         color = Colors.green;
         label = TranslationService.translate(context, 'read_status');
         break;
-      case 'wanted':
-        color = Colors.orange;
+      case 'wanting':
+        color = Colors.red;
         label = TranslationService.translate(context, 'wishlist_status');
         break;
       case 'borrowed':
@@ -1049,7 +1052,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
 
               // Reading Dates (Conditional)
               if (_readingStatus != 'to_read' &&
-                  _readingStatus != 'wanted') ...[
+                  _readingStatus != 'wanting') ...[
                 _buildLabel(
                   TranslationService.translate(
                     context,

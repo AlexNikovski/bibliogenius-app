@@ -439,7 +439,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       'read': const Color(0xFF10B981),
       'reading': const Color(0xFF0EA5E9),
       'to_read': const Color(0xFFF59E0B),
-      'wanted': const Color(0xFFEC4899),
+      'wanting': const Color(0xFFEC4899),
       'owned': const Color(0xFF607D8B),
       'borrowed': const Color(0xFF8B5CF6),
       'unknown': Colors.grey,
@@ -507,7 +507,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         return TranslationService.translate(context, 'reading_status_reading');
       case 'to_read':
         return TranslationService.translate(context, 'reading_status_to_read');
-      case 'wanted':
       case 'wanting':
         return TranslationService.translate(context, 'reading_status_wanting');
       case 'owned':

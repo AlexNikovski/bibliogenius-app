@@ -43,8 +43,9 @@ class Book {
       publicationYear: json['publication_year'],
       readingStatus: (() {
         final raw = json['reading_status']?.toString();
-        final normalized = raw?.toLowerCase().replaceAll(' ', '_');
-        // debugPrint('Book.fromJson: raw="$raw", normalized="$normalized"');
+        var normalized = raw?.toLowerCase().replaceAll(' ', '_');
+        // Normalize legacy 'wanted' to 'wanting' for backward compatibility
+        if (normalized == 'wanted') normalized = 'wanting';
         return normalized;
       })(),
       finishedReadingAt: json['finished_reading_at'] != null

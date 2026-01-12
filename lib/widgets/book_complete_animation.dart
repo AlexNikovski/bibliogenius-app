@@ -11,7 +11,7 @@ class BookCompleteCelebration {
   static void show(
     BuildContext context, {
     required String bookTitle,
-    int xpEarned = 50,
+    int xpEarned = 1,
     String? subtitle,
   }) {
     final overlay = Overlay.of(context);
