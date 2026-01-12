@@ -378,6 +378,7 @@ class QuoteService {
     // Basic heuristic: specific known garbage strings
     final garbagePrefixes = [
       'Citation au hasard',
+      'Citation du jour',
       'modifier',
       'Frase del día',
       'Zitat des Tages',
@@ -389,6 +390,13 @@ class QuoteService {
       // Also check if garbage is attached to recent newlines
       processed = processed.replaceAll(garbage, '').trim();
     }
+
+    // Remove specific date-based titles like "Citation du 12 janvier 2026"
+    // Matches "Citation du " followed by any characters until a newline or significant text start
+    // This covers variable dates without needing complex date parsing
+    processed = processed
+        .replaceAll(RegExp(r'^Citation du .+\d{4}\s*'), '')
+        .trim();
 
     // Remove leading/trailing quotes
     processed = processed.replaceAll(RegExp(r'^["«„“]+|["»“]+$'), '').trim();
