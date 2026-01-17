@@ -45,7 +45,11 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
   bool _sourcesLoaded = false;
 
   // Language filter (defaults to user's language)
+  // _selectedLanguage: null = "all languages" (no strict filter, but still prioritize user's lang)
+  // _userLanguage: device/app language, used for sorting prioritization
   String? _selectedLanguage;
+  String _userLanguage =
+      'en'; // Default fallback, updated in didChangeDependencies
   static const _languageOptions = [
     {'value': null, 'label': 'Toutes les langues', 'labelKey': 'all_languages'},
     {'value': 'fr', 'label': 'Français'},
@@ -72,14 +76,22 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Initialize language filter to user's language (only once)
-    if (_selectedLanguage == null) {
-      final userLang = Localizations.localeOf(context).languageCode;
-      // Check if user's language is in our options
-      final hasUserLang = _languageOptions.any(
-        (opt) => opt['value'] == userLang,
-      );
-      _selectedLanguage = hasUserLang ? userLang : null;
+    // Store user's device language for prioritization
+    final deviceLang = Localizations.localeOf(context).languageCode;
+    _userLanguage = deviceLang;
+
+    // Initialize language filter dropdown (only once, on first load)
+    // Default to user's device language for better UX
+    if (!_sourcesLoaded) {
+      // Pre-select user's language if it's in our supported list
+      final supportedLangs = _languageOptions
+          .map((o) => o['value'])
+          .whereType<String>()
+          .toSet();
+      if (supportedLangs.contains(deviceLang)) {
+        _selectedLanguage = deviceLang;
+      }
+      // If user's language isn't supported, keep null (All Languages)
     }
   }
 
@@ -291,15 +303,17 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
 
     // Sort editions within each work using a quality score
     // Score: language match (100) + cover (30) + publisher (20) + ISBN (10)
-    final userLang = _selectedLanguage?.toLowerCase() ?? '';
+    // Language priority: use selected language if set, otherwise use device language
+    final langForSorting = (_selectedLanguage ?? _userLanguage).toLowerCase();
 
     int editionScore(Map<String, dynamic> edition) {
       int score = 0;
 
       // Language match is top priority
-      if (userLang.isNotEmpty) {
+      // Always prioritize user's language (either explicit selection or device language)
+      if (langForSorting.isNotEmpty) {
         final lang = (edition['language'] as String?)?.toLowerCase() ?? '';
-        if (_langMatches(lang, userLang)) {
+        if (_langMatches(lang, langForSorting)) {
           score += 100;
         } else if (lang.isNotEmpty) {
           score -= 50; // Penalty for explicit non-matching language
@@ -378,26 +392,67 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
       });
     }
 
-    // Sort works by: 1) title relevance, 2) number of editions (popularity), 3) quality score
+    // Sort works by: 1) title relevance, 2) language match, 3) quality score, 4) editions count
     final worksList = workMap.values.toList();
+
+    // Debug: log scores before sorting
+    debugPrint('🔄 SORTING WORKS (lang=$langForSorting):');
+    for (final work in worksList.take(5)) {
+      final editions = (work['editions'] as List).cast<Map<String, dynamic>>();
+      if (editions.isNotEmpty) {
+        final bestEd = editions.first;
+        final score = editionScore(bestEd);
+        final lang = bestEd['language'] ?? 'NULL';
+        debugPrint('  📖 "${work['title']}" → lang=$lang, score=$score');
+      }
+    }
+
     worksList.sort((a, b) {
       final titleA = a['title'] as String? ?? '';
       final titleB = b['title'] as String? ?? '';
       final editionsA = (a['editions'] as List).cast<Map<String, dynamic>>();
       final editionsB = (b['editions'] as List).cast<Map<String, dynamic>>();
 
-      // FIRST: Title relevance is the most important criterion
+      // Calculate scores upfront
       final titleScoreA = _titleRelevanceScore(titleA, searchQuery);
       final titleScoreB = _titleRelevanceScore(titleB, searchQuery);
 
+      int qualityScoreA = 0;
+      int qualityScoreB = 0;
+      if (editionsA.isNotEmpty) qualityScoreA = editionScore(editionsA.first);
+      if (editionsB.isNotEmpty) qualityScoreB = editionScore(editionsB.first);
+
+      // When user has EXPLICITLY selected a language (not just device default),
+      // prioritize language matching FIRST, then title relevance
+      if (_selectedLanguage != null) {
+        // Check if one has matching language and the other doesn't
+        // Language match gives +100 points, non-match gives -50
+        // So a book with matching lang has score >= 100, non-matching has score < 100
+        final aMatchesLang = qualityScoreA >= 100;
+        final bMatchesLang = qualityScoreB >= 100;
+
+        if (aMatchesLang != bMatchesLang) {
+          return aMatchesLang ? -1 : 1; // Matching language comes first
+        }
+        // Both match or both don't match → fall through to title relevance
+      }
+
+      // Title relevance (primary criterion when no explicit language selected,
+      // or secondary when both have same language match status)
       if (titleScoreA != titleScoreB) {
         return titleScoreB.compareTo(
           titleScoreA,
         ); // Higher title relevance first
       }
 
-      // SECOND: Number of editions (popularity indicator)
-      // More editions = more popular/important book
+      // SECOND: Language match (more detailed comparison for same language category)
+      // This handles cases where both match or both don't match the selected language
+      final langDiff = (qualityScoreA - qualityScoreB).abs();
+      if (langDiff >= 50) {
+        return qualityScoreB.compareTo(qualityScoreA);
+      }
+
+      // THIRD: Number of editions (popularity indicator) - but only as tie-breaker
       final editionCountA = editionsA.length;
       final editionCountB = editionsB.length;
 
@@ -405,12 +460,7 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
         return editionCountB.compareTo(editionCountA); // More editions first
       }
 
-      // THIRD: Compare by best edition's quality score (language + metadata)
-      if (editionsA.isEmpty || editionsB.isEmpty) return 0;
-
-      final qualityScoreA = editionScore(editionsA.first);
-      final qualityScoreB = editionScore(editionsB.first);
-
+      // FOURTH: Full quality score comparison for remaining ties
       return qualityScoreB.compareTo(qualityScoreA); // Higher quality first
     });
 
@@ -440,18 +490,19 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
 
     try {
       final api = Provider.of<ApiService>(context, listen: false);
-      // Language filter logic:
-      // - If user selected a specific language -> use that (strict filter)
-      // - If user selected "All languages" (null) -> no filter (show all)
-      // - Default on first load: user's language is pre-selected
-      final langFilter = _selectedLanguage; // null means "all languages"
+      // Language handling:
+      // - If user selected a specific language -> use that for filtering & prioritization
+      // - If "All languages" (null) -> still pass user's device language for prioritization
+      // Backend uses lang param for relevance scoring, not strict filtering
+      final langForApi = _selectedLanguage ?? _userLanguage;
 
       // Use unified search (Inventaire + OpenLibrary + BNF)
       final results = await api.searchBooks(
         title: _titleController.text,
         author: _authorController.text,
         subject: _subjectController.text,
-        lang: langFilter, // Filter/boost by language (null = no filter)
+        lang:
+            langForApi, // Used for relevance boosting (user's preferred language)
         source: _upstreamSource, // Filter to specific source(s)
       );
 
@@ -471,12 +522,15 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
         // Debug: Print grouping info
         debugPrint('🔍 Search returned ${results.length} results');
         debugPrint('📚 Grouped into ${_groupedWorks.length} works');
+        debugPrint('🌐 Lang filter: $_selectedLanguage | User: $_userLanguage');
         debugPrint('🗂️ Sources: $sources');
-        for (final work in _groupedWorks) {
+        for (final work in _groupedWorks.take(5)) {
           final editions = work['editions'] as List;
           debugPrint('  - "${work['title']}": ${editions.length} edition(s)');
-          for (final ed in editions) {
-            debugPrint('    > Publisher: ${ed['publisher']}');
+          for (final ed in editions.take(2)) {
+            debugPrint(
+              '    > Lang: ${ed['language'] ?? 'NULL'} | Pub: ${ed['publisher']}',
+            );
           }
         }
       });
@@ -790,6 +844,12 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
                                   () => _upstreamSource =
                                       option['value'] as String?,
                                 );
+                                // Auto-trigger search when source is changed
+                                if (_titleController.text.isNotEmpty ||
+                                    _authorController.text.isNotEmpty ||
+                                    _subjectController.text.isNotEmpty) {
+                                  _search();
+                                }
                               },
                               selectedColor: Theme.of(context).primaryColor,
                               labelStyle: TextStyle(
@@ -873,6 +933,13 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
                           }).toList(),
                           onChanged: (value) {
                             setState(() => _selectedLanguage = value);
+                            // Auto-trigger search when language is changed
+                            // (only if user has already entered search criteria)
+                            if (_titleController.text.isNotEmpty ||
+                                _authorController.text.isNotEmpty ||
+                                _subjectController.text.isNotEmpty) {
+                              _search();
+                            }
                           },
                         ),
                       ],
