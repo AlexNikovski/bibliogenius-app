@@ -3039,6 +3039,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     value: theme.canBorrowBooks,
                     onChanged: (val) => theme.setCanBorrowBooks(val),
                   ),
+                  const Divider(),
+                  // Digital Formats
+                  SwitchListTile(
+                    title: Text(
+                      TranslationService.translate(
+                            context,
+                            'module_digital_formats',
+                          ) ??
+                          'Digital Formats',
+                    ),
+                    subtitle: Text(
+                      TranslationService.translate(
+                            context,
+                            'module_digital_formats_desc',
+                          ) ??
+                          'Enable support for eBooks and Audiobooks',
+                    ),
+                    secondary: const Icon(Icons.tablet_mac),
+                    value: theme.digitalFormatsEnabled,
+                    onChanged: (val) => theme.setDigitalFormatsEnabled(val),
+                  ),
                   if (theme.isBookseller) ...[
                     const Divider(),
                     // Commerce

@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$FrbBook {
 
- int? get id; String get title; String? get author; String? get isbn; String? get summary; String? get publisher; int? get publicationYear; String? get coverUrl; String? get largeCoverUrl; String? get readingStatus; int? get shelfPosition; int? get userRating; String? get subjects; String? get createdAt; String? get updatedAt; String? get finishedReadingAt; String? get startedReadingAt; bool get owned; double? get price;
+ int? get id; String get title; String? get author; String? get isbn; String? get summary; String? get publisher; int? get publicationYear; String? get coverUrl; String? get largeCoverUrl; String? get readingStatus; int? get shelfPosition; int? get userRating; String? get subjects; String? get createdAt; String? get updatedAt; String? get finishedReadingAt; String? get startedReadingAt; bool get owned; double? get price; List<String>? get digitalFormats;
 /// Create a copy of FrbBook
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $FrbBookCopyWith<FrbBook> get copyWith => _$FrbBookCopyWithImpl<FrbBook>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FrbBook&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.isbn, isbn) || other.isbn == isbn)&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.publicationYear, publicationYear) || other.publicationYear == publicationYear)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.largeCoverUrl, largeCoverUrl) || other.largeCoverUrl == largeCoverUrl)&&(identical(other.readingStatus, readingStatus) || other.readingStatus == readingStatus)&&(identical(other.shelfPosition, shelfPosition) || other.shelfPosition == shelfPosition)&&(identical(other.userRating, userRating) || other.userRating == userRating)&&(identical(other.subjects, subjects) || other.subjects == subjects)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.finishedReadingAt, finishedReadingAt) || other.finishedReadingAt == finishedReadingAt)&&(identical(other.startedReadingAt, startedReadingAt) || other.startedReadingAt == startedReadingAt)&&(identical(other.owned, owned) || other.owned == owned)&&(identical(other.price, price) || other.price == price));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FrbBook&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.isbn, isbn) || other.isbn == isbn)&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.publicationYear, publicationYear) || other.publicationYear == publicationYear)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.largeCoverUrl, largeCoverUrl) || other.largeCoverUrl == largeCoverUrl)&&(identical(other.readingStatus, readingStatus) || other.readingStatus == readingStatus)&&(identical(other.shelfPosition, shelfPosition) || other.shelfPosition == shelfPosition)&&(identical(other.userRating, userRating) || other.userRating == userRating)&&(identical(other.subjects, subjects) || other.subjects == subjects)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.finishedReadingAt, finishedReadingAt) || other.finishedReadingAt == finishedReadingAt)&&(identical(other.startedReadingAt, startedReadingAt) || other.startedReadingAt == startedReadingAt)&&(identical(other.owned, owned) || other.owned == owned)&&(identical(other.price, price) || other.price == price)&&const DeepCollectionEquality().equals(other.digitalFormats, digitalFormats));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,title,author,isbn,summary,publisher,publicationYear,coverUrl,largeCoverUrl,readingStatus,shelfPosition,userRating,subjects,createdAt,updatedAt,finishedReadingAt,startedReadingAt,owned,price]);
+int get hashCode => Object.hashAll([runtimeType,id,title,author,isbn,summary,publisher,publicationYear,coverUrl,largeCoverUrl,readingStatus,shelfPosition,userRating,subjects,createdAt,updatedAt,finishedReadingAt,startedReadingAt,owned,price,const DeepCollectionEquality().hash(digitalFormats)]);
 
 @override
 String toString() {
-  return 'FrbBook(id: $id, title: $title, author: $author, isbn: $isbn, summary: $summary, publisher: $publisher, publicationYear: $publicationYear, coverUrl: $coverUrl, largeCoverUrl: $largeCoverUrl, readingStatus: $readingStatus, shelfPosition: $shelfPosition, userRating: $userRating, subjects: $subjects, createdAt: $createdAt, updatedAt: $updatedAt, finishedReadingAt: $finishedReadingAt, startedReadingAt: $startedReadingAt, owned: $owned, price: $price)';
+  return 'FrbBook(id: $id, title: $title, author: $author, isbn: $isbn, summary: $summary, publisher: $publisher, publicationYear: $publicationYear, coverUrl: $coverUrl, largeCoverUrl: $largeCoverUrl, readingStatus: $readingStatus, shelfPosition: $shelfPosition, userRating: $userRating, subjects: $subjects, createdAt: $createdAt, updatedAt: $updatedAt, finishedReadingAt: $finishedReadingAt, startedReadingAt: $startedReadingAt, owned: $owned, price: $price, digitalFormats: $digitalFormats)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $FrbBookCopyWith<$Res>  {
   factory $FrbBookCopyWith(FrbBook value, $Res Function(FrbBook) _then) = _$FrbBookCopyWithImpl;
 @useResult
 $Res call({
- int? id, String title, String? author, String? isbn, String? summary, String? publisher, int? publicationYear, String? coverUrl, String? largeCoverUrl, String? readingStatus, int? shelfPosition, int? userRating, String? subjects, String? createdAt, String? updatedAt, String? finishedReadingAt, String? startedReadingAt, bool owned, double? price
+ int? id, String title, String? author, String? isbn, String? summary, String? publisher, int? publicationYear, String? coverUrl, String? largeCoverUrl, String? readingStatus, int? shelfPosition, int? userRating, String? subjects, String? createdAt, String? updatedAt, String? finishedReadingAt, String? startedReadingAt, bool owned, double? price, List<String>? digitalFormats
 });
 
 
@@ -62,7 +62,7 @@ class _$FrbBookCopyWithImpl<$Res>
 
 /// Create a copy of FrbBook
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? title = null,Object? author = freezed,Object? isbn = freezed,Object? summary = freezed,Object? publisher = freezed,Object? publicationYear = freezed,Object? coverUrl = freezed,Object? largeCoverUrl = freezed,Object? readingStatus = freezed,Object? shelfPosition = freezed,Object? userRating = freezed,Object? subjects = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? finishedReadingAt = freezed,Object? startedReadingAt = freezed,Object? owned = null,Object? price = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? title = null,Object? author = freezed,Object? isbn = freezed,Object? summary = freezed,Object? publisher = freezed,Object? publicationYear = freezed,Object? coverUrl = freezed,Object? largeCoverUrl = freezed,Object? readingStatus = freezed,Object? shelfPosition = freezed,Object? userRating = freezed,Object? subjects = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? finishedReadingAt = freezed,Object? startedReadingAt = freezed,Object? owned = null,Object? price = freezed,Object? digitalFormats = freezed,}) {
   return _then(_self.copyWith(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -83,7 +83,8 @@ as String?,finishedReadingAt: freezed == finishedReadingAt ? _self.finishedReadi
 as String?,startedReadingAt: freezed == startedReadingAt ? _self.startedReadingAt : startedReadingAt // ignore: cast_nullable_to_non_nullable
 as String?,owned: null == owned ? _self.owned : owned // ignore: cast_nullable_to_non_nullable
 as bool,price: freezed == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
-as double?,
+as double?,digitalFormats: freezed == digitalFormats ? _self.digitalFormats : digitalFormats // ignore: cast_nullable_to_non_nullable
+as List<String>?,
   ));
 }
 
@@ -165,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? id,  String title,  String? author,  String? isbn,  String? summary,  String? publisher,  int? publicationYear,  String? coverUrl,  String? largeCoverUrl,  String? readingStatus,  int? shelfPosition,  int? userRating,  String? subjects,  String? createdAt,  String? updatedAt,  String? finishedReadingAt,  String? startedReadingAt,  bool owned,  double? price)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? id,  String title,  String? author,  String? isbn,  String? summary,  String? publisher,  int? publicationYear,  String? coverUrl,  String? largeCoverUrl,  String? readingStatus,  int? shelfPosition,  int? userRating,  String? subjects,  String? createdAt,  String? updatedAt,  String? finishedReadingAt,  String? startedReadingAt,  bool owned,  double? price,  List<String>? digitalFormats)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FrbBook() when $default != null:
-return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that.publisher,_that.publicationYear,_that.coverUrl,_that.largeCoverUrl,_that.readingStatus,_that.shelfPosition,_that.userRating,_that.subjects,_that.createdAt,_that.updatedAt,_that.finishedReadingAt,_that.startedReadingAt,_that.owned,_that.price);case _:
+return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that.publisher,_that.publicationYear,_that.coverUrl,_that.largeCoverUrl,_that.readingStatus,_that.shelfPosition,_that.userRating,_that.subjects,_that.createdAt,_that.updatedAt,_that.finishedReadingAt,_that.startedReadingAt,_that.owned,_that.price,_that.digitalFormats);case _:
   return orElse();
 
 }
@@ -186,10 +187,10 @@ return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? id,  String title,  String? author,  String? isbn,  String? summary,  String? publisher,  int? publicationYear,  String? coverUrl,  String? largeCoverUrl,  String? readingStatus,  int? shelfPosition,  int? userRating,  String? subjects,  String? createdAt,  String? updatedAt,  String? finishedReadingAt,  String? startedReadingAt,  bool owned,  double? price)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? id,  String title,  String? author,  String? isbn,  String? summary,  String? publisher,  int? publicationYear,  String? coverUrl,  String? largeCoverUrl,  String? readingStatus,  int? shelfPosition,  int? userRating,  String? subjects,  String? createdAt,  String? updatedAt,  String? finishedReadingAt,  String? startedReadingAt,  bool owned,  double? price,  List<String>? digitalFormats)  $default,) {final _that = this;
 switch (_that) {
 case _FrbBook():
-return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that.publisher,_that.publicationYear,_that.coverUrl,_that.largeCoverUrl,_that.readingStatus,_that.shelfPosition,_that.userRating,_that.subjects,_that.createdAt,_that.updatedAt,_that.finishedReadingAt,_that.startedReadingAt,_that.owned,_that.price);}
+return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that.publisher,_that.publicationYear,_that.coverUrl,_that.largeCoverUrl,_that.readingStatus,_that.shelfPosition,_that.userRating,_that.subjects,_that.createdAt,_that.updatedAt,_that.finishedReadingAt,_that.startedReadingAt,_that.owned,_that.price,_that.digitalFormats);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -203,10 +204,10 @@ return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? id,  String title,  String? author,  String? isbn,  String? summary,  String? publisher,  int? publicationYear,  String? coverUrl,  String? largeCoverUrl,  String? readingStatus,  int? shelfPosition,  int? userRating,  String? subjects,  String? createdAt,  String? updatedAt,  String? finishedReadingAt,  String? startedReadingAt,  bool owned,  double? price)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? id,  String title,  String? author,  String? isbn,  String? summary,  String? publisher,  int? publicationYear,  String? coverUrl,  String? largeCoverUrl,  String? readingStatus,  int? shelfPosition,  int? userRating,  String? subjects,  String? createdAt,  String? updatedAt,  String? finishedReadingAt,  String? startedReadingAt,  bool owned,  double? price,  List<String>? digitalFormats)?  $default,) {final _that = this;
 switch (_that) {
 case _FrbBook() when $default != null:
-return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that.publisher,_that.publicationYear,_that.coverUrl,_that.largeCoverUrl,_that.readingStatus,_that.shelfPosition,_that.userRating,_that.subjects,_that.createdAt,_that.updatedAt,_that.finishedReadingAt,_that.startedReadingAt,_that.owned,_that.price);case _:
+return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that.publisher,_that.publicationYear,_that.coverUrl,_that.largeCoverUrl,_that.readingStatus,_that.shelfPosition,_that.userRating,_that.subjects,_that.createdAt,_that.updatedAt,_that.finishedReadingAt,_that.startedReadingAt,_that.owned,_that.price,_that.digitalFormats);case _:
   return null;
 
 }
@@ -218,7 +219,7 @@ return $default(_that.id,_that.title,_that.author,_that.isbn,_that.summary,_that
 
 
 class _FrbBook implements FrbBook {
-  const _FrbBook({this.id, required this.title, this.author, this.isbn, this.summary, this.publisher, this.publicationYear, this.coverUrl, this.largeCoverUrl, this.readingStatus, this.shelfPosition, this.userRating, this.subjects, this.createdAt, this.updatedAt, this.finishedReadingAt, this.startedReadingAt, required this.owned, this.price});
+  const _FrbBook({this.id, required this.title, this.author, this.isbn, this.summary, this.publisher, this.publicationYear, this.coverUrl, this.largeCoverUrl, this.readingStatus, this.shelfPosition, this.userRating, this.subjects, this.createdAt, this.updatedAt, this.finishedReadingAt, this.startedReadingAt, required this.owned, this.price, final  List<String>? digitalFormats}): _digitalFormats = digitalFormats;
   
 
 @override final  int? id;
@@ -240,6 +241,15 @@ class _FrbBook implements FrbBook {
 @override final  String? startedReadingAt;
 @override final  bool owned;
 @override final  double? price;
+ final  List<String>? _digitalFormats;
+@override List<String>? get digitalFormats {
+  final value = _digitalFormats;
+  if (value == null) return null;
+  if (_digitalFormats is EqualUnmodifiableListView) return _digitalFormats;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
 
 /// Create a copy of FrbBook
 /// with the given fields replaced by the non-null parameter values.
@@ -251,16 +261,16 @@ _$FrbBookCopyWith<_FrbBook> get copyWith => __$FrbBookCopyWithImpl<_FrbBook>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FrbBook&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.isbn, isbn) || other.isbn == isbn)&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.publicationYear, publicationYear) || other.publicationYear == publicationYear)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.largeCoverUrl, largeCoverUrl) || other.largeCoverUrl == largeCoverUrl)&&(identical(other.readingStatus, readingStatus) || other.readingStatus == readingStatus)&&(identical(other.shelfPosition, shelfPosition) || other.shelfPosition == shelfPosition)&&(identical(other.userRating, userRating) || other.userRating == userRating)&&(identical(other.subjects, subjects) || other.subjects == subjects)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.finishedReadingAt, finishedReadingAt) || other.finishedReadingAt == finishedReadingAt)&&(identical(other.startedReadingAt, startedReadingAt) || other.startedReadingAt == startedReadingAt)&&(identical(other.owned, owned) || other.owned == owned)&&(identical(other.price, price) || other.price == price));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FrbBook&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.author, author) || other.author == author)&&(identical(other.isbn, isbn) || other.isbn == isbn)&&(identical(other.summary, summary) || other.summary == summary)&&(identical(other.publisher, publisher) || other.publisher == publisher)&&(identical(other.publicationYear, publicationYear) || other.publicationYear == publicationYear)&&(identical(other.coverUrl, coverUrl) || other.coverUrl == coverUrl)&&(identical(other.largeCoverUrl, largeCoverUrl) || other.largeCoverUrl == largeCoverUrl)&&(identical(other.readingStatus, readingStatus) || other.readingStatus == readingStatus)&&(identical(other.shelfPosition, shelfPosition) || other.shelfPosition == shelfPosition)&&(identical(other.userRating, userRating) || other.userRating == userRating)&&(identical(other.subjects, subjects) || other.subjects == subjects)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.finishedReadingAt, finishedReadingAt) || other.finishedReadingAt == finishedReadingAt)&&(identical(other.startedReadingAt, startedReadingAt) || other.startedReadingAt == startedReadingAt)&&(identical(other.owned, owned) || other.owned == owned)&&(identical(other.price, price) || other.price == price)&&const DeepCollectionEquality().equals(other._digitalFormats, _digitalFormats));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,title,author,isbn,summary,publisher,publicationYear,coverUrl,largeCoverUrl,readingStatus,shelfPosition,userRating,subjects,createdAt,updatedAt,finishedReadingAt,startedReadingAt,owned,price]);
+int get hashCode => Object.hashAll([runtimeType,id,title,author,isbn,summary,publisher,publicationYear,coverUrl,largeCoverUrl,readingStatus,shelfPosition,userRating,subjects,createdAt,updatedAt,finishedReadingAt,startedReadingAt,owned,price,const DeepCollectionEquality().hash(_digitalFormats)]);
 
 @override
 String toString() {
-  return 'FrbBook(id: $id, title: $title, author: $author, isbn: $isbn, summary: $summary, publisher: $publisher, publicationYear: $publicationYear, coverUrl: $coverUrl, largeCoverUrl: $largeCoverUrl, readingStatus: $readingStatus, shelfPosition: $shelfPosition, userRating: $userRating, subjects: $subjects, createdAt: $createdAt, updatedAt: $updatedAt, finishedReadingAt: $finishedReadingAt, startedReadingAt: $startedReadingAt, owned: $owned, price: $price)';
+  return 'FrbBook(id: $id, title: $title, author: $author, isbn: $isbn, summary: $summary, publisher: $publisher, publicationYear: $publicationYear, coverUrl: $coverUrl, largeCoverUrl: $largeCoverUrl, readingStatus: $readingStatus, shelfPosition: $shelfPosition, userRating: $userRating, subjects: $subjects, createdAt: $createdAt, updatedAt: $updatedAt, finishedReadingAt: $finishedReadingAt, startedReadingAt: $startedReadingAt, owned: $owned, price: $price, digitalFormats: $digitalFormats)';
 }
 
 
@@ -271,7 +281,7 @@ abstract mixin class _$FrbBookCopyWith<$Res> implements $FrbBookCopyWith<$Res> {
   factory _$FrbBookCopyWith(_FrbBook value, $Res Function(_FrbBook) _then) = __$FrbBookCopyWithImpl;
 @override @useResult
 $Res call({
- int? id, String title, String? author, String? isbn, String? summary, String? publisher, int? publicationYear, String? coverUrl, String? largeCoverUrl, String? readingStatus, int? shelfPosition, int? userRating, String? subjects, String? createdAt, String? updatedAt, String? finishedReadingAt, String? startedReadingAt, bool owned, double? price
+ int? id, String title, String? author, String? isbn, String? summary, String? publisher, int? publicationYear, String? coverUrl, String? largeCoverUrl, String? readingStatus, int? shelfPosition, int? userRating, String? subjects, String? createdAt, String? updatedAt, String? finishedReadingAt, String? startedReadingAt, bool owned, double? price, List<String>? digitalFormats
 });
 
 
@@ -288,7 +298,7 @@ class __$FrbBookCopyWithImpl<$Res>
 
 /// Create a copy of FrbBook
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? title = null,Object? author = freezed,Object? isbn = freezed,Object? summary = freezed,Object? publisher = freezed,Object? publicationYear = freezed,Object? coverUrl = freezed,Object? largeCoverUrl = freezed,Object? readingStatus = freezed,Object? shelfPosition = freezed,Object? userRating = freezed,Object? subjects = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? finishedReadingAt = freezed,Object? startedReadingAt = freezed,Object? owned = null,Object? price = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? title = null,Object? author = freezed,Object? isbn = freezed,Object? summary = freezed,Object? publisher = freezed,Object? publicationYear = freezed,Object? coverUrl = freezed,Object? largeCoverUrl = freezed,Object? readingStatus = freezed,Object? shelfPosition = freezed,Object? userRating = freezed,Object? subjects = freezed,Object? createdAt = freezed,Object? updatedAt = freezed,Object? finishedReadingAt = freezed,Object? startedReadingAt = freezed,Object? owned = null,Object? price = freezed,Object? digitalFormats = freezed,}) {
   return _then(_FrbBook(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -309,7 +319,8 @@ as String?,finishedReadingAt: freezed == finishedReadingAt ? _self.finishedReadi
 as String?,startedReadingAt: freezed == startedReadingAt ? _self.startedReadingAt : startedReadingAt // ignore: cast_nullable_to_non_nullable
 as String?,owned: null == owned ? _self.owned : owned // ignore: cast_nullable_to_non_nullable
 as bool,price: freezed == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
-as double?,
+as double?,digitalFormats: freezed == digitalFormats ? _self._digitalFormats : digitalFormats // ignore: cast_nullable_to_non_nullable
+as List<String>?,
   ));
 }
 

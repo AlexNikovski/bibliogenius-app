@@ -68,6 +68,10 @@ class ThemeProvider with ChangeNotifier {
   bool _editionBrowserEnabled = true;
   bool get editionBrowserEnabled => _editionBrowserEnabled;
 
+  // Digital Formats Module
+  bool _digitalFormatsEnabled = false;
+  bool get digitalFormatsEnabled => _digitalFormatsEnabled;
+
   ThemeData get themeData {
     // Initialize registry if needed
     ThemeRegistry.initialize();
@@ -121,6 +125,7 @@ class ThemeProvider with ChangeNotifier {
     _collectionsEnabled = prefs.getBool('collectionsEnabled') ?? true;
     _quotesEnabled = prefs.getBool('quotesEnabled') ?? true;
     _editionBrowserEnabled = prefs.getBool('editionBrowserEnabled') ?? true;
+    _digitalFormatsEnabled = prefs.getBool('digitalFormatsEnabled') ?? false;
 
     // Load gamification setting (default based on profile type)
     final savedGamification = prefs.getBool('gamificationEnabled');
@@ -468,6 +473,13 @@ class ThemeProvider with ChangeNotifier {
     _quotesEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('quotesEnabled', enabled);
+    notifyListeners();
+  }
+
+  Future<void> setDigitalFormatsEnabled(bool enabled) async {
+    _digitalFormatsEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('digitalFormatsEnabled', enabled);
     notifyListeners();
   }
 }

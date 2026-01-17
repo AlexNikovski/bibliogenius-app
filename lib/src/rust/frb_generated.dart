@@ -1149,8 +1149,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   FrbBook dco_decode_frb_book(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 19)
-      throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
+    if (arr.length != 20)
+      throw Exception('unexpected arr length: expect 20 but see ${arr.length}');
     return FrbBook(
       id: dco_decode_opt_box_autoadd_i_32(arr[0]),
       title: dco_decode_String(arr[1]),
@@ -1171,6 +1171,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       startedReadingAt: dco_decode_opt_String(arr[16]),
       owned: dco_decode_bool(arr[17]),
       price: dco_decode_opt_box_autoadd_f_64(arr[18]),
+      digitalFormats: dco_decode_opt_list_String(arr[19]),
     );
   }
 
@@ -1337,6 +1338,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String>? dco_decode_opt_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_String(raw);
+  }
+
+  @protected
   int dco_decode_u_16(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -1419,6 +1426,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_startedReadingAt = sse_decode_opt_String(deserializer);
     var var_owned = sse_decode_bool(deserializer);
     var var_price = sse_decode_opt_box_autoadd_f_64(deserializer);
+    var var_digitalFormats = sse_decode_opt_list_String(deserializer);
     return FrbBook(
       id: var_id,
       title: var_title,
@@ -1439,6 +1447,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       startedReadingAt: var_startedReadingAt,
       owned: var_owned,
       price: var_price,
+      digitalFormats: var_digitalFormats,
     );
   }
 
@@ -1689,6 +1698,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String>? sse_decode_opt_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   int sse_decode_u_16(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint16();
@@ -1772,6 +1792,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_String(self.startedReadingAt, serializer);
     sse_encode_bool(self.owned, serializer);
     sse_encode_opt_box_autoadd_f_64(self.price, serializer);
+    sse_encode_opt_list_String(self.digitalFormats, serializer);
   }
 
   @protected
@@ -1966,6 +1987,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_box_autoadd_i_32(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_list_String(
+    List<String>? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_String(self, serializer);
     }
   }
 

@@ -14,6 +14,7 @@ class Book {
   final int? userRating; // 0-10 scale
   final bool owned; // Whether I physically own this book (default: true)
   final double? price; // Book price (Bookseller profile)
+  final List<String>? digitalFormats; // ["ebook", "audiobook"]
 
   Book({
     this.id,
@@ -31,6 +32,7 @@ class Book {
     this.userRating,
     this.owned = true,
     this.price, // Optional price
+    this.digitalFormats,
   }) : _coverUrl = coverUrl;
 
   factory Book.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,9 @@ class Book {
       userRating: json['user_rating'],
       owned: json['owned'] ?? true,
       price: json['price'] != null ? (json['price'] as num).toDouble() : null,
+      digitalFormats: json['digital_formats'] != null
+          ? List<String>.from(json['digital_formats'])
+          : null,
     );
   }
 
@@ -84,6 +89,7 @@ class Book {
       'user_rating': userRating,
       'owned': owned,
       'price': price, // Price for Bookseller profile
+      'digital_formats': digitalFormats,
       'created_at': now,
       'updated_at': now,
     };
@@ -107,6 +113,7 @@ class Book {
       userRating: newRating,
       owned: owned,
       price: price, // Preserve price
+      digitalFormats: digitalFormats, // Preserve formats
     );
   }
 

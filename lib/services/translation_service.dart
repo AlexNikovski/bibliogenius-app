@@ -1084,6 +1084,13 @@ class TranslationService {
       'module_edition_browser': 'Edition Browser',
       'module_edition_browser_desc':
           'Browse and select from multiple editions when adding books.',
+      'module_digital_formats': 'Formats',
+      'digital_formats_label': 'Formats',
+      'module_digital_formats_desc':
+          'Enable support for managing physical and digital formats.',
+      'format_paper': 'Paper',
+      'format_ebook': 'Ebook',
+      'format_audiobook': 'Audiobook',
       // Gamification
       'enable_gamification': 'Enable Gamification',
       'gamification_desc':
@@ -1825,6 +1832,13 @@ class TranslationService {
       'module_edition_browser': "Navigateur d'éditions",
       'module_edition_browser_desc':
           "Parcourir et sélectionner parmi plusieurs éditions lors de l'ajout de livres.",
+      'module_digital_formats': 'Formats',
+      'digital_formats_label': 'Formats',
+      'module_digital_formats_desc':
+          'Activer la gestion des formats physiques et numériques (papie, e-books, audio).',
+      'format_paper': 'Papier',
+      'format_ebook': 'Ebook',
+      'format_audiobook': 'Livre Audio',
       'enable_borrowing_module': 'Activer les emprunts',
       'borrowing_module_desc': 'Prêter et emprunter des livres avec vos amis',
 

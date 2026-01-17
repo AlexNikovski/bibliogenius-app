@@ -210,6 +210,7 @@ sealed class FrbBook with _$FrbBook {
     String? startedReadingAt,
     required bool owned,
     double? price,
+    List<String>? digitalFormats,
   }) = _FrbBook;
 }
 

@@ -37,6 +37,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
   late TextEditingController _priceController; // Price for Bookseller profile
   late Book _book;
   List<String> _selectedTags = []; // Add this
+  final List<String> _selectedDigitalFormats = []; // Digital formats
   List<Collection> _selectedCollections = []; // Add this
   List<String> _authors = []; // Multiple authors support
   List<String> _allAuthors = []; // For autocomplete
@@ -72,6 +73,11 @@ class _EditBookScreenState extends State<EditBookScreen> {
           .split(RegExp(r',\s*'))
           .where((s) => s.isNotEmpty)
           .toList();
+    }
+
+    // Initialize digital formats
+    if (widget.book.digitalFormats != null) {
+      _selectedDigitalFormats.addAll(widget.book.digitalFormats!);
     }
 
     // Initialize FocusNodes
@@ -355,6 +361,7 @@ class _EditBookScreenState extends State<EditBookScreen> {
       'price': _priceController.text.isNotEmpty
           ? double.tryParse(_priceController.text.replaceAll(',', '.'))
           : null, // Price for Bookseller profile
+      'digital_formats': _selectedDigitalFormats,
     };
 
     try {
@@ -886,6 +893,8 @@ class _EditBookScreenState extends State<EditBookScreen> {
               ),
 
               // Owned checkbox - controls copy creation
+
+              // Owned checkbox - controls copy creation
               CheckboxListTile(
                 title: Text(
                   TranslationService.translate(context, 'own_this_book') ??
@@ -905,6 +914,111 @@ class _EditBookScreenState extends State<EditBookScreen> {
                 contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: 16),
+
+              // Formats Selection (Unified)
+              Consumer<ThemeProvider>(
+                builder: (context, theme, _) {
+                  if (!theme.digitalFormatsEnabled)
+                    return const SizedBox.shrink();
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            TranslationService.translate(
+                                  context,
+                                  'digital_formats_label',
+                                ) ??
+                                'Formats',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              // Paper Chip
+                              FilterChip(
+                                label: Text(
+                                  TranslationService.translate(
+                                        context,
+                                        'format_paper',
+                                      ) ??
+                                      'Paper',
+                                ),
+                                selected: _selectedDigitalFormats.contains(
+                                  'paper',
+                                ),
+                                onSelected: (bool selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedDigitalFormats.add('paper');
+                                    } else {
+                                      _selectedDigitalFormats.remove('paper');
+                                    }
+                                  });
+                                },
+                                avatar: const Icon(Icons.menu_book, size: 18),
+                              ),
+                              // Digital Formats
+                              FilterChip(
+                                label: Text(
+                                  TranslationService.translate(
+                                        context,
+                                        'format_ebook',
+                                      ) ??
+                                      'Ebook',
+                                ),
+                                selected: _selectedDigitalFormats.contains(
+                                  'ebook',
+                                ),
+                                onSelected: (bool selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedDigitalFormats.add('ebook');
+                                    } else {
+                                      _selectedDigitalFormats.remove('ebook');
+                                    }
+                                  });
+                                },
+                                avatar: const Icon(Icons.tablet_mac, size: 18),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  TranslationService.translate(
+                                        context,
+                                        'format_audiobook',
+                                      ) ??
+                                      'Audiobook',
+                                ),
+                                selected: _selectedDigitalFormats.contains(
+                                  'audiobook',
+                                ),
+                                onSelected: (bool selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedDigitalFormats.add('audiobook');
+                                    } else {
+                                      _selectedDigitalFormats.remove(
+                                        'audiobook',
+                                      );
+                                    }
+                                  });
+                                },
+                                avatar: const Icon(Icons.headset, size: 18),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
 
               // Status
               _buildLabel(
