@@ -81,6 +81,7 @@ class TranslationService {
       'show_borrowed_subtitle': 'Include borrowed books in your library view',
       'data_management': 'Data Management',
       'manage_shelves': 'Manage Shelves',
+      'manage_tags': 'Manage Shelves',
       'create_shelf': 'Create Shelf',
       'edit_shelf': 'Edit Shelf',
       'delete_shelf': 'Delete Shelf',
@@ -1148,6 +1149,7 @@ class TranslationService {
     },
     'fr': {
       'app_title': 'BiblioGenius',
+      'manage_tags': 'Gérer les étagères',
       'app_subtitle': 'Gestionnaire de bibliothèque intelligent',
       'dashboard': 'Tableau de bord',
       'home': 'Accueil',

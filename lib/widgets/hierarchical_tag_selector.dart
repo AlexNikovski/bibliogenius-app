@@ -257,97 +257,103 @@ class _TagSelectionDialogState extends State<_TagSelectionDialog> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            Row(
+            Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _newTagNameController,
-                    decoration: InputDecoration(
-                      hintText: TranslationService.translate(
-                        context,
-                        'tag_name_hint',
-                      ),
-                      isDense: true,
-                      border: const OutlineInputBorder(),
+                TextField(
+                  controller: _newTagNameController,
+                  decoration: InputDecoration(
+                    hintText: TranslationService.translate(
+                      context,
+                      'tag_name_hint',
                     ),
+                    isDense: true,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Parent selector (simple dropdown of existing nodes)
-                // For simplicity, we can use a PopupMenu or just a tree picker dialog.
-                // Let's use a simple dropdown of flattened tags for now, or just "Root" if null.
-                PopupMenuButton<Tag?>(
-                  tooltip: 'Select Parent (Optional)',
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade400),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.folder,
-                          size: 16,
-                          color: Colors.grey.shade600,
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: PopupMenuButton<Tag?>(
+                        tooltip: 'Select Parent (Optional)',
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.folder,
+                                size: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _parentTagForNew == null
+                                      ? TranslationService.translate(
+                                          context,
+                                          'root_tag',
+                                        )
+                                      : _parentTagForNew!.name,
+                                  style: const TextStyle(fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _parentTagForNew == null
-                              ? TranslationService.translate(
+                        itemBuilder: (context) {
+                          final validParents = _tags
+                              .where((t) => t.id > 0)
+                              .toList();
+                          return [
+                            PopupMenuItem<Tag?>(
+                              value: null,
+                              child: Text(
+                                TranslationService.translate(
                                   context,
                                   'root_tag',
-                                )
-                              : _parentTagForNew!.name,
-                          style: const TextStyle(fontSize: 12),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                                ),
+                              ),
+                            ),
+                            ...validParents.map(
+                              (t) => PopupMenuItem<Tag?>(
+                                value: t,
+                                child: Text(
+                                  t.fullPath,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ),
+                          ];
+                        },
+                        onSelected: (Tag? parent) {
+                          setState(() => _parentTagForNew = parent);
+                        },
+                      ),
                     ),
-                  ),
-                  itemBuilder: (context) {
-                    // Flattened list for parent selection
-                    // Only show tags with positive IDs (DB tags, not legacy)
-                    final validParents = _tags.where((t) => t.id > 0).toList();
-                    return [
-                      PopupMenuItem<Tag?>(
-                        value: null,
-                        child: Text(
-                          TranslationService.translate(context, 'root_tag'),
-                        ),
-                      ),
-                      ...validParents.map(
-                        (t) => PopupMenuItem<Tag?>(
-                          value: t,
-                          child: Text(
-                            t.fullPath,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ];
-                  },
-                  onSelected: (Tag? parent) {
-                    setState(() => _parentTagForNew = parent);
-                  },
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  icon: _isCreating
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.add),
-                  onPressed: _isCreating ? null : _createNewTag,
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      icon: _isCreating
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.add),
+                      onPressed: _isCreating ? null : _createNewTag,
+                    ),
+                  ],
                 ),
               ],
             ),
