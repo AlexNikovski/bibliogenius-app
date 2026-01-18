@@ -2080,7 +2080,7 @@ class TranslationService {
       // Celebration Animations
       'book_complete_celebration': '📖 Livre terminé !',
       'new_badge_unlocked': '🏆 Nouveau badge débloqué !',
-      'level_up': 'Niveau supérieur !',
+      // 'level_up': 'Niveau supérieur !', // duplicate removed
       'achievement_unlocked': '🏆 Succès débloqué !',
       'goal_reached_title': '🎯 Objectif atteint !',
       'monthly_goal_reached': 'Objectif mensuel atteint !',
@@ -2969,7 +2969,7 @@ class TranslationService {
       // Celebration Animations
       'book_complete_celebration': '📖 Buch abgeschlossen!',
       'new_badge_unlocked': '🏆 Neues Abzeichen freigeschaltet!',
-      'level_up': 'Level Up!',
+      'level_up': 'Levelaufstieg!',
       'achievement_unlocked': '🏆 Erfolg freigeschaltet!',
       'goal_reached_title': '🎯 Ziel erreicht!',
       'monthly_goal_reached': 'Monatsziel erreicht!',
