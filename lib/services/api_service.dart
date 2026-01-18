@@ -1409,28 +1409,77 @@ class ApiService {
 
   // Export
   Future<Response> exportData() async {
-    // In FFI mode, generate CSV from local books
+    // In FFI mode, generate JSON backup from local data
     if (useFfi) {
       try {
+        // Gather all data for backup
         final books = await FfiService().getBooks();
-        final csvLines = <String>[];
-        // CSV header
-        csvLines.add('Title,Author,ISBN,Publisher,Year,Status,Cover URL');
-        // CSV rows
-        for (final book in books) {
-          final row = [
-            '"${(book.title).replaceAll('"', '""')}"',
-            '"${(book.author ?? '').replaceAll('"', '""')}"',
-            '"${book.isbn ?? ''}"',
-            '"${(book.publisher ?? '').replaceAll('"', '""')}"',
-            '${book.publicationYear ?? ''}',
-            '"${book.readingStatus ?? ''}"',
-            '"${book.coverUrl ?? ''}"',
-          ].join(',');
-          csvLines.add(row);
+        final contacts = await FfiService().getContacts();
+        final tags = await FfiService().getTags();
+
+        // Get collections via local HTTP server
+        List<dynamic> collections = [];
+        try {
+          final localDio = await _getLocalDio();
+          final collectionsResponse = await localDio.get('/api/collections');
+          if (collectionsResponse.statusCode == 200) {
+            collections = collectionsResponse.data as List<dynamic>;
+          }
+        } catch (e) {
+          debugPrint('Could not fetch collections for export: $e');
         }
-        final csvContent = csvLines.join('\n');
-        final bytes = utf8.encode(csvContent);
+
+        // Build JSON backup structure
+        final backupData = {
+          'version': '1.0',
+          'exported_at': DateTime.now().toIso8601String(),
+          'books': books
+              .map(
+                (book) => {
+                  'id': book.id,
+                  'title': book.title,
+                  'author': book.author,
+                  'isbn': book.isbn,
+                  'publisher': book.publisher,
+                  'publication_year': book.publicationYear,
+                  'summary': book.summary,
+                  'cover_url': book.coverUrl,
+                  'reading_status': book.readingStatus,
+                  'user_rating': book.userRating,
+                  'started_reading_at': book.startedReadingAt,
+                  'finished_reading_at': book.finishedReadingAt,
+                  'owned': book.owned,
+                  'price': book.price,
+                  'subjects': book.subjects,
+                },
+              )
+              .toList(),
+          'contacts': contacts
+              .map(
+                (contact) => {
+                  'id': contact.id,
+                  'name': contact.name,
+                  'email': contact.email,
+                  'phone': contact.phone,
+                  'type': contact.type,
+                  'notes': contact.notes,
+                },
+              )
+              .toList(),
+          'tags': tags
+              .map(
+                (tag) => {
+                  'id': tag.id,
+                  'name': tag.name,
+                  'parent_id': tag.parentId,
+                },
+              )
+              .toList(),
+          'collections': collections,
+        };
+
+        final jsonContent = jsonEncode(backupData);
+        final bytes = utf8.encode(jsonContent);
         return Response(
           requestOptions: RequestOptions(path: '/api/export'),
           statusCode: 200,
@@ -1445,6 +1494,7 @@ class ApiService {
         );
       }
     }
+
     return await _dio.get(
       '/api/export',
       options: Options(responseType: ResponseType.bytes),

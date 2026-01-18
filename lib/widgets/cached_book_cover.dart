@@ -70,7 +70,7 @@ class CachedBookCover extends StatelessWidget {
       fit: fit,
       placeholder: (context, url) => placeholder ?? _buildPlaceholder(),
       errorWidget: (context, url, error) {
-        debugPrint('Error loading image $url: $error');
+        // Silent fallback - errors are expected for invalid/unavailable cover URLs
         return errorWidget ?? _buildFallback();
       },
       fadeInDuration: const Duration(milliseconds: 200),

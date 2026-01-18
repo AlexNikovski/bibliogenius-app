@@ -66,6 +66,118 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
     }
   }
 
+  Future<Contact?> _showContactPicker(BuildContext context) async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await apiService.getContacts();
+      if (!mounted) return null;
+      Navigator.pop(context); // Close loading
+
+      if (response.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading contacts: ${response.statusCode}'),
+          ),
+        );
+        return null;
+      }
+
+      final List<Contact> contacts = (response.data as List)
+          .map((json) => Contact.fromJson(json))
+          .toList();
+
+      if (contacts.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(TranslationService.translate(context, 'no_contacts')),
+            action: SnackBarAction(
+              label: TranslationService.translate(context, 'add'),
+              onPressed: () {
+                // Could navigate to add contact screen
+              },
+            ),
+          ),
+        );
+        return null;
+      }
+
+      // Show contact picker modal
+      return await showModalBottomSheet<Contact>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (ctx) => DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) => Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      TranslationService.translate(context, 'select_buyer'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: contacts.length,
+                  itemBuilder: (context, index) {
+                    final contact = contacts[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(
+                          contact.fullName.isNotEmpty
+                              ? contact.fullName[0].toUpperCase()
+                              : '?',
+                        ),
+                      ),
+                      title: Text(contact.fullName),
+                      subtitle: contact.email != null
+                          ? Text(contact.email!)
+                          : null,
+                      onTap: () => Navigator.pop(context, contact),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading if still open
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+      return null;
+    }
+  }
+
   Future<void> _submitSale() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCopy == null) {
@@ -210,13 +322,12 @@ class _RecordSaleScreenState extends State<RecordSaleScreen> {
                 leading: const Icon(Icons.person),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () async {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Contact picker not implemented in this step',
-                      ),
-                    ),
-                  );
+                  final contact = await _showContactPicker(context);
+                  if (contact != null) {
+                    setState(() {
+                      _selectedContact = contact;
+                    });
+                  }
                 },
               ),
               const Divider(),
