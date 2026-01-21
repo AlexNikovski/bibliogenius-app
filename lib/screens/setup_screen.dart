@@ -186,9 +186,25 @@ class _SetupScreenState extends State<SetupScreen> {
               );
               if (currentStep < 4) {
                 if (currentStep == 1) {
+                  // Validate library name is not empty
+                  if (_libraryNameController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          TranslationService.translate(
+                                context,
+                                'library_name_required',
+                              ) ??
+                              'Le nom de la bibliothèque est requis',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
                   // Save library name when leaving step 1
                   themeProvider.setSetupLibraryName(
-                    _libraryNameController.text,
+                    _libraryNameController.text.trim(),
                   );
                 }
                 // Validate password on credentials step

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/curated_lists_service.dart';
 import '../../services/api_service.dart';
 import '../../services/collection_import_service.dart';
@@ -20,16 +21,30 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
   List<CuratedCategory> _categories = [];
   String? _selectedCategoryId;
   List<CuratedList> _currentLists = [];
+  String _profileType = 'individual';
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    _loadProfileAndCategories();
+  }
+
+  Future<void> _loadProfileAndCategories() async {
+    // Load profile type first to determine category ordering
+    final prefs = await SharedPreferences.getInstance();
+    _profileType = prefs.getString('ffi_profile_type') ?? 'individual';
+    await _loadCategories();
   }
 
   Future<void> _loadCategories() async {
     try {
-      final categories = await _curatedService.loadCategories();
+      var categories = await _curatedService.loadCategories();
+
+      // Prioritize jeunesse category for kid profiles
+      if (_profileType == 'kid') {
+        categories = _prioritizeCategory(categories, 'jeunesse');
+      }
+
       if (mounted) {
         setState(() {
           _categories = categories;
@@ -48,6 +63,19 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
         });
       }
     }
+  }
+
+  /// Move a specific category to the front of the list
+  List<CuratedCategory> _prioritizeCategory(
+    List<CuratedCategory> categories,
+    String categoryId,
+  ) {
+    final index = categories.indexWhere((c) => c.id == categoryId);
+    if (index > 0) {
+      final category = categories.removeAt(index);
+      categories.insert(0, category);
+    }
+    return categories;
   }
 
   Future<void> _selectCategory(String categoryId) async {

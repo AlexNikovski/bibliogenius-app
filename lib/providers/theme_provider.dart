@@ -368,7 +368,7 @@ class ThemeProvider with ChangeNotifier {
   // Setup Wizard State
   int _setupStep = 0;
   int get setupStep => _setupStep;
-  String _setupLibraryName = 'My Library';
+  String _setupLibraryName = '';
   String get setupLibraryName => _setupLibraryName;
   String _setupProfileType = 'individual';
   String get setupProfileType => _setupProfileType;
@@ -404,7 +404,7 @@ class ThemeProvider with ChangeNotifier {
 
   void resetSetupState() {
     _setupStep = 0;
-    _setupLibraryName = 'My Library';
+    _setupLibraryName = '';
     _setupProfileType = 'individual';
     _setupAvatarConfig = AvatarConfig.defaultConfig;
     _setupImportDemo = false;
