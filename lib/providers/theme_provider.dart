@@ -96,7 +96,7 @@ class ThemeProvider with ChangeNotifier {
     } else {
       // Auto-detect system language on first launch
       final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
-      final supportedLanguages = ['en', 'fr'];
+      final supportedLanguages = ['en', 'fr', 'es', 'de'];
       if (supportedLanguages.contains(systemLocale.languageCode)) {
         _locale = Locale(systemLocale.languageCode);
       } else {
@@ -330,6 +330,42 @@ class ThemeProvider with ChangeNotifier {
     _isSetupComplete = true;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isSetupComplete', true);
+    notifyListeners();
+  }
+
+  /// Initialize defaults for first launch (skip setup wizard).
+  /// Call this once during app startup if setup is not complete.
+  Future<void> initializeDefaults() async {
+    if (_isSetupComplete) return; // Already setup
+
+    final prefs = await SharedPreferences.getInstance();
+
+    // Auto-detect language from device
+    final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
+    final supportedLanguages = ['en', 'fr', 'es', 'de'];
+    if (supportedLanguages.contains(systemLocale.languageCode)) {
+      _locale = Locale(systemLocale.languageCode);
+      await prefs.setString('languageCode', systemLocale.languageCode);
+    } else {
+      _locale = const Locale('en');
+      await prefs.setString('languageCode', 'en');
+    }
+
+    // Set sensible defaults
+    _libraryName = 'My Library';
+    await prefs.setString('libraryName', _libraryName);
+
+    _profileType = 'individual';
+    await prefs.setString('profileType', _profileType);
+
+    _avatarConfig = AvatarConfig.defaultConfig;
+    await prefs.setString('avatarConfig', jsonEncode(_avatarConfig!.toJson()));
+
+    // Mark setup as complete
+    _isSetupComplete = true;
+    await prefs.setBool('isSetupComplete', true);
+
+    debugPrint('✅ ThemeProvider: Initialized defaults (setup skipped)');
     notifyListeners();
   }
 

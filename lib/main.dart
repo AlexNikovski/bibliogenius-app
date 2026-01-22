@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'config/platform_init.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -120,6 +121,27 @@ void main([List<String>? args]) async {
   // Load settings early so library name is available for mDNS
   try {
     await themeProvider.loadSettings();
+    // Auto-initialize defaults if first launch (skip setup wizard)
+    final authService = AuthService();
+    if (!themeProvider.isSetupComplete) {
+      await themeProvider.initializeDefaults();
+      // Auto-login user on first launch (no password required by default)
+      await authService.saveUsername('admin');
+      await authService.saveToken(
+        'local-auto-token-${DateTime.now().millisecondsSinceEpoch}',
+      );
+      debugPrint('✅ First launch: auto-logged in as admin');
+    } else {
+      // Fallback: auto-login for existing installs without a token
+      final isLoggedIn = await authService.isLoggedIn();
+      if (!isLoggedIn) {
+        await authService.saveUsername('admin');
+        await authService.saveToken(
+          'local-auto-token-${DateTime.now().millisecondsSinceEpoch}',
+        );
+        debugPrint('✅ Existing install: auto-logged in as admin');
+      }
+    }
     // Initialize feature flags
     final prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey('enableHierarchicalTags')) {
@@ -153,9 +175,14 @@ void main([List<String>? args]) async {
       try {
         final authService = AuthService();
         final libraryUuid = await authService.getOrCreateLibraryUuid();
-        final libraryName = themeProvider.libraryName.isNotEmpty
+        // Include device hostname for network disambiguation
+        final baseName = themeProvider.libraryName.isNotEmpty
             ? themeProvider.libraryName
             : 'BiblioGenius Library';
+        final deviceName = Platform.localHostname;
+        final libraryName = deviceName.isNotEmpty
+            ? '$baseName ($deviceName)'
+            : baseName;
         await MdnsService.startAnnouncing(
           libraryName,
           httpPort,
@@ -246,39 +273,43 @@ class _AppRouterState extends State<AppRouter> with WidgetsBindingObserver {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     _router = GoRouter(
-      initialLocation: '/dashboard',
+      initialLocation: '/books',
       refreshListenable: themeProvider,
       redirect: (context, state) async {
-        final isSetup = themeProvider.isSetupComplete;
-        final isSetupRoute = state.uri.path == '/setup';
         final isOnboardingRoute = state.uri.path == '/onboarding';
         final isLoginRoute = state.uri.path == '/login';
-
-        // 1. Setup check - if not setup complete, only allow /setup route
-        if (!isSetup && !isSetupRoute) return '/setup';
-
-        // 2. If currently on setup route, skip all other checks (allow wizard to complete)
-        if (isSetupRoute) return null;
-
-        // 3. Auth check (only for non-setup routes)
         final authService = Provider.of<AuthService>(context, listen: false);
+
+        // Auto-init if setup not complete (e.g., after resetSetup)
+        if (!themeProvider.isSetupComplete) {
+          await themeProvider.initializeDefaults();
+          await authService.saveUsername('admin');
+          await authService.saveToken(
+            'local-auto-token-${DateTime.now().millisecondsSinceEpoch}',
+          );
+          debugPrint('✅ Redirect: auto-initialized and logged in');
+        }
+
+        // Auth check
         final isLoggedIn = await authService.isLoggedIn();
 
         if (!isLoggedIn) {
-          if (isLoginRoute) return null; // Allow access to login
-          if (isOnboardingRoute) return null; // Allow onboarding
-          return '/login';
+          // Fallback auto-login for edge cases
+          await authService.saveUsername('admin');
+          await authService.saveToken(
+            'local-auto-token-${DateTime.now().millisecondsSinceEpoch}',
+          );
+          debugPrint('✅ Redirect fallback: auto-logged in');
+          // Continue to destination (now logged in)
         }
 
-        // 3. Logged in user trying to access login
+        // Logged in user trying to access login
         if (isLoggedIn && isLoginRoute) {
-          return '/dashboard';
+          return '/books';
         }
 
-        // 4. Onboarding check (only if logged in or allowed)
-        if (isLoggedIn && state.uri.path == '/dashboard') {
-          // Check if user has seen tour only if going to dashboard root?
-          // Original logic checked it when redirecting FROM setup.
+        // Onboarding check (only if logged in)
+        if (isLoggedIn && state.uri.path == '/books') {
           final hasSeenTour = await WizardService.hasSeenOnboardingTour();
           if (!hasSeenTour) return '/onboarding';
         }

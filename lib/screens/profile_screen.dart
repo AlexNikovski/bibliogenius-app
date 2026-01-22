@@ -27,6 +27,7 @@ import '../themes/base/theme_registry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/app_constants.dart';
 import '../audio/audio_module.dart'; // Audio module (decoupled)
+import '../services/wizard_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? initialAction;
@@ -1787,7 +1788,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             }
 
                             if (mounted) {
-                              context.go('/setup');
+                              // Mark onboarding as seen (user already knows the app)
+                              await WizardService.markOnboardingTourSeen();
+                              context.go('/books');
                             }
                           } catch (e) {
                             if (mounted) {
