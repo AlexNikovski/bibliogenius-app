@@ -348,11 +348,18 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
               icon: const Icon(Icons.add),
               label: Text(
                 TranslationService.translate(context, 'create_first_shelf'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
             ),
@@ -387,7 +394,7 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
             ElevatedButton.icon(
               onPressed: _refreshTags,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(TranslationService.translate(context, 'retry')),
             ),
           ],
         ),

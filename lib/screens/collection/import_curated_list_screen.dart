@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/curated_lists_service.dart';
 import '../../services/api_service.dart';
 import '../../services/collection_import_service.dart';
+import '../../services/translation_service.dart';
 
 class ImportCuratedListScreen extends StatefulWidget {
   const ImportCuratedListScreen({Key? key}) : super(key: key);
@@ -114,22 +115,22 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
 
     final String? confirmedStatus = await showDialog<String?>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (dialogContext, setState) {
             return AlertDialog(
-              title: Text('Importer "$listTitle" ?'),
+              title: Text(TranslationService.translate(dialogContext, 'import_list_title', params: {'title': listTitle})),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Cela va créer une nouvelle collection avec ${list.books.length} livres.',
+                    TranslationService.translate(dialogContext, 'import_list_desc', params: {'count': list.books.length.toString()}),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Statut des livres importés :',
-                    style: TextStyle(fontWeight: FontWeight.w500),
+                  Text(
+                    TranslationService.translate(dialogContext, 'imported_books_status'),
+                    style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
@@ -141,14 +142,14 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
                         vertical: 8,
                       ),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: 'owned',
                         child: Row(
                           children: [
-                            Icon(Icons.inventory_2_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('Dans ma bibliothèque'),
+                            const Icon(Icons.inventory_2_outlined, size: 20),
+                            const SizedBox(width: 8),
+                            Text(TranslationService.translate(dialogContext, 'in_my_library')),
                           ],
                         ),
                       ),
@@ -156,9 +157,9 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
                         value: 'to_read',
                         child: Row(
                           children: [
-                            Icon(Icons.bookmark_border, size: 20),
-                            SizedBox(width: 8),
-                            Text('À lire'),
+                            const Icon(Icons.bookmark_border, size: 20),
+                            const SizedBox(width: 8),
+                            Text(TranslationService.translate(dialogContext, 'to_read_status')),
                           ],
                         ),
                       ),
@@ -166,9 +167,9 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
                         value: 'wanting',
                         child: Row(
                           children: [
-                            Icon(Icons.favorite_border, size: 20),
-                            SizedBox(width: 8),
-                            Text('Wishlist'),
+                            const Icon(Icons.favorite_border, size: 20),
+                            const SizedBox(width: 8),
+                            Text(TranslationService.translate(dialogContext, 'wishlist_status')),
                           ],
                         ),
                       ),
@@ -182,22 +183,22 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
                   const SizedBox(height: 8),
                   Text(
                     selectedStatus == 'wanting'
-                        ? 'Les livres seront ajoutés à votre wishlist.'
-                        : 'Des exemplaires seront créés automatiquement.',
+                        ? TranslationService.translate(dialogContext, 'books_added_to_wishlist')
+                        : TranslationService.translate(dialogContext, 'copies_created_automatically'),
                     style: Theme.of(
-                      context,
+                      dialogContext,
                     ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                   ),
                 ],
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context, null),
-                  child: const Text('Annuler'),
+                  onPressed: () => Navigator.pop(dialogContext, null),
+                  child: Text(TranslationService.translate(dialogContext, 'cancel')),
                 ),
                 FilledButton(
-                  onPressed: () => Navigator.pop(context, selectedStatus),
-                  child: const Text('Importer'),
+                  onPressed: () => Navigator.pop(dialogContext, selectedStatus),
+                  child: Text(TranslationService.translate(dialogContext, 'import')),
                 ),
               ],
             );
@@ -235,7 +236,7 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
       if (result.hasError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur : ${result.error}'),
+            content: Text('${TranslationService.translate(context, 'error')}: ${result.error}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -243,7 +244,7 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Collection "$listTitle" créée avec ${result.successCount} livres.',
+              TranslationService.translate(context, 'collection_created', params: {'title': listTitle, 'count': result.successCount.toString()}),
             ),
           ),
         );
@@ -253,7 +254,7 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur inattendue : $e'),
+            content: Text('${TranslationService.translate(context, 'unexpected_error')}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -287,16 +288,16 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
     final langCode = _currentLangCode;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Découvrir des Collections')),
+      appBar: AppBar(title: Text(TranslationService.translate(context, 'discover_collections'))),
       body: _isImporting
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
                   Text(
-                    'Création de la collection et importation des livres...',
+                    TranslationService.translate(context, 'importing_collection'),
                   ),
                 ],
               ),
@@ -480,7 +481,7 @@ class _ImportCuratedListScreenState extends State<ImportCuratedListScreen> {
                   child: FilledButton.icon(
                     onPressed: () => _importList(list),
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Importer la collection'),
+                    label: Text(TranslationService.translate(context, 'import_list')),
                   ),
                 ),
               ],

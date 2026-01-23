@@ -347,7 +347,7 @@ class _AppRouterState extends State<AppRouter> with WidgetsBindingObserver {
             ),
             GoRoute(
               path: '/books',
-              builder: (context, state) => const LibraryScreen(initialIndex: 0),
+              builder: (context, state) => LibraryScreen(initialIndex: 0),
               routes: [
                 GoRoute(
                   path: 'add',

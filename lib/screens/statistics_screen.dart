@@ -3,12 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
-import '../models/gamification_status.dart';
 import '../models/book.dart';
 import '../models/contact.dart';
 import '../widgets/genie_app_bar.dart';
 import '../theme/app_design.dart';
-import '../widgets/gamification_widgets.dart';
 import '../providers/theme_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -24,7 +22,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   List<Book> _books = [];
   List<dynamic> _loans = [];
   Map<int, Contact> _contactsMap = {};
-  GamificationStatus? _userStatus;
   Map<String, dynamic>? _salesStats;
   bool _isLoading = true;
   late AnimationController _animController;
@@ -71,16 +68,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         debugPrint('Error fetching loans: $e');
       }
 
-      GamificationStatus? status;
-      try {
-        final statusRes = await api.getUserStatus();
-        if (statusRes.statusCode == 200) {
-          status = GamificationStatus.fromJson(statusRes.data);
-        }
-      } catch (e) {
-        debugPrint('Error fetching gamification stats: $e');
-      }
-
       // Fetch contacts for names
       Map<int, Contact> contactsMap = {};
       try {
@@ -113,7 +100,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           _books = books;
           _loans = loans;
           _contactsMap = contactsMap;
-          _userStatus = status;
           _salesStats = salesStats;
           _isLoading = false;
         });
@@ -150,7 +136,16 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           : FadeTransition(
               opacity: _fadeAnim,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.only(
+                  top:
+                      kToolbarHeight +
+                      48 +
+                      MediaQuery.of(context).padding.top +
+                      16,
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: 16.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -167,20 +162,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       ),
                       const SizedBox(height: 16),
                       _buildSalesStatisticsSection(),
-                    ],
-                    const SizedBox(height: 32),
-                    if (_userStatus != null &&
-                        Provider.of<ThemeProvider>(
-                          context,
-                        ).gamificationEnabled) ...[
-                      _buildSectionTitle(
-                        TranslationService.translate(context, 'your_progress'),
-                        Icons.emoji_events,
-                        AppDesign.primaryGradient,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildGamificationSection(),
-                      const SizedBox(height: 32),
                     ],
                     _buildSectionTitle(
                       TranslationService.translate(context, 'reading_habits'),
@@ -266,7 +247,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Add books to see your reading statistics',
+            TranslationService.translate(context, 'add_books_for_stats'),
             style: TextStyle(color: Colors.grey[600]),
           ),
         ],
@@ -564,7 +545,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
           boxShadow: AppDesign.cardShadow,
         ),
-        child: const Center(child: Text('No author data available')),
+        child: Center(
+          child: Text(TranslationService.translate(context, 'no_author_data')),
+        ),
       );
     }
 
@@ -802,240 +785,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               },
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGamificationSection() {
-    if (_userStatus == null) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
-        boxShadow: AppDesign.cardShadow,
-      ),
-      child: Column(
-        children: [
-          // Badge display at top
-          // Badge display at top
-          CurrentBadgeWidget(statusLevel: _userStatus!.statusLevel),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStreakCard(
-                    _userStatus!.streak.current,
-                    TranslationService.translate(context, 'current_streak'),
-                    Icons.local_fire_department,
-                    Colors.orange,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStreakCard(
-                    _userStatus!.streak.longest,
-                    TranslationService.translate(context, 'best_streak'),
-                    Icons.emoji_events_outlined,
-                    Colors.amber,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          BadgeCollectionWidget(statusLevel: _userStatus!.statusLevel),
-          const SizedBox(height: 24),
-          const Divider(height: 1, indent: 24, endIndent: 24),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final collectors = _buildCircularTrack(
-                  context,
-                  TranslationService.translate(context, 'track_collector'),
-                  _userStatus!.collector,
-                  Icons.collections_bookmark,
-                  const Color(0xFFD4A855), // Bronze instead of blue
-                );
-                final reader = _buildCircularTrack(
-                  context,
-                  TranslationService.translate(context, 'track_reader'),
-                  _userStatus!.reader,
-                  Icons.menu_book,
-                  Colors.green,
-                );
-                final lender = _buildCircularTrack(
-                  context,
-                  TranslationService.translate(context, 'track_lender'),
-                  _userStatus!.lender,
-                  Icons.volunteer_activism,
-                  Colors.orange,
-                );
-                final cataloguer = _buildCircularTrack(
-                  context,
-                  TranslationService.translate(context, 'track_cataloguer'),
-                  _userStatus!.cataloguer,
-                  Icons.list_alt,
-                  const Color(0xFF8B4513), // Bronze instead of purple
-                );
-
-                // Use 2x2 grid for narrow screens (< 400px)
-                if (constraints.maxWidth < 400) {
-                  return Column(
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [collectors, reader],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [lender, cataloguer],
-                      ),
-                    ],
-                  );
-                }
-                // Use Row for wide screens
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [collectors, reader, lender, cataloguer],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStreakCard(int count, String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            count.toString(),
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCircularTrack(
-    BuildContext context,
-    String title,
-    TrackProgress track,
-    IconData icon,
-    Color color,
-  ) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => showTrackLevelInfo(
-          context,
-          trackName: title,
-          track: track,
-          icon: icon,
-          color: color,
-        ),
-        child: Column(
-          children: [
-            SizedBox(
-              width: 70,
-              height: 70,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: CircularProgressIndicator(
-                      value: 1.0,
-                      strokeWidth: 6,
-                      color: color.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: CircularProgressIndicator(
-                      value: track.progress,
-                      strokeWidth: 6,
-                      color: color,
-                      strokeCap: StrokeCap.round,
-                    ),
-                  ),
-                  Icon(icon, color: color, size: 28),
-                  if (track.level > 0)
-                    Positioned(
-                      top: 0,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: const BoxDecoration(
-                          color: Colors.amber,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          track.level.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title.split(' ').last,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodySmall?.color,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            // Show progress intelligently: if current >= nextThreshold, show level completed
-            Text(
-              track.isMaxLevel
-                  ? '${track.current} ✓'
-                  : track.current >= track.nextThreshold
-                  ? '${track.current}/${track.nextThreshold} ✓'
-                  : '${track.current}/${track.nextThreshold}',
-              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-            ),
-          ],
         ),
       ),
     );
@@ -1416,6 +1165,322 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Embeddable statistics content widget (without Scaffold)
+/// Used in Dashboard tabs
+class StatisticsContent extends StatefulWidget {
+  const StatisticsContent({super.key});
+
+  @override
+  State<StatisticsContent> createState() => _StatisticsContentState();
+}
+
+class _StatisticsContentState extends State<StatisticsContent>
+    with TickerProviderStateMixin {
+  List<Book> _books = [];
+  bool _isLoading = true;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnim = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+
+    _fetchData();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchData() async {
+    final api = Provider.of<ApiService>(context, listen: false);
+    try {
+      final books = await api.getBooks();
+
+      if (mounted) {
+        setState(() {
+          _books = books;
+          _isLoading = false;
+        });
+        _animController.forward();
+      }
+    } catch (e) {
+      debugPrint('Error in statistics: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_books.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.analytics_outlined,
+                size: 64,
+                color: Color(0xFF6366F1),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              TranslationService.translate(context, 'no_books_analyze'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              TranslationService.translate(context, 'add_books_for_stats'),
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Reuse the full StatisticsScreen by navigating to it
+    // This is a simplified placeholder - for full functionality,
+    // consider extracting shared widgets
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: RefreshIndicator(
+        onRefresh: _fetchData,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            top: kToolbarHeight + 48 + MediaQuery.of(context).padding.top + 16,
+            left: 16.0,
+            right: 16.0,
+            bottom: 16.0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSummaryCards(),
+              _buildSectionTitle(
+                TranslationService.translate(context, 'reading_habits'),
+                Icons.pie_chart,
+                AppDesign.primaryGradient,
+              ),
+              const SizedBox(height: 16),
+              _buildStatusPieChart(),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCards() {
+    final totalBooks = _books.length;
+    final readBooks = _books.where((b) => b.readingStatus == 'read').length;
+    final toReadBooks = _books
+        .where((b) => b.readingStatus == 'to_read')
+        .length;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildSummaryCard(
+            TranslationService.translate(context, 'total_books'),
+            totalBooks.toString(),
+            Icons.menu_book,
+            AppDesign.primaryGradient,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildSummaryCard(
+            TranslationService.translate(context, 'books_read'),
+            readBooks.toString(),
+            Icons.check_circle,
+            AppDesign.successGradient,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildSummaryCard(
+            TranslationService.translate(context, 'reading_status_to_read'),
+            toReadBooks.toString(),
+            Icons.bookmark,
+            AppDesign.accentGradient,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(
+    String label,
+    String value,
+    IconData icon,
+    Gradient gradient,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ShaderMask(
+            shaderCallback: (bounds) => gradient.createShader(bounds),
+            child: Icon(icon, size: 24, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon, Gradient gradient) {
+    return Row(
+      children: [
+        ShaderMask(
+          shaderCallback: (bounds) => gradient.createShader(bounds),
+          child: Icon(icon, size: 24, color: Colors.white),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusPieChart() {
+    final statusCounts = <String, int>{};
+    for (final book in _books) {
+      final status = book.readingStatus ?? 'unknown';
+      statusCounts[status] = (statusCounts[status] ?? 0) + 1;
+    }
+
+    if (statusCounts.isEmpty) {
+      return Container(
+        height: 200,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+          boxShadow: AppDesign.cardShadow,
+        ),
+        child: Center(
+          child: Text(
+            TranslationService.translate(context, 'no_data_available'),
+          ),
+        ),
+      );
+    }
+
+    final colors = {
+      'read': const Color(0xFF10B981),
+      'reading': const Color(0xFF6366F1),
+      'to_read': const Color(0xFFF59E0B),
+      'wanting': const Color(0xFFEC4899),
+      'borrowed': const Color(0xFF8B5CF6),
+      'unknown': Colors.grey,
+    };
+
+    return Container(
+      height: 280,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: PieChart(
+              PieChartData(
+                sections: statusCounts.entries.map((e) {
+                  return PieChartSectionData(
+                    value: e.value.toDouble(),
+                    title: e.value.toString(),
+                    color: colors[e.key] ?? Colors.grey,
+                    radius: 60,
+                    titleStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  );
+                }).toList(),
+                sectionsSpace: 2,
+                centerSpaceRadius: 40,
+              ),
+            ),
+          ),
+          const SizedBox(width: 24),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: statusCounts.entries.map((e) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: colors[e.key] ?? Colors.grey,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      TranslationService.translate(
+                        context,
+                        'reading_status_${e.key}',
+                      ),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }

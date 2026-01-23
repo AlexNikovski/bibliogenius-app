@@ -265,7 +265,7 @@ class _ContactDetailsScreenState extends State<ContactDetailsScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error')}: $e')));
       }
     }
   }

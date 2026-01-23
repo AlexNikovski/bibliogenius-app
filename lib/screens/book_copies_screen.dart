@@ -96,7 +96,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error')}: $e')));
         }
       }
     }
@@ -118,7 +118,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error')}: $e')));
         }
       }
     }
@@ -146,7 +146,7 @@ class _BookCopiesScreenState extends State<BookCopiesScreen>
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error updating copy: $e')));
+          ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error_updating_copy')}: $e')));
         }
       }
     }

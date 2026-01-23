@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/translation_service.dart';
 import '../models/gamification_status.dart';
+import 'bibliogenius_logo.dart';
 
 /// A premium gradient banner widget that can be displayed on any page.
 ///
@@ -70,15 +71,9 @@ class WelcomeBanner extends StatelessWidget {
           // Logo
           Container(
             padding: EdgeInsets.all(compact ? 10 : 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(compact ? 12 : 16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-            ),
-            child: Icon(
-              Icons.auto_awesome,
-              color: Colors.white,
+            child: BiblioGeniusLogo(
               size: compact ? 24 : 28,
+              color: Colors.white,
             ),
           ),
           SizedBox(width: compact ? 12 : 16),

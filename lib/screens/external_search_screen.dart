@@ -693,7 +693,7 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
     if (!isOnline && mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('No internet connection')));
+      ).showSnackBar(SnackBar(content: Text(TranslationService.translate(context, 'no_internet_connection'))));
       return;
     }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/theme_provider.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'bibliogenius_logo.dart';
 
 class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
   final dynamic title;
@@ -86,11 +87,9 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
           final isCompact = availableWidth < 220;
 
           // Adaptive sizes
-          final logoSize = isCompact ? 20.0 : 28.0;
+          final logoSize = isCompact ? 28.0 : 36.0;
           final titleFontSize = isCompact ? 15.0 : 20.0;
           final subtitleFontSize = isCompact ? 10.0 : 13.0;
-          final logoPadding = isCompact ? 4.0 : 6.0;
-          final logoRadius = isCompact ? 8.0 : 12.0;
           final spacing = isCompact ? 6.0 : 12.0;
 
           // Mobile check: If screen width is small, hide the spark icon explicitly
@@ -104,18 +103,13 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
             children: [
               if (!isMobile)
                 Container(
-                  padding: EdgeInsets.all(logoPadding),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(logoRadius),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
+                  child: SizedBox(
+                    width: logoSize,
+                    height: logoSize,
+                    child: BiblioGeniusLogo(
+                      size: logoSize,
+                      color: Colors.white,
                     ),
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome, // "Spark" / Magic
-                    color: Colors.white,
-                    size: logoSize,
                   ),
                 ),
               // Hide text entirely if space is too tight (don't truncate)
@@ -186,41 +180,43 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
         if (actions != null) ...actions!,
         // Avatar
-        Padding(
-          padding: const EdgeInsets.only(right: 16, left: 8),
-          child: GestureDetector(
-            onTap: () => context.push('/profile'),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: avatarConfig?.style == 'genie'
-                    ? Color(
-                        int.parse(
-                          'FF${avatarConfig?.genieBackground ?? "fbbf24"}',
-                          radix: 16,
+        if (avatarConfig?.style != 'initials')
+          Padding(
+            padding: const EdgeInsets.only(right: 16, left: 8),
+            child: GestureDetector(
+              onTap: () => context.push('/profile'),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: avatarConfig?.style == 'genie'
+                      ? Color(
+                          int.parse(
+                            'FF${avatarConfig?.genieBackground ?? "fbbf24"}',
+                            radix: 16,
+                          ),
+                        )
+                      : Colors.white,
+                ),
+                child: ClipOval(
+                  child: (avatarConfig?.isGenie ?? false)
+                      ? Image.asset(
+                          avatarConfig?.assetPath ?? 'assets/genie_mascot.jpg',
+                          fit: BoxFit.cover,
+                        )
+                      : CachedNetworkImage(
+                          imageUrl:
+                              avatarConfig?.toUrl(size: 32, format: 'png') ??
+                              '',
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) =>
+                              const Icon(Icons.person, color: Colors.grey),
                         ),
-                      )
-                    : Colors.white,
-              ),
-              child: ClipOval(
-                child: (avatarConfig?.isGenie ?? false)
-                    ? Image.asset(
-                        avatarConfig?.assetPath ?? 'assets/genie_mascot.jpg',
-                        fit: BoxFit.cover,
-                      )
-                    : CachedNetworkImage(
-                        imageUrl:
-                            avatarConfig?.toUrl(size: 32, format: 'png') ?? '',
-                        fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) =>
-                            const Icon(Icons.person, color: Colors.grey),
-                      ),
+                ),
               ),
             ),
           ),
-        ),
       ],
       bottom: bottom,
       centerTitle: false,

@@ -149,7 +149,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error updating rating: $e')));
+        ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error_updating_rating')}: $e')));
       }
     }
   }
@@ -1176,7 +1176,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error updating status: $e')));
+        ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error_updating_status')}: $e')));
       }
     }
   }
@@ -1232,7 +1232,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         if (context.mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error deleting book: $e')));
+          ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error_deleting_book')}: $e')));
         }
       }
     }

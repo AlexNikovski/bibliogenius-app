@@ -199,6 +199,73 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Empty state
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.collections_bookmark,
+                              size: 64,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            TranslationService.translate(
+                              context,
+                              'no_collections',
+                            ),
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              TranslationService.translate(
+                                context,
+                                'collection_empty_state_desc',
+                              ),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          ElevatedButton.icon(
+                            onPressed: _createCollection,
+                            icon: const Icon(Icons.add),
+                            label: Text(
+                              TranslationService.translate(
+                                context,
+                                'create_collection',
+                              ),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 48),
+
                           // Promotional banner
                           Container(
                             padding: const EdgeInsets.all(20),
@@ -278,30 +345,6 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 32),
-                          // Empty state
-                          const Icon(
-                            Icons.collections_bookmark,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            TranslationService.translate(
-                              context,
-                              'no_collections',
-                            ),
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            TranslationService.translate(
-                              context,
-                              'create_collection_hint',
-                            ),
-                            style: Theme.of(context).textTheme.bodySmall,
-                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),

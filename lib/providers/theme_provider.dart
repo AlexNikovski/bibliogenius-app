@@ -72,6 +72,17 @@ class ThemeProvider with ChangeNotifier {
   bool _digitalFormatsEnabled = false;
   bool get digitalFormatsEnabled => _digitalFormatsEnabled;
 
+  // Audio Module
+  bool _audioEnabled = false;
+  bool get audioEnabled => _audioEnabled;
+
+  // MCP Integration
+  bool _mcpEnabled = false;
+  bool get mcpEnabled => _mcpEnabled;
+
+  // Network Module (Alias for network discovery for UI consistency)
+  bool get networkEnabled => _networkDiscoveryEnabled;
+
   ThemeData get themeData {
     // Initialize registry if needed
     ThemeRegistry.initialize();
@@ -164,6 +175,8 @@ class ThemeProvider with ChangeNotifier {
     _quotesEnabled = prefs.getBool('quotesEnabled') ?? true;
     _editionBrowserEnabled = prefs.getBool('editionBrowserEnabled') ?? true;
     _digitalFormatsEnabled = prefs.getBool('digitalFormatsEnabled') ?? false;
+    _audioEnabled = prefs.getBool('audioEnabled') ?? false;
+    _mcpEnabled = prefs.getBool('mcpEnabled') ?? false;
 
     // Load gamification setting (default based on profile type)
     final savedGamification = prefs.getBool('gamificationEnabled');
@@ -555,5 +568,25 @@ class ThemeProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('digitalFormatsEnabled', enabled);
     notifyListeners();
+  }
+
+  Future<void> setAudioEnabled(bool enabled) async {
+    _audioEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('audioEnabled', enabled);
+    notifyListeners();
+  }
+
+  Future<void> setMcpEnabled(bool enabled) async {
+    _mcpEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('mcpEnabled', enabled);
+    notifyListeners();
+  }
+
+  // Alias for UI consistency
+  Future<void> setNetworkEnabled(bool enabled) async {
+    // For simple toggle, we don't pass libraryId/port, assuming they are set elsewhere or used defaults
+    await setNetworkDiscoveryEnabled(enabled);
   }
 }

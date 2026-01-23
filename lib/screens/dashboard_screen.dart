@@ -6,17 +6,27 @@ import '../widgets/genie_app_bar.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
 import '../models/book.dart';
-import '../models/gamification_status.dart';
 // import 'genie_chat_screen.dart'; // Removed as we use route string
 import '../providers/theme_provider.dart';
+
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:universal_html/html.dart' as html;
+import 'dart:io' as io;
+import 'package:dio/dio.dart' show Response;
+import 'dart:convert';
+import '../services/auth_service.dart';
 
 import '../widgets/premium_book_card.dart';
 import '../services/quote_service.dart';
 import '../models/quote.dart';
 import '../theme/app_design.dart';
 import '../services/backup_reminder_service.dart';
-import '../widgets/gamification_widgets.dart';
-import '../widgets/level_up_animation.dart';
+import 'statistics_screen.dart';
+import '../utils/app_constants.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -25,7 +35,9 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   bool _isLoading = true;
   Quote? _dailyQuote;
   String? _userName;
@@ -34,24 +46,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Book> _recentBooks = [];
   List<Book> _readingListBooks = [];
   Book? _heroBook;
-  GamificationStatus? _gamificationStatus;
   String? _libraryName;
   bool _quoteExpanded = false;
 
+  Map<String, dynamic>? _config; // For settings
+  Map<String, dynamic>? _userInfo; // For settings
+  Map<String, dynamic>? _userStatus; // For settings logic (gamification etc)
+
   final GlobalKey _addKey = GlobalKey(debugLabel: 'dashboard_add');
-  final GlobalKey _searchKey = GlobalKey(debugLabel: 'dashboard_search');
   final GlobalKey _statsKey = GlobalKey(debugLabel: 'dashboard_stats');
   final GlobalKey _menuKey = GlobalKey(debugLabel: 'dashboard_menu');
+
+  // Search preferences state
+  Map<String, bool> _searchPrefs = {
+    'inventaire': true,
+    'bnf': true,
+    'openlibrary': true,
+    'google_books': true,
+  };
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _fetchDashboardData();
     // Verify locale changes on startup/init
     // Removed redundant _fetchDashboardData call in postFrameCallback
     // Add delay to ensure layout is complete and stable before showing wizard
     Future.delayed(const Duration(seconds: 1), _checkWizard);
     _checkBackupReminder();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -206,10 +235,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
             setState(() {
               _stats['active_loans'] = statusData['loans_count'] ?? 0;
               _userName = statusData['name'];
-              _gamificationStatus = GamificationStatus.fromJson(statusData);
+              _userStatus = statusData; // Store full status for settings
+
+              // Load search prefs from user status
+              if (_userStatus != null && _userStatus!['config'] != null) {
+                final config = _userStatus!['config'];
+                if (config['fallback_preferences'] != null) {
+                  final prefs = config['fallback_preferences'] as Map;
+                  prefs.forEach((key, value) {
+                    if (value is bool) {
+                      _searchPrefs[key.toString()] = value;
+                    }
+                  });
+                }
+              }
             });
-            _checkGamificationLevelUp(statusData);
           }
+        }
+
+        // Fetch Config and Me for Settings Tab
+        print('Dashboard: Fetching config and me...');
+        final configRes = await api.getLibraryConfig();
+        final meRes = await api.getMe();
+
+        if (mounted) {
+          setState(() {
+            _config = configRes.data;
+            _userInfo = meRes.data;
+
+            // Sync library name from config
+            final name = _config?['library_name'] ?? _config?['name'];
+            if (name != null) {
+              themeProvider.setLibraryName(name);
+              _libraryName = name;
+            }
+
+            // Sync profile type
+            final profileType = _config?['profile_type'];
+            if (profileType != null) {
+              themeProvider.setProfileType(profileType);
+            }
+          });
         }
       } catch (e) {
         debugPrint('Error fetching user status: $e');
@@ -266,84 +332,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _checkGamificationLevelUp(
-    Map<String, dynamic> statusData,
-  ) async {
-    try {
-      if (!mounted) return;
-      final prefs = await SharedPreferences.getInstance();
-      final tracks = statusData['tracks'] as Map<String, dynamic>?;
-
-      if (tracks == null) return;
-
-      final trackConfigs = {
-        'collector': {
-          'key': 'last_collector_level',
-          'icon': Icons.library_books,
-          'color': Colors.blue,
-          'translation_key': 'track_collector',
-        },
-        'reader': {
-          'key': 'last_reader_level',
-          'icon': Icons.menu_book,
-          'color': Colors.green,
-          'translation_key': 'track_reader',
-        },
-        'lender': {
-          'key': 'last_lender_level',
-          'icon': Icons.handshake,
-          'color': Colors.orange,
-          'translation_key': 'track_lender',
-        },
-        'cataloguer': {
-          'key': 'last_cataloguer_level',
-          'icon': Icons.sort,
-          'color': Colors.purple,
-          'translation_key': 'track_cataloguer',
-        },
-      };
-
-      for (final entry in trackConfigs.entries) {
-        final trackId = entry.key;
-        final config = entry.value;
-        final trackData = tracks[trackId] as Map<String, dynamic>?;
-
-        if (trackData != null) {
-          final currentLevel = trackData['level'] as int? ?? 0;
-          final lastLevelKey = config['key'] as String;
-          final lastLevel = prefs.getInt(lastLevelKey);
-
-          // Only trigger if we have a previous History (lastLevel != null)
-          // AND the level has increased
-          // AND we are mounted
-          if (lastLevel != null &&
-              currentLevel > lastLevel &&
-              currentLevel > 0) {
-            if (mounted) {
-              LevelUpAnimation.show(
-                context,
-                newLevel: currentLevel,
-                trackName: TranslationService.translate(
-                  context,
-                  config['translation_key'] as String,
-                ),
-                trackColor: config['color'] as Color,
-                trackIcon: config['icon'] as IconData,
-              );
-            }
-          }
-
-          // Update stored level
-          if (lastLevel != currentLevel) {
-            await prefs.setInt(lastLevelKey, currentLevel);
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking level up: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -372,24 +360,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
         automaticallyImplyLeading: false,
-        showQuickActions: true,
-        actions: [
-          IconButton(
-            key: _searchKey,
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              context.push('/books');
-            },
+        showQuickActions: false,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          indicatorWeight: 4,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+          isScrollable: !isWide, // Scrollable on mobile to prevent cramping
+          tabAlignment: !isWide
+              ? TabAlignment.start
+              : TabAlignment.fill, // Align start on mobile
+          labelStyle: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: isWide ? 16 : 15,
+            letterSpacing: 0.5,
           ),
-        ],
+          indicatorSize: TabBarIndicatorSize.tab,
+          tabs: [
+            Tab(
+              icon: const Icon(Icons.dashboard_rounded, size: 22),
+              text: TranslationService.translate(context, 'dashboard'),
+            ),
+            Tab(
+              icon: const Icon(Icons.insights_rounded, size: 22),
+              text: TranslationService.translate(context, 'nav_statistics'),
+            ),
+            Tab(
+              icon: const Icon(Icons.settings_rounded, size: 22),
+              text: TranslationService.translate(context, 'configuration'),
+            ),
+          ],
+        ),
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     context.push('/genie-chat');
-      //   },
-      //   backgroundColor: Colors.blueAccent,
-      //   child: const Icon(Icons.auto_awesome, color: Colors.white),
-      // ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.pageGradientForTheme(
@@ -397,129 +400,123 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         child: SafeArea(
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // Tab 1: Dashboard
+              _buildDashboardTab(context, isWide, themeProvider, isKid),
+              // Tab 2: Statistics
+              const StatisticsContent(),
+              // Tab 3: Configuration
+              _buildConfigurationTab(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardTab(
+    BuildContext context,
+    bool isWide,
+    ThemeProvider themeProvider,
+    bool isKid,
+  ) {
+    return _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          )
+        : RefreshIndicator(
+            onRefresh: _fetchDashboardData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(
+                top: kToolbarHeight + kTextTabBarHeight,
+                left: isWide ? 32 : 16,
+                right: isWide ? 32 : 16,
+                bottom: 16,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isWide ? 900 : double.infinity,
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _fetchDashboardData,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isWide ? 32 : 16,
-                      vertical: 16,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: isWide ? 900 : double.infinity,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 1. Header with Quote (if enabled)
-                            if (themeProvider.quotesEnabled) ...[
-                              _buildHeader(context),
-                              const SizedBox(height: 24),
-                            ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Quick Actions [MOVED TO TOP]
+                      _buildQuickActions(context, themeProvider, isKid),
+                      const SizedBox(height: 32),
 
-                            // Stats Row - Responsive Layout (2x2 on small screens)
-                            LayoutBuilder(
-                              key: _statsKey,
-                              builder: (context, constraints) {
-                                // Build list of stat cards based on conditions
-                                final statCards = <Widget>[
-                                  _buildStatCard(
-                                    context,
-                                    TranslationService.translate(
-                                      context,
-                                      'my_books',
-                                    ),
-                                    (_stats['total_books'] ?? 0).toString(),
-                                    Icons.menu_book,
-                                  ),
-                                  _buildStatCard(
-                                    context,
-                                    TranslationService.translate(
-                                      context,
-                                      'lent_status',
-                                    ),
-                                    (_stats['active_loans'] ?? 0).toString(),
-                                    Icons.arrow_upward,
-                                    isAccent: true,
-                                  ),
-                                  if (!themeProvider.isLibrarian)
-                                    _buildStatCard(
-                                      context,
-                                      TranslationService.translate(
+                      // 2. Header with Quote (if enabled)
+                      if (themeProvider.quotesEnabled) ...[
+                        _buildHeader(context),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Stats Row - Responsive Layout (2x2 on small screens)
+                      LayoutBuilder(
+                        key: _statsKey,
+                        builder: (context, constraints) {
+                          // Build list of stat cards based on conditions
+                          final statCards = <Widget>[
+                            _buildStatCard(
+                              context,
+                              TranslationService.translate(context, 'my_books'),
+                              (_stats['total_books'] ?? 0).toString(),
+                              Icons.menu_book,
+                              onTap: () => context.push('/books'),
+                            ),
+                            _buildStatCard(
+                              context,
+                              TranslationService.translate(
+                                context,
+                                'lent_status',
+                              ),
+                              (_stats['active_loans'] ?? 0).toString(),
+                              Icons.arrow_upward,
+                              isAccent: true,
+                            ),
+                            if (!themeProvider.isLibrarian)
+                              _buildStatCard(
+                                context,
+                                TranslationService.translate(
+                                  context,
+                                  'borrowed_status',
+                                ),
+                                (_stats['borrowed_count'] ?? 0).toString(),
+                                Icons.arrow_downward,
+                              ),
+                            if (!isKid)
+                              _buildStatCard(
+                                context,
+                                themeProvider.isLibrarian
+                                    ? TranslationService.translate(
                                         context,
-                                        'borrowed_status',
+                                        'borrowers',
+                                      )
+                                    : TranslationService.translate(
+                                        context,
+                                        'contacts',
                                       ),
-                                      (_stats['borrowed_count'] ?? 0)
-                                          .toString(),
-                                      Icons.arrow_downward,
-                                    ),
-                                  if (!isKid)
-                                    _buildStatCard(
-                                      context,
-                                      themeProvider.isLibrarian
-                                          ? TranslationService.translate(
-                                              context,
-                                              'borrowers',
-                                            )
-                                          : TranslationService.translate(
-                                              context,
-                                              'contacts',
-                                            ),
-                                      (_stats['contacts_count'] ?? 0)
-                                          .toString(),
-                                      Icons.people,
-                                    ),
-                                ];
+                                (_stats['contacts_count'] ?? 0).toString(),
+                                Icons.people,
+                              ),
+                          ];
 
-                                // Use 2x2 grid for narrow screens (< 400px)
-                                if (constraints.maxWidth < 400 &&
-                                    statCards.length > 2) {
-                                  // Split into rows of 2
-                                  final firstRow = statCards.take(2).toList();
-                                  final secondRow = statCards.skip(2).toList();
-                                  return Column(
-                                    children: [
-                                      Row(
-                                        children:
-                                            firstRow
-                                                .expand(
-                                                  (w) => [
-                                                    Expanded(child: w),
-                                                    const SizedBox(width: 12),
-                                                  ],
-                                                )
-                                                .toList()
-                                              ..removeLast(),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        children:
-                                            secondRow
-                                                .expand(
-                                                  (w) => [
-                                                    Expanded(child: w),
-                                                    const SizedBox(width: 12),
-                                                  ],
-                                                )
-                                                .toList()
-                                              ..removeLast(),
-                                      ),
-                                    ],
-                                  );
-                                }
-
-                                // Use Row for wide screens
-                                return Row(
+                          // Use 2x2 grid for narrow screens (< 400px)
+                          if (constraints.maxWidth < 400 &&
+                              statCards.length > 2) {
+                            // Split into rows of 2
+                            final firstRow = statCards.take(2).toList();
+                            final secondRow = statCards.skip(2).toList();
+                            return Column(
+                              children: [
+                                Row(
                                   children:
-                                      statCards
+                                      firstRow
                                           .expand(
                                             (w) => [
                                               Expanded(child: w),
@@ -528,316 +525,804 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           )
                                           .toList()
                                         ..removeLast(),
-                                );
-                              },
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // Gamification Mini-Widget
-                            if (_gamificationStatus != null &&
-                                !isKid &&
-                                themeProvider.gamificationEnabled)
-                              _buildGamificationMini(context),
-
-                            const SizedBox(height: 32),
-
-                            // Main Content Container
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (isKid) ...[
-                                  _buildSectionTitle(
-                                    context,
-                                    TranslationService.translate(
-                                      context,
-                                      'quick_actions',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildKidActionCard(
-                                          context,
-                                          TranslationService.translate(
-                                            context,
-                                            'action_scan_barcode',
-                                          ),
-                                          Icons.qr_code_scanner,
-                                          Colors.orange,
-                                          () async {
-                                            final isbn = await context
-                                                .push<String>('/scan');
-                                            if (isbn != null &&
-                                                context.mounted) {
-                                              context.push(
-                                                '/books/add',
-                                                extra: {'isbn': isbn},
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: _buildKidActionCard(
-                                          context,
-                                          TranslationService.translate(
-                                            context,
-                                            'action_search_online',
-                                          ),
-                                          Icons.search,
-                                          Colors.blue,
-                                          () =>
-                                              context.push('/search/external'),
-                                          key: const Key('addBookButton'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 32),
-                                ] else if (_heroBook != null)
-                                  // Hero Section
-                                  _buildHeroBook(context, _heroBook!),
-
-                                if (!isKid) ...[
-                                  _buildSectionTitle(
-                                    context,
-                                    TranslationService.translate(
-                                      context,
-                                      'quick_actions',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                          blurRadius: 15,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                      border: Border.all(
-                                        color: const Color(
-                                          0xFF667eea,
-                                        ).withValues(alpha: 0.1),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Wrap(
-                                      spacing: 12,
-                                      runSpacing: 12,
-                                      alignment: WrapAlignment.spaceEvenly,
-                                      children: [
-                                        _buildActionButton(
-                                          context,
-                                          TranslationService.translate(
-                                            context,
-                                            'action_add_book',
-                                          ),
-                                          Icons.add,
-                                          () => context.push('/books/add'),
-                                          isPrimary: true,
-                                          key: _addKey,
-                                          testKey: const Key('addBookButton'),
-                                        ),
-                                        // New: Search in Library
-                                        _buildActionButton(
-                                          context,
-                                          TranslationService.translate(
-                                            context,
-                                            'search_books',
-                                          ),
-                                          Icons.search,
-                                          () => context.push('/books'),
-                                        ),
-                                        // New: Scan Book
-                                        _buildActionButton(
-                                          context,
-                                          TranslationService.translate(
-                                            context,
-                                            'action_scan_barcode',
-                                          ),
-                                          Icons.qr_code_scanner,
-                                          () async {
-                                            final isbn = await context
-                                                .push<String>('/scan');
-                                            if (isbn != null &&
-                                                context.mounted) {
-                                              context.push(
-                                                '/books/add',
-                                                extra: {'isbn': isbn},
-                                              );
-                                            }
-                                          },
-                                        ),
-                                        _buildActionButton(
-                                          context,
-                                          TranslationService.translate(
-                                            context,
-                                            'action_search_online',
-                                          ),
-                                          Icons.travel_explore,
-                                          () =>
-                                              context.push('/search/external'),
-                                        ),
-                                        _buildActionButton(
-                                          context,
-                                          TranslationService.translate(
-                                            context,
-                                            'action_checkout_book',
-                                          ),
-                                          Icons.upload_file,
-                                          () => context.push('/network-search'),
-                                        ),
-                                        // _buildActionButton(
-                                        //   context,
-                                        //   TranslationService.translate(
-                                        //     context,
-                                        //     'ask_genie',
-                                        //   ), // Translated
-                                        //   Icons.auto_awesome,
-                                        //   () => context.push('/genie-chat'),
-                                        // ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 32),
-                                ],
-
-                                // Recent Books
-                                if (_recentBooks.isNotEmpty) ...[
-                                  _buildSectionTitle(
-                                    context,
-                                    TranslationService.translate(
-                                      context,
-                                      'recent_books',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                          blurRadius: 15,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: _buildBookList(
-                                      context,
-                                      _recentBooks,
-                                      TranslationService.translate(
-                                        context,
-                                        'no_recent_books',
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 32),
-                                ],
-
-                                // Reading List
-                                if (_readingListBooks.isNotEmpty) ...[
-                                  _buildSectionTitle(
-                                    context,
-                                    TranslationService.translate(
-                                      context,
-                                      'reading_list',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                          blurRadius: 15,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: _buildBookList(
-                                      context,
-                                      _readingListBooks,
-                                      TranslationService.translate(
-                                        context,
-                                        'no_reading_list',
-                                      ),
-                                    ),
-                                  ),
-                                ],
-
-                                const SizedBox(height: 32),
-                                if (!isKid)
-                                  Center(
-                                    child: ScaleOnTap(
-                                      child: TextButton.icon(
-                                        onPressed: () =>
-                                            context.push('/statistics'),
-                                        icon: const Icon(
-                                          Icons.insights,
-                                          color: Colors.black54,
-                                        ),
-                                        label: Text(
-                                          TranslationService.translate(
-                                            context,
-                                            'view_insights',
-                                          ),
-                                          style: TextStyle(
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                        style: TextButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 16,
-                                          ),
-                                          backgroundColor: Colors.black
-                                              .withValues(alpha: 0.05),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                            side: BorderSide(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.1,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(height: 32),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children:
+                                      secondRow
+                                          .expand(
+                                            (w) => [
+                                              Expanded(child: w),
+                                              const SizedBox(width: 12),
+                                            ],
+                                          )
+                                          .toList()
+                                        ..removeLast(),
+                                ),
                               ],
+                            );
+                          }
+
+                          // Use Row for wide screens
+                          return Row(
+                            children:
+                                statCards
+                                    .expand(
+                                      (w) => [
+                                        Expanded(child: w),
+                                        const SizedBox(width: 12),
+                                      ],
+                                    )
+                                    .toList()
+                                  ..removeLast(),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      const SizedBox(height: 32),
+
+                      // Main Content Container
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_heroBook != null && !isKid)
+                            // Hero Section
+                            _buildHeroBook(context, _heroBook!),
+
+                          // Recent Books
+                          if (_recentBooks.isNotEmpty) ...[
+                            _buildSectionTitle(
+                              context,
+                              TranslationService.translate(
+                                context,
+                                'recent_books',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: _buildBookList(
+                                context,
+                                _recentBooks,
+                                TranslationService.translate(
+                                  context,
+                                  'no_recent_books',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                          ],
+
+                          // Reading List
+                          if (_readingListBooks.isNotEmpty) ...[
+                            _buildSectionTitle(
+                              context,
+                              TranslationService.translate(
+                                context,
+                                'reading_list',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.08),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: _buildBookList(
+                                context,
+                                _readingListBooks,
+                                TranslationService.translate(
+                                  context,
+                                  'no_reading_list',
+                                ),
+                              ),
                             ),
                           ],
-                        ),
+
+                          const SizedBox(height: 32),
+                          if (!isKid)
+                            Center(
+                              child: ScaleOnTap(
+                                child: TextButton.icon(
+                                  onPressed: () => context.push('/statistics'),
+                                  icon: const Icon(
+                                    Icons.insights,
+                                    color: Colors.black54,
+                                  ),
+                                  label: Text(
+                                    TranslationService.translate(
+                                      context,
+                                      'view_insights',
+                                    ),
+                                    style: TextStyle(color: Colors.black54),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 16,
+                                    ),
+                                    backgroundColor: Colors.black.withValues(
+                                      alpha: 0.05,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                      side: BorderSide(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 32),
+                        ],
                       ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+  }
+
+  Widget _buildConfigurationTab(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    // Safety check for user info
+    final hasPassword = _userInfo?['has_password'] ?? false;
+    final mfaEnabled = _userInfo?['mfa_enabled'] ?? false;
+    final email = _userInfo?['email'] ?? '';
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(
+        top: kToolbarHeight + 48 + MediaQuery.of(context).padding.top + 16,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Modules Section
+          Text(
+            TranslationService.translate(context, 'modules') ?? 'Modules',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Column(
+              children: [
+                _buildModuleToggle(
+                  context,
+                  'quotes_module',
+                  'quotes_module_desc',
+                  Icons.format_quote,
+                  themeProvider.quotesEnabled,
+                  (value) => themeProvider.setQuotesEnabled(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'gamification_module',
+                  'gamification_desc',
+                  Icons.emoji_events,
+                  themeProvider.gamificationEnabled,
+                  (value) => themeProvider.setGamificationEnabled(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'collections_module',
+                  'collections_module_desc',
+                  Icons.collections_bookmark,
+                  themeProvider.collectionsEnabled,
+                  (value) => themeProvider.setCollectionsEnabled(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'commerce_module',
+                  'commerce_module_desc',
+                  Icons.storefront,
+                  themeProvider.commerceEnabled,
+                  (value) => themeProvider.setCommerceEnabled(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'audio_module',
+                  'audio_module_desc',
+                  Icons.headphones,
+                  themeProvider.audioEnabled,
+                  (value) => themeProvider.setAudioEnabled(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'network_module',
+                  'network_module_desc',
+                  Icons.hub,
+                  themeProvider.networkEnabled,
+                  (value) => themeProvider.setNetworkEnabled(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'module_edition_browser',
+                  'module_edition_browser_desc',
+                  Icons.layers,
+                  themeProvider.editionBrowserEnabled,
+                  (value) => themeProvider.setEditionBrowserEnabled(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'enable_borrowing_module',
+                  'borrowing_module_desc',
+                  Icons.swap_horiz,
+                  themeProvider.canBorrowBooks,
+                  (value) => themeProvider.setCanBorrowBooks(value),
+                ),
+                _buildModuleToggle(
+                  context,
+                  'module_digital_formats',
+                  'module_digital_formats_desc',
+                  Icons.tablet_mac,
+                  themeProvider.digitalFormatsEnabled,
+                  (value) => themeProvider.setDigitalFormatsEnabled(value),
+                ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.account_tree),
+                  title: Text(
+                    TranslationService.translate(context, 'enable_taxonomy') ??
+                        'Hierarchical Tags',
+                  ),
+                  subtitle: const Text('Gestion de sous-étagères'),
+                  value: AppConstants.enableHierarchicalTags,
+                  onChanged: (bool value) async {
+                    setState(() {
+                      AppConstants.enableHierarchicalTags = value;
+                    });
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('enableHierarchicalTags', value);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            TranslationService.translate(
+                                  context,
+                                  'restart_required_for_changes',
+                                ) ??
+                                'Please restart the app for changes to take full effect',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 24),
+
+          // App Settings Section
+          Text(
+            TranslationService.translate(context, 'app_settings') ??
+                'App Settings',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.library_books),
+                  title: Text(
+                    TranslationService.translate(context, 'library_name') ??
+                        'Library Name',
+                  ),
+                  subtitle: Text(_libraryName ?? 'My Library'),
+                  trailing: const Icon(Icons.edit),
+                  onTap: () {
+                    // TODO: Implement rename dialog if needed or keep it read-only for now
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: Text(
+                    TranslationService.translate(context, 'profile_type') ??
+                        'Profile Type',
+                  ),
+                  subtitle: Text(themeProvider.profileType.toUpperCase()),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 24),
+
+          // Security Section
+          Text(
+            TranslationService.translate(context, 'security') ?? 'Security',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.lock),
+                  title: Text(
+                    TranslationService.translate(context, 'password') ??
+                        'Password',
+                  ),
+                  subtitle: Text(
+                    hasPassword
+                        ? '********'
+                        : (TranslationService.translate(context, 'not_set') ??
+                              'Not set'),
+                  ),
+                  trailing: TextButton(
+                    onPressed: _showChangePasswordDialog,
+                    child: Text(
+                      TranslationService.translate(context, 'change') ??
+                          'Change',
                     ),
                   ),
                 ),
-        ),
+                ListTile(
+                  leading: const Icon(Icons.security),
+                  title: Text(
+                    TranslationService.translate(context, 'two_factor_auth') ??
+                        'Two-Factor Authentication',
+                  ),
+                  subtitle: Text(
+                    mfaEnabled
+                        ? (TranslationService.translate(context, 'enabled') ??
+                              'Enabled')
+                        : (TranslationService.translate(context, 'disabled') ??
+                              'Disabled'),
+                  ),
+                  trailing: Switch(
+                    value: mfaEnabled,
+                    onChanged: (val) {
+                      if (val) {
+                        _setupMfa();
+                      } else {
+                        // Disable MFA logic (todo)
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 24),
+
+          // Search Configuration
+          _buildSearchConfiguration(context),
+
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 24),
+
+          // Integrations
+          _buildMcpIntegrationSection(),
+
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 24),
+
+          // Data Management
+          Text(
+            TranslationService.translate(context, 'data_management') ??
+                'Data Management',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _exportData,
+                icon: const Icon(Icons.download),
+                label: Text(
+                  TranslationService.translate(context, 'export_backup') ??
+                      'Export Backup',
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _importBackup,
+                icon: const Icon(Icons.upload),
+                label: Text(
+                  TranslationService.translate(context, 'import_backup') ??
+                      'Import Backup',
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => context.push('/shelves-management'),
+                icon: const Icon(Icons.folder_special),
+                label: Text(
+                  TranslationService.translate(context, 'manage_shelves') ??
+                      'Manage Shelves',
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 24),
+
+          // Session / Logout
+          OutlinedButton.icon(
+            onPressed: () async {
+              final authService = Provider.of<AuthService>(
+                context,
+                listen: false,
+              );
+              // Small delay to ensure any pending theme/UI updates are settled
+              await Future.delayed(const Duration(milliseconds: 200));
+
+              await authService.logout();
+              if (mounted) {
+                context.go('/login');
+              }
+            },
+            icon: const Icon(Icons.logout),
+            label: Text(TranslationService.translate(context, 'logout')),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+              foregroundColor: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 100), // Bottom padding
+        ],
       ),
+    );
+  }
+
+  Widget _buildSearchConfiguration(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          TranslationService.translate(context, 'search_sources') ??
+              'Search Sources',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Column(
+            children: [
+              _buildSwitchTile(
+                context,
+                'Inventaire.io',
+                'inventaire_desc',
+                _searchPrefs['inventaire'] ?? true,
+                (val) => _updateSearchPreference('inventaire', val),
+                icon: Icons.language,
+              ),
+              _buildSwitchTile(
+                context,
+                'Bibliothèque Nationale (BNF)',
+                'bnf_desc',
+                _searchPrefs['bnf'] ?? true,
+                (val) => _updateSearchPreference('bnf', val),
+                icon: Icons.account_balance,
+              ),
+              _buildSwitchTile(
+                context,
+                'OpenLibrary',
+                'openlibrary_desc',
+                _searchPrefs['openlibrary'] ?? true,
+                (val) => _updateSearchPreference('openlibrary', val),
+                icon: Icons.local_library,
+              ),
+              _buildSwitchTile(
+                context,
+                'Google Books',
+                'google_books_desc',
+                _searchPrefs['google_books'] ?? true,
+                (val) => _updateSearchPreference('google_books', val),
+                icon: Icons.search,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchTile(
+    BuildContext context,
+    String title,
+    String subtitleKey,
+    bool value,
+    ValueChanged<bool> onChanged, {
+    IconData? icon,
+  }) {
+    return SwitchListTile(
+      secondary: icon != null ? Icon(icon) : null,
+      title: Text(title),
+      subtitle: Text(
+        TranslationService.translate(context, subtitleKey) ?? subtitleKey,
+      ),
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+
+  Future<void> _updateSearchPreference(String source, bool enabled) async {
+    setState(() {
+      _searchPrefs[source] = enabled;
+    });
+
+    try {
+      final api = Provider.of<ApiService>(context, listen: false);
+      await api.updateGamificationConfig(fallbackPreferences: _searchPrefs);
+
+      // Update local _userStatus config to reflect changes
+      if (_userStatus != null) {
+        if (_userStatus!['config'] == null) {
+          _userStatus!['config'] = {};
+        }
+        _userStatus!['config']['fallback_preferences'] = _searchPrefs;
+      }
+    } catch (e) {
+      debugPrint('Error updating search preference: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${TranslationService.translate(context, 'error_update')}: $e',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildModuleToggle(
+    BuildContext context,
+    String titleKey,
+    String descKey,
+    IconData icon,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: SwitchListTile(
+        secondary: Icon(icon),
+        title: Text(TranslationService.translate(context, titleKey)),
+        subtitle: Text(TranslationService.translate(context, descKey)),
+        value: value,
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(
+    BuildContext context,
+    ThemeProvider themeProvider,
+    bool isKid,
+  ) {
+    if (isKid) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(
+            context,
+            TranslationService.translate(context, 'quick_actions'),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildKidActionCard(
+                  context,
+                  TranslationService.translate(context, 'action_scan_barcode'),
+                  Icons.qr_code_scanner,
+                  Colors.orange,
+                  () async {
+                    final isbn = await context.push<String>('/scan');
+                    if (isbn != null && context.mounted) {
+                      context.push('/books/add', extra: {'isbn': isbn});
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildKidActionCard(
+                  context,
+                  TranslationService.translate(context, 'action_search_online'),
+                  Icons.search,
+                  Colors.blue,
+                  () => context.push('/search/external'),
+                  key: const Key('addBookButton'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(
+          context,
+          TranslationService.translate(context, 'quick_actions'),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // 1. Search Bar (Fake)
+              ScaleOnTap(
+                onTap: () => context.push('/books'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search, color: Colors.grey),
+                      const SizedBox(width: 12),
+                      Text(
+                        TranslationService.translate(
+                          context,
+                          'search_in_library',
+                        ),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 2. Primary Action: Add Book
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  key: _addKey,
+                  onPressed: () => context.push('/books/add'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                    shadowColor: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.4),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: Text(
+                    TranslationService.translate(context, 'action_add_book'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 3. Secondary Actions Grid
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isSmall = constraints.maxWidth < 400;
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.start,
+                    children: [
+                      _buildQuickActionCard(
+                        context,
+                        label: TranslationService.translate(
+                          context,
+                          'action_scan_barcode',
+                        ),
+                        icon: Icons.qr_code_scanner,
+                        color: Colors.orange,
+                        onTap: () async {
+                          final isbn = await context.push<String>('/scan');
+                          if (isbn != null && context.mounted) {
+                            context.push('/books/add', extra: {'isbn': isbn});
+                          }
+                        },
+                        width: isSmall
+                            ? (constraints.maxWidth - 12) / 2
+                            : (constraints.maxWidth - 24) / 3,
+                      ),
+                      _buildQuickActionCard(
+                        context,
+                        label: TranslationService.translate(
+                          context,
+                          'action_search_online',
+                        ),
+                        icon: Icons.travel_explore,
+                        color: Colors.blue,
+                        onTap: () => context.push('/search/external'),
+                        width: isSmall
+                            ? (constraints.maxWidth - 12) / 2
+                            : (constraints.maxWidth - 24) / 3,
+                      ),
+                      _buildQuickActionCard(
+                        context,
+                        label: TranslationService.translate(
+                          context,
+                          'action_checkout_book',
+                        ),
+                        icon: Icons.local_library,
+                        color: Colors.purple,
+                        onTap: () => context.push('/network-search'),
+                        width: isSmall
+                            ? constraints.maxWidth
+                            : (constraints.maxWidth - 24) / 3,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -1001,205 +1486,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String _getGreeting(BuildContext context) {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return TranslationService.translate(context, 'greeting_morning');
-    } else if (hour < 18) {
-      return TranslationService.translate(context, 'greeting_afternoon');
-    } else {
-      return TranslationService.translate(context, 'greeting_evening');
-    }
-  }
-
-  Widget _buildGamificationMini(BuildContext context) {
-    if (_gamificationStatus == null) return const SizedBox.shrink();
-
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final isSorbonne = themeProvider.themeStyle == 'sorbonne';
-    final cardColor = isSorbonne ? const Color(0xFF2D1810) : Colors.white;
-    final accentColors = isSorbonne
-        ? [const Color(0xFF8B4513), const Color(0xFF5D3A1A)] // Bronze/leather
-        : [const Color(0xFF667eea), const Color(0xFF764ba2)]; // Blue-purple
-
-    return GestureDetector(
-      onTap: () => context.push('/profile'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: AppDesign.subtleShadow,
-          border: isSorbonne
-              ? Border.all(color: const Color(0xFF5D3A1A))
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: accentColors),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.emoji_events,
-                        color: isSorbonne
-                            ? const Color(0xFFC4A35A)
-                            : Colors.white,
-                        size: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      TranslationService.translate(context, 'your_progress'),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) {
-                final isDesktop = MediaQuery.of(context).size.width > 600;
-                final trackSize = isDesktop ? 80.0 : 60.0;
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Use 2x2 grid for narrow screens (< 400px)
-                    if (constraints.maxWidth < 400) {
-                      return Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              TrackProgressWidget(
-                                track: _gamificationStatus!.collector,
-                                trackName: TranslationService.translate(
-                                  context,
-                                  'track_collector',
-                                ),
-                                icon: Icons.collections_bookmark,
-                                color: Colors.blue,
-                                size: trackSize,
-                              ),
-                              TrackProgressWidget(
-                                track: _gamificationStatus!.reader,
-                                trackName: TranslationService.translate(
-                                  context,
-                                  'track_reader',
-                                ),
-                                icon: Icons.menu_book,
-                                color: Colors.green,
-                                size: trackSize,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              TrackProgressWidget(
-                                track: _gamificationStatus!.lender,
-                                trackName: TranslationService.translate(
-                                  context,
-                                  'track_lender',
-                                ),
-                                icon: Icons.volunteer_activism,
-                                color: Colors.orange,
-                                size: trackSize,
-                              ),
-                              TrackProgressWidget(
-                                track: _gamificationStatus!.cataloguer,
-                                trackName: TranslationService.translate(
-                                  context,
-                                  'track_cataloguer',
-                                ),
-                                icon: Icons.list_alt,
-                                color: Colors.purple,
-                                size: trackSize,
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }
-                    // Use centered Wrap for wide screens
-                    return Center(
-                      child: Wrap(
-                        alignment: WrapAlignment.spaceAround,
-                        spacing: isDesktop ? 32 : 16,
-                        runSpacing: isDesktop ? 24 : 12,
-                        children: [
-                          TrackProgressWidget(
-                            track: _gamificationStatus!.collector,
-                            trackName: TranslationService.translate(
-                              context,
-                              'track_collector',
-                            ),
-                            icon: Icons.collections_bookmark,
-                            color: Colors.blue,
-                            size: trackSize,
-                          ),
-                          TrackProgressWidget(
-                            track: _gamificationStatus!.reader,
-                            trackName: TranslationService.translate(
-                              context,
-                              'track_reader',
-                            ),
-                            icon: Icons.menu_book,
-                            color: Colors.green,
-                            size: trackSize,
-                          ),
-                          TrackProgressWidget(
-                            track: _gamificationStatus!.lender,
-                            trackName: TranslationService.translate(
-                              context,
-                              'track_lender',
-                            ),
-                            icon: Icons.volunteer_activism,
-                            color: Colors.orange,
-                            size: trackSize,
-                          ),
-                          TrackProgressWidget(
-                            track: _gamificationStatus!.cataloguer,
-                            trackName: TranslationService.translate(
-                              context,
-                              'track_cataloguer',
-                            ),
-                            icon: Icons.list_alt,
-                            color: Colors.purple,
-                            size: trackSize,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildStatCard(
     BuildContext context,
     String label,
     String value,
     IconData icon, {
     bool isAccent = false,
+    VoidCallback? onTap,
   }) {
     final isSorbonne =
         Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
@@ -1224,52 +1517,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? Colors.white70
         : (isSorbonne ? const Color(0xFF8B7355) : Colors.black54);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderClr),
-        boxShadow: isAccent
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+    return ScaleOnTap(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderClr),
+          boxShadow: isAccent
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+              : AppDesign.subtleShadow,
+        ),
+        child: Builder(
+          builder: (context) {
+            final isDesktop = MediaQuery.of(context).size.width > 600;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: iconClr, size: isDesktop ? 28 : 24),
+                SizedBox(height: isDesktop ? 16 : 12),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: isDesktop ? 32 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: valueClr,
+                  ),
                 ),
-              ]
-            : AppDesign.subtleShadow,
-      ),
-      child: Builder(
-        builder: (context) {
-          final isDesktop = MediaQuery.of(context).size.width > 600;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: iconClr, size: isDesktop ? 28 : 24),
-              SizedBox(height: isDesktop ? 16 : 12),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: isDesktop ? 32 : 24,
-                  fontWeight: FontWeight.bold,
-                  color: valueClr,
+                SizedBox(height: isDesktop ? 6 : 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: isDesktop ? 14 : 12,
+                    fontWeight: FontWeight.w500,
+                    color: labelClr,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              SizedBox(height: isDesktop ? 6 : 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: isDesktop ? 14 : 12,
-                  fontWeight: FontWeight.w500,
-                  color: labelClr,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1336,50 +1632,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildActionButton(
-    BuildContext context,
-    String label,
-    IconData icon,
-    VoidCallback onPressed, {
-    bool isPrimary = false,
-    Key? key,
-    Key? testKey,
+  Widget _buildQuickActionCard(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required double width,
   }) {
-    final isSorbonne =
-        Provider.of<ThemeProvider>(context, listen: false).themeStyle ==
-        'sorbonne';
-    final btnBg = isPrimary
-        ? Theme.of(context).primaryColor
-        : (isSorbonne ? const Color(0xFF2D1810) : Colors.white);
-    final btnFg = isPrimary
-        ? Colors.white
-        : (isSorbonne
-              ? const Color(0xFFC4A35A)
-              : Theme.of(context).primaryColor);
-
-    Widget button = ScaleOnTap(
-      child: ElevatedButton.icon(
-        key: key,
-        onPressed: onPressed,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: btnBg,
-          foregroundColor: btnFg,
-          elevation: isPrimary ? 4 : 2,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          shadowColor: Colors.black.withValues(alpha: 0.1),
+    return ScaleOnTap(
+      onTap: onTap,
+      child: Container(
+        width: width,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.1), width: 1.5),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
-
-    if (testKey != null) {
-      return KeyedSubtree(key: testKey, child: button);
-    }
-    return button;
   }
 
   Widget _buildBookList(
@@ -1471,6 +1775,541 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMcpIntegrationSection() {
+    return Consumer<ThemeProvider>(
+      builder: (context, theme, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              TranslationService.translate(context, 'integrations') ??
+                  'Integrations',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: SwitchListTile(
+                title: const Text('MCP Server'),
+                subtitle: const Text(
+                  'Enable Model Context Protocol integration for Claude Desktop',
+                ),
+                secondary: const Icon(Icons.integration_instructions),
+                value: theme.mcpEnabled,
+                onChanged: (val) => theme.setMcpEnabled(val),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _exportData() async {
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              TranslationService.translate(context, 'preparing_backup'),
+            ),
+          ),
+        );
+      }
+
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final response = await apiService.exportData();
+
+      if (kIsWeb) {
+        // Web export: trigger download directly
+        final blob = html.Blob([response.data]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute(
+            'download',
+            'bibliogenius_backup_${DateTime.now().toIso8601String().split('T')[0]}.json',
+          )
+          ..click();
+        html.Url.revokeObjectUrl(url);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                TranslationService.translate(context, 'backup_downloaded'),
+              ),
+            ),
+          );
+        }
+      } else {
+        // Mobile/Desktop export: use share_plus
+        final directory = await getTemporaryDirectory();
+        final filename =
+            'bibliogenius_backup_${DateTime.now().toIso8601String().split('T')[0]}.json';
+        final file = io.File('${directory.path}/$filename');
+        await file.writeAsBytes(response.data);
+
+        await Share.shareXFiles([
+          XFile(file.path),
+        ], text: 'My BiblioGenius Backup');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${TranslationService.translate(context, 'export_fail')}: $e',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _importBackup() async {
+    try {
+      // Pick a file (JSON for backup, CSV/TXT for book list)
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json', 'csv', 'txt'],
+        withData: kIsWeb,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return; // User cancelled
+      }
+
+      final file = result.files.first;
+      final extension = file.extension?.toLowerCase();
+
+      // If it's a CSV or TXT, redirect to book import
+      if (extension == 'csv' || extension == 'txt') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                TranslationService.translate(context, 'importing_books'),
+              ),
+            ),
+          );
+        }
+
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        late final Response response;
+
+        if (kIsWeb) {
+          // On web, bytes are loaded into memory
+          if (file.bytes == null) throw Exception('No file data');
+          response = await apiService.importBooks(
+            file.bytes!,
+            filename: file.name,
+          );
+        } else {
+          // On native, use path
+          if (file.path == null) throw Exception('No file path');
+          response = await apiService.importBooks(file.path!);
+        }
+
+        if (mounted) {
+          if (response.statusCode == 200) {
+            final imported = response.data['imported'];
+            _fetchDashboardData(); // Refresh
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${TranslationService.translate(context, 'import_success')} $imported ${TranslationService.translate(context, 'books')}',
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            throw Exception(response.data['error'] ?? 'Import failed');
+          }
+        }
+        return;
+      }
+
+      // JSON Backup Import Logic
+      List<int> bytes;
+      if (kIsWeb) {
+        if (file.bytes == null) throw Exception('Could not read file');
+        bytes = file.bytes!;
+      } else {
+        if (file.path == null) throw Exception('File path is null');
+        final ioFile = io.File(file.path!);
+        bytes = await ioFile.readAsBytes();
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              TranslationService.translate(context, 'importing_backup'),
+            ),
+          ),
+        );
+      }
+
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final response = await apiService.importBackup(bytes);
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final booksCount = data['books_imported'] ?? 0;
+        final message = data['message'] ?? 'Import successful';
+
+        if (mounted) {
+          _fetchDashboardData();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '$message - $booksCount ${TranslationService.translate(context, 'books_imported')}',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception(response.data['error'] ?? 'Import failed');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${TranslationService.translate(context, 'import_fail')}: $e',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _setupMfa() async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+
+    // Check if we're in FFI/local mode where MFA is not supported
+    if (apiService.useFfi) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.info_outline, color: Theme.of(context).primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                TranslationService.translate(context, 'two_factor_auth') ??
+                    'Two-Factor Authentication',
+              ),
+            ],
+          ),
+          content: Text(
+            TranslationService.translate(context, 'mfa_requires_server') ??
+                'Two-factor authentication is only available when connected to a remote BiblioGenius server. In local mode, your data is already secured on your device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(TranslationService.translate(context, 'ok') ?? 'OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    try {
+      final response = await apiService.setup2Fa();
+      final data = response.data;
+      final secret = data['secret'];
+      final qrCode = data['qr_code']; // Base64 string
+
+      if (!mounted) return;
+
+      final codeController = TextEditingController();
+      String? verifyError;
+
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text(
+              TranslationService.translate(context, 'setup_2fa') ?? 'Setup 2FA',
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    TranslationService.translate(context, 'scan_qr_code') ??
+                        'Scan this QR code with your authenticator app:',
+                  ),
+                  const SizedBox(height: 16),
+                  if (qrCode != null)
+                    Image.memory(base64Decode(qrCode), height: 200, width: 200),
+                  const SizedBox(height: 16),
+                  SelectableText(
+                    '${TranslationService.translate(context, 'secret_key') ?? 'Secret Key'}: $secret',
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: codeController,
+                    decoration: InputDecoration(
+                      labelText:
+                          TranslationService.translate(
+                            context,
+                            'verification_code',
+                          ) ??
+                          'Verification Code',
+                      errorText: verifyError,
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  TranslationService.translate(context, 'cancel') ?? 'Cancel',
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  setState(() => verifyError = null);
+                  final code = codeController.text.trim();
+                  if (code.length != 6) {
+                    setState(
+                      () => verifyError =
+                          TranslationService.translate(
+                            context,
+                            'invalid_code',
+                          ) ??
+                          'Invalid code',
+                    );
+                    return;
+                  }
+
+                  try {
+                    await apiService.verify2Fa(secret, code);
+                    if (mounted) {
+                      Navigator.pop(context); // Close dialog
+                      _fetchDashboardData(); // Refresh status
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            TranslationService.translate(
+                                  context,
+                                  'mfa_enabled_success',
+                                ) ??
+                                'MFA Enabled Successfully',
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    setState(
+                      () => verifyError =
+                          TranslationService.translate(
+                            context,
+                            'verification_failed',
+                          ) ??
+                          'Verification failed',
+                    );
+                  }
+                },
+                child: Text(
+                  TranslationService.translate(context, 'verify') ?? 'Verify',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${TranslationService.translate(context, 'error_initializing_mfa') ?? 'Error initializing MFA'}: $e',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showChangePasswordDialog() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final hasPassword = await authService.hasPasswordSet();
+
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    String? errorText;
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(
+            hasPassword
+                ? (TranslationService.translate(context, 'change_password') ??
+                      'Change Password')
+                : (TranslationService.translate(context, 'set_password') ??
+                      'Set Password'),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!hasPassword)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      TranslationService.translate(
+                            context,
+                            'first_time_password',
+                          ) ??
+                          'Set a password to protect your data',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                if (hasPassword)
+                  TextField(
+                    controller: currentPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText:
+                          TranslationService.translate(
+                            context,
+                            'current_password',
+                          ) ??
+                          'Current Password',
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                if (hasPassword) const SizedBox(height: 16),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText:
+                        TranslationService.translate(context, 'new_password') ??
+                        'New Password',
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText:
+                        TranslationService.translate(
+                          context,
+                          'confirm_password',
+                        ) ??
+                        'Confirm Password',
+                    errorText: errorText,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                TranslationService.translate(context, 'cancel') ?? 'Cancel',
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Validate
+                if (newPasswordController.text.length < 4) {
+                  setState(
+                    () => errorText =
+                        TranslationService.translate(
+                          context,
+                          'password_too_short',
+                        ) ??
+                        'Password must be at least 4 characters',
+                  );
+                  return;
+                }
+                if (newPasswordController.text !=
+                    confirmPasswordController.text) {
+                  setState(
+                    () => errorText =
+                        TranslationService.translate(
+                          context,
+                          'passwords_dont_match',
+                        ) ??
+                        'Passwords do not match',
+                  );
+                  return;
+                }
+
+                if (hasPassword) {
+                  // Verify old password first
+                  final isValid = await authService.verifyPassword(
+                    currentPasswordController.text,
+                  );
+                  if (!isValid) {
+                    setState(
+                      () => errorText =
+                          TranslationService.translate(
+                            context,
+                            'password_incorrect',
+                          ) ??
+                          'Incorrect password',
+                    );
+                    return;
+                  }
+                  // Change password
+                  await authService.changePassword(
+                    currentPasswordController.text,
+                    newPasswordController.text,
+                  );
+                } else {
+                  // First time setting password
+                  await authService.savePassword(newPasswordController.text);
+                }
+
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        TranslationService.translate(
+                              context,
+                              'password_changed_success',
+                            ) ??
+                            'Password changed successfully',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                TranslationService.translate(context, 'save') ?? 'Save',
               ),
             ),
           ],

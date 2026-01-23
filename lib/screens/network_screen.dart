@@ -1,3 +1,4 @@
+import 'package:bibliogenius/screens/scan_qr_screen.dart';
 import 'package:flutter/material.dart';
 import '../widgets/genie_app_bar.dart';
 import 'package:provider/provider.dart';
@@ -9,12 +10,9 @@ import '../models/network_member.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/translation_service.dart';
-import '../providers/theme_provider.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../utils/app_constants.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:network_info_plus/network_info_plus.dart';
-import '../services/mdns_service.dart';
 import 'borrow_requests_screen.dart';
 
 /// Filter options for the network list
@@ -33,6 +31,8 @@ class NetworkScreen extends StatefulWidget {
 class _NetworkScreenState extends State<NetworkScreen>
     with SingleTickerProviderStateMixin {
   late TabController _mainTabController;
+  final GlobalKey<_ContactsListViewState> _contactsListKey =
+      GlobalKey<_ContactsListViewState>();
 
   @override
   void initState() {
@@ -49,6 +49,90 @@ class _NetworkScreenState extends State<NetworkScreen>
   void dispose() {
     _mainTabController.dispose();
     super.dispose();
+  }
+
+  /// Shows the modal bottom sheet for adding a new connection
+  void _showAddConnectionSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: Text(
+                  TranslationService.translate(context, 'enter_manually'),
+                ),
+                subtitle: Text(
+                  TranslationService.translate(context, 'type_contact_details'),
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final result = await context.push('/contacts/add');
+                  if (result == true) {
+                    _contactsListKey.currentState?.reloadMembers();
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.qr_code_scanner),
+                title: Text(
+                  TranslationService.translate(context, 'scan_qr_code'),
+                ),
+                subtitle: Text(
+                  TranslationService.translate(context, 'scan_friend_qr_code'),
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ScanQrScreen(),
+                    ),
+                  );
+                  if (result == true) {
+                    _contactsListKey.currentState?.reloadMembers();
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.qr_code),
+                title: Text(
+                  TranslationService.translate(context, 'show_my_code'),
+                ),
+                subtitle: Text(
+                  TranslationService.translate(
+                    context,
+                    'let_someone_scan_your_library',
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  showDialog(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(
+                        TranslationService.translate(context, 'show_my_code'),
+                      ),
+                      content: const ShareContactView(),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: Text(
+                            TranslationService.translate(context, 'close'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -85,91 +169,16 @@ class _NetworkScreenState extends State<NetworkScreen>
       body: TabBarView(
         controller: _mainTabController,
         children: [
-          // Tab 1: Contacts (Nested tabs: List, Scan, Share)
-          const ContactsWrapperView(),
+          // Tab 1: Contacts (now directly showing the list)
+          ContactsListView(key: _contactsListKey),
           // Tab 2: Loans (Existing BorrowRequestsScreen as view)
           const LoansScreen(isTabView: true),
         ],
       ),
-    );
-  }
-}
-
-/// Wrapper for Contacts tab that handles nested tabs (List, Scan, Share)
-class ContactsWrapperView extends StatefulWidget {
-  const ContactsWrapperView({super.key});
-
-  @override
-  State<ContactsWrapperView> createState() => _ContactsWrapperViewState();
-}
-
-class _ContactsWrapperViewState extends State<ContactsWrapperView>
-    with SingleTickerProviderStateMixin {
-  late TabController _nestedTabController;
-  final bool _p2pEnabled = AppConstants.enableP2PFeatures;
-
-  @override
-  void initState() {
-    super.initState();
-    // If P2P is enabled, we have 3 sub-tabs: List, Scan, Share
-    // If disabled, just 1: List (but we might not even show the tab bar in that case)
-    _nestedTabController = TabController(
-      length: _p2pEnabled ? 3 : 1,
-      vsync: this,
-    );
-  }
-
-  @override
-  void dispose() {
-    _nestedTabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_p2pEnabled) {
-      return const ContactsListView();
-    }
-
-    return Column(
-      children: [
-        Container(
-          color: Theme.of(context).primaryColor.withOpacity(0.05),
-          child: TabBar(
-            controller: _nestedTabController,
-            labelColor: Theme.of(context).primaryColor,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Theme.of(context).primaryColor,
-            tabs: [
-              Tab(
-                icon: const Icon(Icons.list),
-                text: TranslationService.translate(context, 'tab_list'),
-              ),
-              Tab(
-                icon: const Icon(Icons.qr_code_scanner),
-                text: TranslationService.translate(context, 'tab_scan_code'),
-              ),
-              Tab(
-                icon: const Icon(Icons.qr_code),
-                text: TranslationService.translate(context, 'tab_share_code'),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _nestedTabController,
-            children: [
-              // Sub-tab 1: List
-              const ContactsListView(),
-              // Sub-tab 2: Scan
-              const ScanContactView(),
-              // Sub-tab 3: Share
-              const ShareContactView(),
-            ],
-          ),
-        ),
-      ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddConnectionSheet(context),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
@@ -192,6 +201,10 @@ class _ContactsListViewState extends State<ContactsListView> {
   @override
   void initState() {
     super.initState();
+    _loadAllMembers();
+  }
+
+  void reloadMembers() {
     _loadAllMembers();
   }
 
@@ -421,35 +434,7 @@ class _ContactsListViewState extends State<ContactsListView> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _filteredMembers.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.people_outline,
-                        size: 64,
-                        color: Colors.grey[300],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        TranslationService.translate(
-                          context,
-                          'no_network_members',
-                        ),
-                        style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        TranslationService.translate(
-                          context,
-                          'add_contact_or_scan_help',
-                        ),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                )
+              ? _buildEmptyState(context)
               : ListView.builder(
                   itemCount: _filteredMembers.length,
                   itemBuilder: (context, index) {
@@ -533,21 +518,210 @@ class _ContactsListViewState extends State<ContactsListView> {
                   },
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              final result = await context.push('/contacts/add');
-              if (result == true) _loadAllMembers();
-            },
-            icon: const Icon(Icons.add),
-            label: Text(TranslationService.translate(context, 'add_contact')),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48),
-            ),
-          ),
-        ),
       ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.people_outline,
+                size: 64,
+                color: Colors.amber,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              TranslationService.translate(context, 'no_contacts_title'),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              TranslationService.translate(context, 'no_contacts_hint'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Primary Button: Add First Contact
+            ElevatedButton.icon(
+              onPressed: () {
+                final networkScreenState = context
+                    .findAncestorStateOfType<_NetworkScreenState>();
+                if (networkScreenState != null) {
+                  networkScreenState._showAddConnectionSheet(context);
+                }
+              },
+              icon: const Icon(Icons.person_add),
+              label: Text(
+                TranslationService.translate(context, 'add_first_contact'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Secondary Button: QR Code Help
+            TextButton.icon(
+              onPressed: () => _showQrHelpDialog(context),
+              icon: const Icon(Icons.qr_code_scanner, size: 20),
+              label: Text(
+                TranslationService.translate(context, 'how_to_add_contact_qr'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Tertiary Button: Show My Code Help
+            TextButton.icon(
+              onPressed: () => _showShowCodeHelpDialog(context),
+              icon: const Icon(Icons.qr_code, size: 20),
+              label: Text(
+                TranslationService.translate(context, 'how_to_show_code_label'),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showQrHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.qr_code_2, color: Colors.blue),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                TranslationService.translate(
+                  context,
+                  'how_to_add_contact_help_title',
+                ),
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              TranslationService.translate(
+                context,
+                'how_to_add_contact_help_desc',
+              ),
+              style: const TextStyle(fontSize: 16, height: 1.5),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: const Icon(
+                Icons.qr_code_scanner,
+                size: 48,
+                color: Colors.black54,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(TranslationService.translate(context, 'understood')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showShowCodeHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.qr_code, color: Colors.purple),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                TranslationService.translate(
+                  context,
+                  'how_to_show_code_help_title',
+                ),
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              TranslationService.translate(
+                context,
+                'how_to_show_code_help_desc',
+              ),
+              style: const TextStyle(fontSize: 16, height: 1.5),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: const Icon(Icons.qr_code, size: 48, color: Colors.black54),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(TranslationService.translate(context, 'understood')),
+          ),
+        ],
+      ),
     );
   }
 
@@ -558,108 +732,6 @@ class _ContactsListViewState extends State<ContactsListView> {
       onSelected: (selected) {
         setState(() => _filter = filter);
       },
-    );
-  }
-}
-
-/// View for Scanning Codes (extracted from original state)
-class ScanContactView extends StatefulWidget {
-  const ScanContactView({super.key});
-
-  @override
-  State<ScanContactView> createState() => _ScanContactViewState();
-}
-
-class _ScanContactViewState extends State<ScanContactView> {
-  MobileScannerController cameraController = MobileScannerController(
-    autoStart: false,
-  );
-  bool _isProcessingScan = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Start camera when view is visible
-      cameraController.start();
-    });
-  }
-
-  @override
-  void dispose() {
-    cameraController.stop();
-    cameraController.dispose();
-    super.dispose();
-  }
-
-  // Adapted from original _onDetect
-  void _onDetect(BarcodeCapture capture) async {
-    if (_isProcessingScan) return;
-    final List<Barcode> barcodes = capture.barcodes;
-    for (final barcode in barcodes) {
-      if (barcode.rawValue != null) {
-        try {
-          final data = jsonDecode(barcode.rawValue!);
-          if (data['name'] != null && data['url'] != null) {
-            setState(() => _isProcessingScan = true);
-            // Call connect peer logic
-            await _connect(data['name'], data['url']);
-            break;
-          }
-        } catch (_) {}
-      }
-    }
-  }
-
-  Future<void> _connect(String name, String url) async {
-    // Connect logic (simplified)
-    final api = Provider.of<ApiService>(context, listen: false);
-    try {
-      await api.connectPeer(name, url);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "${TranslationService.translate(context, 'connected_to')} $name",
-            ),
-          ),
-        );
-        // Switch back to list view?? Or just reset.
-        // Since we are in a tab view, maybe we want to inform the user and stay, or switch tab?
-        setState(() => _isProcessingScan = false);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "${TranslationService.translate(context, 'connection_failed')}: $e",
-            ),
-          ),
-        );
-        setState(() => _isProcessingScan = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: MobileScanner(
-            controller: cameraController,
-            onDetect: _onDetect,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            TranslationService.translate(context, 'scan_instruction'),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ],
     );
   }
 }

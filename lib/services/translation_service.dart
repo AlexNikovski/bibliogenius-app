@@ -77,6 +77,9 @@ class TranslationService {
       'to_next_level': 'to next level',
       'level': 'Level',
       'profile_settings': 'Profile Settings',
+      'select_profile_type': 'Select Profile Type',
+      'young_reader_mode': 'Young Reader Mode',
+      'young_reader_mode_desc': 'Simplified interface for children',
       'profile_type': 'Profile Type',
       'profile_type_label': 'Profile Type',
       'show_borrowed_books': 'Show borrowed books',
@@ -92,7 +95,7 @@ class TranslationService {
       'add_sub_shelf': 'Add Sub-Shelf',
       'shelf_name': 'Shelf Name',
       'shelf_name_hint': 'e.g. Science Fiction',
-      'no_shelves_title': 'No shelves yet',
+
       'create_first_shelf': 'Create your first shelf to organize your books',
       'scan_first_book': 'Scan my first book',
       'shelf_management_hint':
@@ -457,6 +460,8 @@ class TranslationService {
       // Collections
       'collections': 'Collections',
       'no_collections': 'No collections found',
+      'collection_empty_state_desc':
+          'Gather all books from the same series here and track the ones you\'re missing.',
       'create_collection': 'Create Collection',
       'delete_collection': 'Delete Collection',
       'delete_collection_confirm':
@@ -484,6 +489,18 @@ class TranslationService {
       'search_hint_example': 'ex: "Science Fiction", "Asimov"',
       'search_btn': 'Search',
       'import_btn': 'Import Selected',
+      'search_in_library': 'Search in library',
+      'import_screen_title': 'Add Books from List',
+      'import_method_file_title': 'I have a file',
+      'import_method_file_desc': 'Tap to select a .bibliogenius file',
+      'import_method_paste_title': 'I have a text or link',
+      'import_method_paste_desc': 'Paste content from your clipboard',
+      'import_preview_title': 'Look what we found! ✨',
+      'import_preview_subtitle':
+          'Ready to import {count} books into your library.',
+      'import_status_label': 'Where should these go?',
+      'import_action_button': 'Add {count} Books to Library',
+      'import_list': 'Import',
       'add_to_collections_label': 'Add to Collections',
       'selected_books_count': '{count} selected',
       'mark_as_owned': 'Mark as Owned',
@@ -585,9 +602,18 @@ class TranslationService {
       'error_peer_timeout': 'Partner library is not responding',
       'error_peer_offline': 'Could not connect to partner',
       'scan_qr_code': 'Or scan a QR Code',
+      'scan_friend_qr_code':
+          'Scan a friend'
+          's library code',
+      'show_my_code': 'Show My Code',
+      'let_someone_scan_your_library': 'Let someone scan your library',
+      'enter_manually': 'Enter Manually',
+      'type_contact_details': 'Type contact details',
       'already_connected': 'Already connected',
       'add_peer_btn': 'Add',
-      'peer_search_hint': 'Ex: Thomas\'s Library',
+      'peer_search_hint':
+          'Ex: Thomas'
+          's Library',
       // Setup Screen
       'choose_profile_type': 'Choose Profile Type',
       'profile_usage_question': 'How will you use BiblioGenius?',
@@ -1102,6 +1128,10 @@ class TranslationService {
       'borrowing_module_desc': 'Lend and borrow books with friends',
       // Modules Section
       'modules': 'Modules',
+      'audio_module': 'Audio Module',
+      'audio_module_desc': 'Manage your audiobooks and read-aloud sessions.',
+      'network_module': 'Network Module',
+      'network_module_desc': 'Connect with other readers and share your books.',
       'module_collections': 'Collections',
       'module_collections_desc':
           'Enable or disable collection management features.',
@@ -1177,6 +1207,107 @@ class TranslationService {
       'source_bnf_desc': 'National Library of France (French books)',
       'source_google_desc': 'Excellent for covers and modern metadata',
       'min_one_source_error': 'At least one search source is required',
+      // Collection screens
+      'delete_collection_title': 'Delete Collection?',
+      'delete_collection_warning':
+          'Are you sure you want to delete this collection? This cannot be undone.',
+      'error_deleting_collection': 'Error deleting collection',
+      'import_books': 'Import Books',
+      'selected_file': 'Selected file:',
+      'add_to_library_copies': 'Add to library copies',
+      'importing_books': 'Importing books...',
+      'books_imported_count': 'Successfully imported {count} books.',
+      'books_skipped_count': '{count} skipped.',
+      'error_importing_books': 'Error importing books',
+      'removed_from_collection': 'Removed from collection',
+      'error_removing_book': 'Error removing book',
+      'collection_exported': 'Collection exported!',
+      'error_sharing_collection': 'Error sharing collection',
+      'no_books_yet': 'No books yet',
+      'add_books': 'Add Books',
+      'remove_book_title': 'Remove Book?',
+      'remove_book_confirm': 'Remove this book from the collection?',
+      'remove': 'Remove',
+      'error_updating_status': 'Error updating status',
+      // Import shared list
+      'import_shared_list': 'Import Shared List',
+      'select_bibliogenius_file': 'Select .bibliogenius.yml file',
+      'paste_from_clipboard': 'Paste from clipboard',
+      'import_collection': 'Import Collection',
+      'choose_different_file': 'Choose a different file',
+      'importing_collection': 'Importing collection...',
+      'clipboard_empty': 'Clipboard is empty',
+      'error_reading_file': 'Error reading file',
+      'error_reading_clipboard': 'Error reading clipboard',
+      // Import curated list
+      'import_list_title': 'Import "{title}"?',
+      'import_list_desc':
+          'This will create a new collection with {count} books.',
+      'imported_books_status': 'Imported books status:',
+      'in_my_library': 'In my library',
+      'books_added_to_wishlist': 'Books will be added to your wishlist.',
+      'copies_created_automatically': 'Copies will be created automatically.',
+      'discover_collections': 'Discover Collections',
+      'import_list': 'Import list',
+      'no_lists_in_category': 'No lists in this category',
+      'collection_created': 'Collection "{title}" created with {count} books.',
+      'unexpected_error': 'Unexpected error',
+      // Book list
+      'shelf_order_saved': 'Shelf order saved!',
+      'error_saving_order': 'Error saving order',
+      'sorted_by_author': 'Sorted by author A-Z. Click the checkmark to save.',
+      // Statistics
+      'add_books_for_stats': 'Add books to see your reading statistics',
+      'no_author_data': 'No author data available',
+      // Peer/Network
+      'library_synced': 'Library synced successfully',
+      'sync_failed': 'Sync failed',
+      'sync_library': 'Sync Library',
+      'borrow': 'Borrow',
+      'error_loading_library': 'Error loading library',
+      // Profile
+      'backup_downloaded': 'Backup downloaded successfully',
+      'reset_failed': 'Reset failed',
+      'error_fetching_config': 'Error fetching configuration',
+      'hierarchical_shelf_management': 'Hierarchical shelf management',
+      // External search
+      'no_internet_connection': 'No internet connection',
+      // Commerce/Sales
+      'commerce_not_enabled': 'Commerce module is not enabled.',
+      // Book copies
+      'error_updating_copy': 'Error updating copy',
+      // Web view
+      'error_loading_page': 'Error loading page',
+      // Contact
+      'contact_updated': 'Contact updated successfully',
+      'error_updating_contact': 'Error updating contact',
+      // Generic
+      'generic_error': 'Error',
+      'error_generic': 'An error occurred',
+      'error_updating_rating': 'Error updating rating',
+      // Configuration tab
+      'configuration': 'Settings',
+      'quotes_module': 'Daily quotes',
+      'quotes_module_desc': 'Show inspiring literary quotes',
+      'gamification_module': 'Gamification',
+      'collections_module': 'Collections',
+      'collections_module_desc': 'Organize books into custom collections',
+      'borrowing_module': 'Lending',
+      'commerce_module': 'Commerce',
+      'commerce_module_desc': 'Enable book selling features',
+      'no_data_available': 'No data available',
+      'no_contacts_title': 'No Contacts Yet',
+      'no_contacts_hint': 'Add friends to share books and track loans.',
+      'add_first_contact': 'Add First Contact',
+      'how_to_add_contact_qr': 'How to add a contact with QR Code',
+      'how_to_add_contact_help_title': 'Add Contact via QR Code',
+      'how_to_add_contact_help_desc':
+          'Ask your friend to open their app, go to "Network" and tap "Show My Code". Then scan that code to add them instantly.',
+      'understood': 'Understood',
+      'how_to_show_code_label': 'How to show get my code',
+      'how_to_show_code_help_title': 'Show My QR Code',
+      'how_to_show_code_help_desc':
+          'Go to "Network" tab, then tap "Show My Code". Your friends can scan this code to connect to your library.',
     },
     'fr': {
       'app_title': 'BiblioGenius',
@@ -1274,6 +1405,9 @@ class TranslationService {
       'to_next_level': 'pour le niveau suivant',
       'badge_collection': 'Collection de Badges',
       'profile_settings': 'Paramètres du profil',
+      'select_profile_type': 'Choisir le type de profil',
+      'young_reader_mode': 'Mode Jeune Lecteur',
+      'young_reader_mode_desc': 'Interface simplifiée pour les enfants',
       'profile_type': 'Type de profil',
       'profile_type_label': 'Type de profil',
       'show_borrowed_books': 'Afficher les livres empruntés',
@@ -1289,7 +1423,7 @@ class TranslationService {
       'add_sub_shelf': 'Ajouter une sous-étagère',
       'shelf_name': 'Nom de l\'étagère',
       'shelf_name_hint': 'ex. Science Fiction',
-      'no_shelves_title': 'Aucune étagère',
+
       'create_first_shelf':
           'Créez votre première étagère pour organiser vos livres',
       'shelf_management_hint':
@@ -1457,6 +1591,19 @@ class TranslationService {
       'availability_lost': 'Perdu',
       'availability_wanted': 'Souhaité',
       'status_loaned': 'Prêté',
+      'no_contacts_title': 'Aucun contact',
+      'no_contacts_hint':
+          'Ajoutez des amis pour partager des livres et suivre vos prêts.',
+      'add_first_contact': 'Ajouter un premier contact',
+      'how_to_add_contact_qr': 'Comment ajouter un contact avec son QR Code',
+      'how_to_add_contact_help_title': 'Ajouter un contact par QR Code',
+      'how_to_add_contact_help_desc':
+          'Demandez à votre ami d\'ouvrir son application, d\'aller dans "Réseau" et de cliquer sur "Partager le code". Scannez ensuite ce code pour l\'ajouter instantanément.',
+      'understood': 'Compris',
+      'how_to_show_code_label': 'Comment afficher mon code',
+      'how_to_show_code_help_title': 'Afficher mon code QR',
+      'how_to_show_code_help_desc':
+          'Allez dans l\'onglet "Réseau" et appuyez sur "Partager le code". Vos amis pourront le scanner pour se connecter à votre bibliothèque.',
       // Owned checkbox
       'own_this_book': 'Je possède ce livre',
       'own_this_book_hint':
@@ -1578,6 +1725,8 @@ class TranslationService {
       'collections': 'Collections',
       'collections_label': 'Collections',
       'no_collections': 'Aucune collection',
+      'collection_empty_state_desc':
+          "C'est une manière de rassembler tous les livres d'un même auteur, d'une même série et de voir ceux que l'on a et ceux qui nous manquent.",
       'create_collection': 'Créer une collection',
       'add_collection': 'Ajouter une collection',
       'manage_collections': 'Gérer les collections',
@@ -1591,6 +1740,17 @@ class TranslationService {
           'Utilisez le bouton + pour créer votre propre collection.',
       'collection_name_hint': 'Nom de collection',
       'import_options': 'Options d\'import (Tags & Collections)',
+      'search_in_library': 'Rechercher dans ma bibliothèque',
+      'import_screen_title': 'Ajouter des livres',
+      'import_method_file_title': 'J\'ai un fichier',
+      'import_method_file_desc': 'Sélectionner une sauvegarde .bibliogenius',
+      'import_method_paste_title': 'J\'ai un texte ou lien',
+      'import_method_paste_desc': 'Coller le contenu depuis le presse-papier',
+      'import_preview_title': 'Regardez ce qu\'on a trouvé ! ✨',
+      'import_preview_subtitle':
+          'Prêt à importer {count} livres dans votre bibliothèque.',
+      'import_status_label': 'Où ranger ces livres ?',
+      'import_action_button': 'Ajouter {count} livres',
       'add_tags': 'Ajouter des tags',
       'no_collection_selected': 'Aucune collection sélectionnée',
       'search_placeholder': 'Rechercher (Sujet, Auteur...)',
@@ -1598,6 +1758,7 @@ class TranslationService {
       'search_hint_example': 'ex: "Science Fiction", "Asimov"',
       'search_btn': 'Rechercher',
       'import_btn': 'Importer la sélection',
+      'import_list': 'Importer',
       'add_to_collections_label': 'Ajouter aux collections',
       'selected_books_count': '{count} sélectionnés',
       'mark_as_owned': 'J\'ai ce livre',
@@ -1784,6 +1945,15 @@ class TranslationService {
       'error_peer_timeout': 'Le partenaire ne répond pas',
       'error_peer_offline': 'Impossible de se connecter au partenaire',
       'scan_qr_code': 'Ou scannez un QR Code',
+      'scan_friend_qr_code':
+          'Scannez le code de la bibliothèque d'
+          'un ami',
+      'show_my_code': 'Afficher mon code',
+      'let_someone_scan_your_library':
+          'Laissez quelqu'
+          'un scanner votre bibliothèque',
+      'enter_manually': 'Saisir manuellement',
+      'type_contact_details': 'Saisir les détails du contact',
       'already_connected': 'Déjà connecté',
       'add_peer_btn': 'Ajouter',
       'peer_search_hint': 'Ex: Bibliothèque de Thomas',
@@ -1860,6 +2030,11 @@ class TranslationService {
 
       // Modules
       'modules': 'Modules',
+      'audio_module': 'Module Audio',
+      'audio_module_desc': 'Gérez vos livres audio et lectures à voix haute.',
+      'network_module': 'Module Réseau',
+      'network_module_desc':
+          'Connectez-vous avec d\'autres lecteurs et partagez vos livres.',
       'module_collections': 'Collections',
       'module_collections_desc':
           'Activez ou désactivez les fonctionnalités de gestion de collections.',
@@ -2364,6 +2539,102 @@ class TranslationService {
       'source_google_desc':
           'Excellent pour les couvertures et métadonnées modernes',
       'min_one_source_error': 'Au moins une source de recherche est requise',
+      // Collection screens
+      'delete_collection_title': 'Supprimer la collection ?',
+      'delete_collection_warning':
+          'Êtes-vous sûr de vouloir supprimer cette collection ? Cette action est irréversible.',
+      'error_deleting_collection':
+          'Erreur lors de la suppression de la collection',
+      'import_books': 'Importer des livres',
+      'selected_file': 'Fichier sélectionné :',
+      'add_to_library_copies': 'Ajouter aux exemplaires de la bibliothèque',
+      'importing_books': 'Importation des livres...',
+      'books_imported_count': '{count} livres importés avec succès.',
+      'books_skipped_count': '{count} ignorés.',
+      'error_importing_books': 'Erreur lors de l\'importation des livres',
+      'removed_from_collection': 'Retiré de la collection',
+      'error_removing_book': 'Erreur lors de la suppression du livre',
+      'collection_exported': 'Collection exportée !',
+      'error_sharing_collection': 'Erreur lors du partage de la collection',
+      'no_books_yet': 'Aucun livre pour l\'instant',
+      'add_books': 'Ajouter des livres',
+      'remove_book_title': 'Retirer le livre ?',
+      'remove_book_confirm': 'Retirer ce livre de la collection ?',
+      'remove': 'Retirer',
+      'error_updating_status': 'Erreur lors de la mise à jour du statut',
+      // Import shared list
+      'import_shared_list': 'Importer une liste partagée',
+      'select_bibliogenius_file': 'Sélectionner un fichier .bibliogenius.yml',
+      'paste_from_clipboard': 'Coller depuis le presse-papiers',
+      'import_collection': 'Importer la collection',
+      'choose_different_file': 'Choisir un autre fichier',
+      'importing_collection': 'Importation de la collection...',
+      'clipboard_empty': 'Le presse-papiers est vide',
+      'error_reading_file': 'Erreur de lecture du fichier',
+      'error_reading_clipboard': 'Erreur de lecture du presse-papiers',
+      // Import curated list
+      'import_list_title': 'Importer « {title} » ?',
+      'import_list_desc':
+          'Cela créera une nouvelle collection avec {count} livres.',
+      'imported_books_status': 'Statut des livres importés :',
+      'in_my_library': 'Dans ma bibliothèque',
+      'books_added_to_wishlist':
+          'Les livres seront ajoutés à votre liste de souhaits.',
+      'copies_created_automatically':
+          'Des exemplaires seront créés automatiquement.',
+      'discover_collections': 'Découvrir des collections',
+      'import_list': 'Importer la liste',
+      'no_lists_in_category': 'Aucune liste dans cette catégorie',
+      'collection_created': 'Collection « {title} » créée avec {count} livres.',
+      'unexpected_error': 'Erreur inattendue',
+      // Book list
+      'shelf_order_saved': 'Ordre de l\'étagère enregistré !',
+      'error_saving_order': 'Erreur lors de l\'enregistrement de l\'ordre',
+      'sorted_by_author':
+          'Trié par auteur A-Z. Cliquez sur ✓ pour enregistrer.',
+      // Statistics
+      'add_books_for_stats':
+          'Ajoutez des livres pour voir vos statistiques de lecture',
+      'no_author_data': 'Aucune donnée d\'auteur disponible',
+      // Peer/Network
+      'library_synced': 'Bibliothèque synchronisée avec succès',
+      'sync_failed': 'Échec de la synchronisation',
+      'sync_library': 'Synchroniser la bibliothèque',
+      'borrow': 'Emprunter',
+      'error_loading_library': 'Erreur lors du chargement de la bibliothèque',
+      // Profile
+      'backup_downloaded': 'Sauvegarde téléchargée avec succès',
+      'reset_failed': 'Échec de la réinitialisation',
+      'error_fetching_config':
+          'Erreur lors de la récupération de la configuration',
+      'hierarchical_shelf_management': 'Gestion des sous-étagères',
+      // External search
+      'no_internet_connection': 'Pas de connexion internet',
+      // Commerce/Sales
+      'commerce_not_enabled': 'Le module commerce n\'est pas activé.',
+      // Book copies
+      'error_updating_copy': 'Erreur lors de la mise à jour de l\'exemplaire',
+      // Web view
+      'error_loading_page': 'Erreur de chargement de la page',
+      // Contact
+      'contact_updated': 'Contact mis à jour avec succès',
+      'error_updating_contact': 'Erreur lors de la mise à jour du contact',
+      // Generic
+      'generic_error': 'Erreur',
+      'error_generic': 'Une erreur s\'est produite',
+      'error_updating_rating': 'Erreur lors de la mise à jour de la note',
+      // Configuration tab
+      'configuration': 'Paramètres',
+      'quotes_module': 'Citations du jour',
+      'quotes_module_desc': 'Afficher des citations littéraires inspirantes',
+      'gamification_module': 'Gamification',
+      'collections_module': 'Collections',
+      'collections_module_desc':
+          'Organiser les livres en collections personnalisées',
+      'borrowing_module': 'Prêts',
+      'commerce_module': 'Commerce',
+      'commerce_module_desc': 'Activer les fonctionnalités de vente de livres',
+      'no_data_available': 'Aucune donnée disponible',
     },
     'es': {
       'tag_beta': 'Beta',
@@ -2957,6 +3228,100 @@ class TranslationService {
       'restart_required_for_changes':
           'Reinicie la app para aplicar los cambios',
       'view': 'Ver',
+      // Collection screens
+      'delete_collection_title': '¿Eliminar colección?',
+      'delete_collection_warning':
+          '¿Estás seguro de que quieres eliminar esta colección? Esta acción no se puede deshacer.',
+      'error_deleting_collection': 'Error al eliminar la colección',
+      'import_books': 'Importar libros',
+      'selected_file': 'Archivo seleccionado:',
+      'add_to_library_copies': 'Añadir a los ejemplares de la biblioteca',
+      'importing_books': 'Importando libros...',
+      'books_imported_count': '{count} libros importados con éxito.',
+      'books_skipped_count': '{count} omitidos.',
+      'error_importing_books': 'Error al importar libros',
+      'removed_from_collection': 'Eliminado de la colección',
+      'error_removing_book': 'Error al eliminar el libro',
+      'collection_exported': '¡Colección exportada!',
+      'error_sharing_collection': 'Error al compartir la colección',
+      'no_books_yet': 'Aún no hay libros',
+      'add_books': 'Añadir libros',
+      'remove_book_title': '¿Eliminar libro?',
+      'remove_book_confirm': '¿Eliminar este libro de la colección?',
+      'remove': 'Eliminar',
+      'error_updating_status': 'Error al actualizar el estado',
+      // Import shared list
+      'import_shared_list': 'Importar lista compartida',
+      'select_bibliogenius_file': 'Seleccionar archivo .bibliogenius.yml',
+      'paste_from_clipboard': 'Pegar desde el portapapeles',
+      'import_collection': 'Importar colección',
+      'choose_different_file': 'Elegir otro archivo',
+      'importing_collection': 'Importando colección...',
+      'clipboard_empty': 'El portapapeles está vacío',
+      'error_reading_file': 'Error al leer el archivo',
+      'error_reading_clipboard': 'Error al leer el portapapeles',
+      // Import curated list
+      'import_list_title': '¿Importar "{title}"?',
+      'import_list_desc': 'Esto creará una nueva colección con {count} libros.',
+      'imported_books_status': 'Estado de los libros importados:',
+      'in_my_library': 'En mi biblioteca',
+      'books_added_to_wishlist': 'Los libros se añadirán a tu lista de deseos.',
+      'copies_created_automatically': 'Se crearán ejemplares automáticamente.',
+      'discover_collections': 'Descubrir colecciones',
+      'collection_empty_state_desc':
+          'Reúne aquí todos los libros de una misma serie y rastrea los que te faltan.',
+      'import_list': 'Importar lista',
+      'no_lists_in_category': 'No hay listas en esta categoría',
+      'collection_created': 'Colección "{title}" creada con {count} libros.',
+      'unexpected_error': 'Error inesperado',
+      // Book list
+      'shelf_order_saved': '¡Orden del estante guardado!',
+      'error_saving_order': 'Error al guardar el orden',
+      'sorted_by_author': 'Ordenado por autor A-Z. Haz clic en ✓ para guardar.',
+      // Statistics
+      'add_books_for_stats':
+          'Añade libros para ver tus estadísticas de lectura',
+      'no_author_data': 'No hay datos de autor disponibles',
+      // Peer/Network
+      'library_synced': 'Biblioteca sincronizada con éxito',
+      'sync_failed': 'Error de sincronización',
+      'sync_library': 'Sincronizar biblioteca',
+      'borrow': 'Pedir prestado',
+      'error_loading_library': 'Error al cargar la biblioteca',
+      'no_books_found': 'No se encontraron libros',
+      'import_error': 'Error al importar la colección',
+      // Profile
+      'backup_downloaded': 'Copia de seguridad descargada con éxito',
+      'reset_failed': 'Error al restablecer',
+      'error_fetching_config': 'Error al obtener la configuración',
+      'hierarchical_shelf_management': 'Gestión de sub-estantes',
+      // External search
+      'no_internet_connection': 'Sin conexión a internet',
+      // Commerce/Sales
+      'commerce_not_enabled': 'El módulo de comercio no está habilitado.',
+      // Book copies
+      'error_updating_copy': 'Error al actualizar el ejemplar',
+      // Web view
+      'error_loading_page': 'Error al cargar la página',
+      // Contact
+      'contact_updated': 'Contacto actualizado con éxito',
+      'error_updating_contact': 'Error al actualizar el contacto',
+      // Generic
+      'generic_error': 'Error',
+      'error_generic': 'Ha ocurrido un error',
+      'error_updating_rating': 'Error al actualizar la valoración',
+      // Configuration tab
+      'configuration': 'Ajustes',
+      'quotes_module': 'Citas del día',
+      'quotes_module_desc': 'Mostrar citas literarias inspiradoras',
+      'gamification_module': 'Gamificación',
+      'collections_module': 'Colecciones',
+      'collections_module_desc':
+          'Organizar libros en colecciones personalizadas',
+      'borrowing_module': 'Préstamos',
+      'commerce_module': 'Comercio',
+      'commerce_module_desc': 'Habilitar funciones de venta de libros',
+      'no_data_available': 'No hay datos disponibles',
     },
     'de': {
       'tag_beta': 'Beta',
@@ -3478,6 +3843,102 @@ class TranslationService {
       'setup_btn_back': 'Zurück',
       'setup_btn_finish': 'Fertigstellen',
       'setup_progress': 'Einrichtung läuft...',
+      // Collection screens
+      'delete_collection_title': 'Sammlung löschen?',
+      'delete_collection_warning':
+          'Sind Sie sicher, dass Sie diese Sammlung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+      'error_deleting_collection': 'Fehler beim Löschen der Sammlung',
+      'import_books': 'Bücher importieren',
+      'selected_file': 'Ausgewählte Datei:',
+      'add_to_library_copies': 'Zu Bibliotheksexemplaren hinzufügen',
+      'importing_books': 'Bücher werden importiert...',
+      'books_imported_count': '{count} Bücher erfolgreich importiert.',
+      'books_skipped_count': '{count} übersprungen.',
+      'error_importing_books': 'Fehler beim Importieren der Bücher',
+      'removed_from_collection': 'Aus Sammlung entfernt',
+      'error_removing_book': 'Fehler beim Entfernen des Buches',
+      'collection_exported': 'Sammlung exportiert!',
+      'error_sharing_collection': 'Fehler beim Teilen der Sammlung',
+      'no_books_yet': 'Noch keine Bücher',
+      'add_books': 'Bücher hinzufügen',
+      'remove_book_title': 'Buch entfernen?',
+      'remove_book_confirm': 'Dieses Buch aus der Sammlung entfernen?',
+      'remove': 'Entfernen',
+      'error_updating_status': 'Fehler beim Aktualisieren des Status',
+      // Import shared list
+      'import_shared_list': 'Geteilte Liste importieren',
+      'select_bibliogenius_file': '.bibliogenius.yml-Datei auswählen',
+      'paste_from_clipboard': 'Aus Zwischenablage einfügen',
+      'import_collection': 'Sammlung importieren',
+      'choose_different_file': 'Andere Datei wählen',
+      'importing_collection': 'Sammlung wird importiert...',
+      'clipboard_empty': 'Zwischenablage ist leer',
+      'error_reading_file': 'Fehler beim Lesen der Datei',
+      'error_reading_clipboard': 'Fehler beim Lesen der Zwischenablage',
+      // Import curated list
+      'import_list_title': '„{title}" importieren?',
+      'import_list_desc':
+          'Dies erstellt eine neue Sammlung mit {count} Büchern.',
+      'imported_books_status': 'Status der importierten Bücher:',
+      'in_my_library': 'In meiner Bibliothek',
+      'books_added_to_wishlist': 'Bücher werden Ihrer Wunschliste hinzugefügt.',
+      'copies_created_automatically': 'Exemplare werden automatisch erstellt.',
+      'discover_collections': 'Sammlungen entdecken',
+      'collection_empty_state_desc':
+          'Sammeln Sie hier alle Bücher einer Serie und verfolgen Sie die, die Ihnen fehlen.',
+      'import_list': 'Liste importieren',
+      'no_lists_in_category': 'Keine Listen in dieser Kategorie',
+      'collection_created': 'Sammlung „{title}" mit {count} Büchern erstellt.',
+      'unexpected_error': 'Unerwarteter Fehler',
+      // Book list
+      'shelf_order_saved': 'Regalreihenfolge gespeichert!',
+      'error_saving_order': 'Fehler beim Speichern der Reihenfolge',
+      'sorted_by_author':
+          'Nach Autor A-Z sortiert. Klicken Sie auf ✓ zum Speichern.',
+      // Statistics
+      'add_books_for_stats':
+          'Fügen Sie Bücher hinzu, um Ihre Lesestatistiken zu sehen',
+      'no_author_data': 'Keine Autorendaten verfügbar',
+      // Peer/Network
+      'library_synced': 'Bibliothek erfolgreich synchronisiert',
+      'sync_failed': 'Synchronisierung fehlgeschlagen',
+      'sync_library': 'Bibliothek synchronisieren',
+      'borrow': 'Ausleihen',
+      'error_loading_library': 'Fehler beim Laden der Bibliothek',
+      'no_books_found': 'Keine Bücher gefunden',
+      'import_error': 'Fehler beim Importieren der Sammlung',
+      // Profile
+      'backup_downloaded': 'Backup erfolgreich heruntergeladen',
+      'reset_failed': 'Zurücksetzen fehlgeschlagen',
+      'error_fetching_config': 'Fehler beim Abrufen der Konfiguration',
+      'hierarchical_shelf_management': 'Hierarchische Regalverwaltung',
+      // External search
+      'no_internet_connection': 'Keine Internetverbindung',
+      // Commerce/Sales
+      'commerce_not_enabled': 'Das Handelsmodul ist nicht aktiviert.',
+      // Book copies
+      'error_updating_copy': 'Fehler beim Aktualisieren des Exemplars',
+      // Web view
+      'error_loading_page': 'Fehler beim Laden der Seite',
+      // Contact
+      'contact_updated': 'Kontakt erfolgreich aktualisiert',
+      'error_updating_contact': 'Fehler beim Aktualisieren des Kontakts',
+      // Generic
+      'generic_error': 'Fehler',
+      'error_generic': 'Ein Fehler ist aufgetreten',
+      'error_updating_rating': 'Fehler beim Aktualisieren der Bewertung',
+      // Configuration tab
+      'configuration': 'Einstellungen',
+      'quotes_module': 'Tägliche Zitate',
+      'quotes_module_desc': 'Inspirierende literarische Zitate anzeigen',
+      'gamification_module': 'Gamifizierung',
+      'collections_module': 'Sammlungen',
+      'collections_module_desc':
+          'Bücher in benutzerdefinierten Sammlungen organisieren',
+      'borrowing_module': 'Ausleihen',
+      'commerce_module': 'Handel',
+      'commerce_module_desc': 'Buchverkaufsfunktionen aktivieren',
+      'no_data_available': 'Keine Daten verfügbar',
     },
   };
 

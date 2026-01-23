@@ -43,14 +43,6 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: Text(TranslationService.translate(context, 'nav_dashboard')),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/dashboard');
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.book),
             title: Text(
               TranslationService.translate(context, 'nav_my_library'),
@@ -108,13 +100,11 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.insights),
-            title: Text(
-              TranslationService.translate(context, 'nav_statistics'),
-            ),
+            leading: const Icon(Icons.dashboard),
+            title: Text(TranslationService.translate(context, 'nav_dashboard')),
             onTap: () {
               Navigator.pop(context);
-              context.go('/statistics');
+              context.go('/dashboard');
             },
           ),
           ListTile(

@@ -114,6 +114,23 @@ class _BookListScreenState extends State<BookListScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final state = GoRouterState.of(context);
+    final newTag = state.uri.queryParameters['tag'];
+
+    // If tag changed (including check for null which means cleared), update filter
+    if (newTag != _tagFilter) {
+      if (mounted) {
+        setState(() {
+          _tagFilter = newTag;
+          _filterBooks();
+        });
+      }
+    }
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Refresh books when app comes back to foreground
     if (state == AppLifecycleState.resumed) {
@@ -1205,97 +1222,106 @@ class _BookListScreenState extends State<BookListScreen>
         onRefresh: _fetchBooks,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.menu_book_rounded,
-                      size: 80,
-                      color: Theme.of(context).disabledColor.withOpacity(0.5),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      TranslationService.translate(context, 'welcome_subtitle'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withOpacity(0.8),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final isbn = await context.push<String>('/scan');
-                        if (isbn != null && mounted) {
-                          final result = await context.push(
-                            '/books/add',
-                            extra: {'isbn': isbn},
-                          );
-                          if (result == true && mounted) {
-                            _fetchBooks(); // Refresh list after book was added
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.qr_code_scanner),
-                      label: Text(
-                        TranslationService.translate(
-                          context,
-                          'scan_first_book',
-                        ),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final result = await context.push('/search/external');
-                        if (result == true) {
-                          _fetchBooks();
-                        }
-                      },
-                      icon: const Icon(Icons.travel_explore),
-                      label: Text(
-                        TranslationService.translate(
-                          context,
-                          'btn_search_book_online',
-                        ),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    size: 64,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Text(
+                  TranslationService.translate(context, 'welcome_title'),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  TranslationService.translate(context, 'welcome_subtitle'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final isbn = await context.push<String>('/scan');
+                    if (isbn != null && mounted) {
+                      final result = await context.push(
+                        '/books/add',
+                        extra: {'isbn': isbn},
+                      );
+                      if (result == true && mounted) {
+                        _fetchBooks(); // Refresh list after book was added
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: Text(
+                    TranslationService.translate(context, 'scan_first_book'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final result = await context.push('/search/external');
+                    if (result == true) {
+                      _fetchBooks();
+                    }
+                  },
+                  icon: const Icon(Icons.travel_explore),
+                  label: Text(
+                    TranslationService.translate(
+                      context,
+                      'btn_search_book_online',
+                    ),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -1425,14 +1451,22 @@ class _BookListScreenState extends State<BookListScreen>
       });
       // Don't call _fetchBooks() here - it would reload with global order
       // and lose the tag-filtered order we just saved
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Shelf order saved!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            TranslationService.translate(context, 'shelf_order_saved'),
+          ),
+        ),
+      );
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving order: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${TranslationService.translate(context, 'error_saving_order')}: $e',
+          ),
+        ),
+      );
     }
   }
 
@@ -1448,9 +1482,11 @@ class _BookListScreenState extends State<BookListScreen>
       });
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Sorted by author A→Z. Click ✓ to save.'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(
+          TranslationService.translate(context, 'sorted_by_author'),
+        ),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

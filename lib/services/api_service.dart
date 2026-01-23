@@ -1376,6 +1376,7 @@ class ApiService {
     int? readingGoalYearly,
     int? readingGoalMonthly,
     String? achievementsStyle,
+    Map<String, dynamic>? fallbackPreferences,
   }) async {
     final data = <String, dynamic>{};
     if (readingGoalYearly != null)
@@ -1384,6 +1385,8 @@ class ApiService {
       data['reading_goal_monthly'] = readingGoalMonthly;
     if (achievementsStyle != null)
       data['achievements_style'] = achievementsStyle;
+    if (fallbackPreferences != null)
+      data['fallback_preferences'] = fallbackPreferences;
 
     if (useFfi) {
       // In FFI mode, store in SharedPreferences
@@ -1396,6 +1399,12 @@ class ApiService {
       }
       if (achievementsStyle != null) {
         await prefs.setString('ffi_achievements_style', achievementsStyle);
+      }
+      if (fallbackPreferences != null) {
+        await prefs.setString(
+          'ffi_fallback_preferences',
+          jsonEncode(fallbackPreferences),
+        );
       }
       return Response(
         requestOptions: RequestOptions(path: '/api/user/config'),

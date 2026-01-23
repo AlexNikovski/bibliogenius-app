@@ -73,7 +73,7 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error reading file: $e')));
+        ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error_reading_file')}: $e')));
       }
     }
   }
@@ -87,14 +87,14 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Clipboard is empty')));
+          ).showSnackBar(SnackBar(content: Text(TranslationService.translate(context, 'clipboard_empty'))));
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error reading clipboard: $e')));
+        ).showSnackBar(SnackBar(content: Text('${TranslationService.translate(context, 'error_reading_clipboard')}: $e')));
       }
     }
   }
@@ -117,10 +117,16 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
       );
 
       if (mounted) {
-        String message =
-            'Collection "${result.collection?.name ?? "Unknown"}" created with ${result.successCount} books.';
+        String message = TranslationService.translate(
+          context,
+          'collection_created',
+          params: {
+            'title': result.collection?.name ?? "Unknown",
+            'count': result.successCount.toString(),
+          },
+        );
         if (result.errorCount > 0) {
-          message += ' ${result.errorCount} could not be imported.';
+          message += ' ${TranslationService.translate(context, 'books_skipped_count', params: {'count': result.errorCount.toString()})}';
         }
 
         ScaffoldMessenger.of(
@@ -133,7 +139,7 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Import error: $e'),
+            content: Text('${TranslationService.translate(context, 'import_error')}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -150,15 +156,15 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Import Shared List')),
+      appBar: AppBar(title: Text(TranslationService.translate(context, 'import_shared_list'))),
       body: _isImporting
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Importing collection...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(TranslationService.translate(context, 'importing_collection')),
                 ],
               ),
             )
@@ -182,7 +188,7 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
                     OutlinedButton.icon(
                       onPressed: _pickFile,
                       icon: const Icon(Icons.file_open),
-                      label: const Text('Select .bibliogenius.yml file'),
+                      label: Text(TranslationService.translate(context, 'select_bibliogenius_file')),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.all(16),
                       ),
@@ -194,7 +200,7 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
                     OutlinedButton.icon(
                       onPressed: _pasteFromClipboard,
                       icon: const Icon(Icons.paste),
-                      label: const Text('Paste from clipboard'),
+                      label: Text(TranslationService.translate(context, 'paste_from_clipboard')),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.all(16),
                       ),
@@ -379,7 +385,7 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
                       FilledButton.icon(
                         onPressed: _importCollection,
                         icon: const Icon(Icons.download),
-                        label: const Text('Import Collection'),
+                        label: Text(TranslationService.translate(context, 'import_collection')),
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.all(16),
                         ),
@@ -396,7 +402,7 @@ class _ImportSharedListScreenState extends State<ImportSharedListScreen> {
                             _validationError = null;
                           });
                         },
-                        child: const Text('Choose a different file'),
+                        child: Text(TranslationService.translate(context, 'choose_different_file')),
                       ),
                     ],
                   ],

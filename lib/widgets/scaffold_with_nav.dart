@@ -68,13 +68,6 @@ class ScaffoldWithNav extends StatelessWidget {
   List<_NavItem> _buildNavItems(BuildContext context) {
     return [
       _NavItem(
-        route: '/dashboard',
-        destination: NavigationRailDestination(
-          icon: const Icon(Icons.dashboard),
-          label: Text(TranslationService.translate(context, 'dashboard')),
-        ),
-      ),
-      _NavItem(
         route: '/books',
         matchPrefixes: ['/books', '/shelves', '/collections'],
         destination: NavigationRailDestination(
@@ -82,7 +75,6 @@ class ScaffoldWithNav extends StatelessWidget {
           label: Text(TranslationService.translate(context, 'library')),
         ),
       ),
-
       _NavItem(
         route: '/network',
         matchPrefixes: ['/network', '/contacts', '/peers', '/requests'],
@@ -99,10 +91,11 @@ class ScaffoldWithNav extends StatelessWidget {
         ),
       ),
       _NavItem(
-        route: '/statistics',
+        route: '/dashboard',
+        matchPrefixes: ['/dashboard', '/statistics'],
         destination: NavigationRailDestination(
-          icon: const Icon(Icons.insights),
-          label: Text(TranslationService.translate(context, 'nav_statistics')),
+          icon: const Icon(Icons.dashboard),
+          label: Text(TranslationService.translate(context, 'dashboard')),
         ),
       ),
       _NavItem(
