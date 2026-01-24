@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/tag.dart';
 import '../services/api_service.dart';
 import '../widgets/genie_app_bar.dart';
+import '../widgets/contextual_help_sheet.dart';
 import '../services/translation_service.dart';
 import '../theme/app_design.dart';
 import '../providers/theme_provider.dart';
@@ -163,7 +164,7 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
             (TranslationService.translate(context, 'shelves') ?? 'Shelves'),
         leading: _currentParent != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
                 onPressed: _goBack,
               )
             : (isMobile
@@ -174,6 +175,26 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
                   : null),
         automaticallyImplyLeading: false,
         showQuickActions: true,
+        actions: [
+          ContextualHelpIconButton(
+            titleKey: 'help_ctx_shelves_title',
+            contentKey: 'help_ctx_shelves_content',
+            tips: const [
+              HelpTip(
+                icon: Icons.add_circle,
+                color: Colors.blue,
+                titleKey: 'help_ctx_shelves_tip_create',
+                descriptionKey: 'help_ctx_shelves_tip_create_desc',
+              ),
+              HelpTip(
+                icon: Icons.book,
+                color: Colors.green,
+                titleKey: 'help_ctx_shelves_tip_assign',
+                descriptionKey: 'help_ctx_shelves_tip_assign_desc',
+              ),
+            ],
+          ),
+        ],
         contextualQuickActions: [
           ListTile(
             leading: const Icon(Icons.add_circle_outline),
@@ -184,6 +205,18 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
             onTap: () {
               Navigator.pop(context); // Close Quick Actions sheet
               _showCreateShelfDialog();
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.edit_note),
+            title: Text(
+              TranslationService.translate(context, 'manage_shelves') ??
+                  'Manage Shelves',
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/shelves-management');
             },
           ),
         ],

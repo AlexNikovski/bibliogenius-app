@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/genie_app_bar.dart';
+import '../widgets/contextual_help_sheet.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
 import '../models/book.dart';
@@ -356,6 +357,26 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
         automaticallyImplyLeading: false,
         showQuickActions: false,
+        actions: [
+          ContextualHelpIconButton(
+            titleKey: 'help_ctx_dashboard_title',
+            contentKey: 'help_ctx_dashboard_content',
+            tips: const [
+              HelpTip(
+                icon: Icons.insights,
+                color: Colors.blue,
+                titleKey: 'help_ctx_dashboard_tip_stats',
+                descriptionKey: 'help_ctx_dashboard_tip_stats_desc',
+              ),
+              HelpTip(
+                icon: Icons.menu_book,
+                color: Colors.green,
+                titleKey: 'help_ctx_dashboard_tip_reading',
+                descriptionKey: 'help_ctx_dashboard_tip_reading_desc',
+              ),
+            ],
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -919,13 +940,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
           // Search Configuration
           _buildSearchConfiguration(context),
-
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 24),
-
-          // Integrations
-          _buildMcpIntegrationSection(),
 
           const SizedBox(height: 24),
           const Divider(),
@@ -1563,7 +1577,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withAlpha(25),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 40, color: color),
@@ -1581,35 +1595,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMcpIntegrationSection() {
-    return Consumer<ThemeProvider>(
-      builder: (context, theme, _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              TranslationService.translate(context, 'integrations') ??
-                  'Integrations',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: SwitchListTile(
-                title: const Text('MCP Server'),
-                subtitle: const Text(
-                  'Enable Model Context Protocol integration for Claude Desktop',
-                ),
-                secondary: const Icon(Icons.integration_instructions),
-                value: theme.mcpEnabled,
-                onChanged: (val) => theme.setMcpEnabled(val),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 

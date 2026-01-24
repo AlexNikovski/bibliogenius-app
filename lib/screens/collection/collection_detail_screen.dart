@@ -285,10 +285,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
       appBar: GenieAppBar(
         title: widget.collection.name,
         transparent: true, // 🌟 Transparent AppBar
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-            onPressed: () async {
+        showQuickActions: false,
+        contextualQuickActions: [
+          ListTile(
+            leading: const Icon(Icons.qr_code_scanner, color: Colors.orange),
+            title: Text(
+              TranslationService.translate(context, 'scan_into_collection') ??
+                  'Scan into Collection',
+            ),
+            onTap: () async {
+              Navigator.pop(context);
               await context.push(
                 '/scan',
                 extra: {
@@ -299,27 +305,43 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
               );
               _refreshBooks();
             },
-            tooltip: TranslationService.translate(
-              context,
-              'scan_into_collection',
+          ),
+          ListTile(
+            leading: const Icon(Icons.upload_file, color: Colors.blue),
+            title: Text(TranslationService.translate(context, 'import_books')),
+            onTap: () {
+              Navigator.pop(context);
+              _importBooks();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.share, color: Colors.green),
+            title: Text(
+              TranslationService.translate(context, 'action_share') ?? 'Share',
             ),
+            onTap: () {
+              Navigator.pop(context);
+              _shareCollection();
+            },
           ),
-          IconButton(
-            icon: const Icon(Icons.upload_file, color: Colors.white),
-            onPressed: _importBooks,
-            tooltip: 'Import Books',
-          ),
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
-            onPressed: _shareCollection,
-            tooltip: TranslationService.translate(context, 'action_share'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.white),
-            onPressed: _deleteCollection,
-            tooltip: 'Delete Collection',
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: Text(
+              TranslationService.translate(
+                    context,
+                    'delete_collection_title',
+                  ) ??
+                  'Delete Collection',
+              style: const TextStyle(color: Colors.red),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              _deleteCollection();
+            },
           ),
         ],
+        actions: [],
       ),
       body: FutureBuilder<List<CollectionBook>>(
         future: _booksFuture,

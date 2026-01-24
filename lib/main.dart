@@ -42,6 +42,7 @@ import 'screens/onboarding_tour_screen.dart';
 import 'screens/network_screen.dart';
 import 'screens/library_screen.dart';
 import 'screens/feedback_screen.dart';
+import 'screens/settings_screen.dart';
 
 import 'screens/link_device_screen.dart';
 import 'screens/external_search_screen.dart';
@@ -560,6 +561,10 @@ class _AppRouterState extends State<AppRouter> with WidgetsBindingObserver {
             GoRoute(
               path: '/statistics',
               builder: (context, state) => const StatisticsScreen(),
+            ),
+            GoRoute(
+              path: '/settings',
+              builder: (context, state) => const SettingsScreen(),
             ),
             GoRoute(
               path: '/help',

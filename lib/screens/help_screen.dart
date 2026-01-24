@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/genie_app_bar.dart';
@@ -21,60 +22,115 @@ class _HelpScreenState extends State<HelpScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final collectionsEnabled = Provider.of<ThemeProvider>(
-      context,
-    ).collectionsEnabled;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final collectionsEnabled = themeProvider.collectionsEnabled;
+    final audioEnabled = themeProvider.audioEnabled;
 
     _topics = [
+      // Getting Started
       _HelpTopic(
         icon: Icons.add_circle_outline,
         titleKey: 'help_topic_add_book',
         descKey: 'help_desc_add_book',
         gradient: AppDesign.successGradient,
-      ),
-      _HelpTopic(
-        icon: Icons.import_contacts,
-        titleKey: 'help_topic_lend',
-        descKey: 'help_desc_lend',
-        gradient: AppDesign.oceanGradient,
-      ),
-      _HelpTopic(
-        icon: Icons.qr_code,
-        titleKey: 'help_topic_connect',
-        descKey: 'help_desc_connect',
-        gradient: AppDesign.warningGradient,
-      ),
-      _HelpTopic(
-        icon: Icons.people,
-        titleKey: 'help_topic_contacts',
-        descKey: 'help_desc_contacts',
-        gradient: AppDesign.primaryGradient,
-      ),
-      _HelpTopic(
-        icon: Icons.cloud_sync,
-        titleKey: 'help_topic_network',
-        descKey: 'help_desc_network_p2p', // Updated for P2P roadmap
-        gradient: AppDesign.accentGradient,
-      ),
-      _HelpTopic(
-        icon: Icons.swap_horiz,
-        titleKey: 'help_topic_requests',
-        descKey: 'help_desc_requests_p2p', // Updated for P2P roadmap
-        gradient: AppDesign.darkGradient,
+        ctaKey: 'help_cta_go_to_library',
+        ctaRoute: '/books',
       ),
       _HelpTopic(
         icon: Icons.sort,
         titleKey: 'help_topic_organize_shelf',
         descKey: 'help_desc_organize_shelf',
-        gradient: AppDesign.successGradient,
+        gradient: AppDesign.warningGradient,
+        ctaKey: 'help_cta_manage_shelves',
+        ctaRoute: '/shelves',
       ),
+      _HelpTopic(
+        icon: Icons.auto_stories,
+        titleKey: 'help_topic_reading_progress',
+        descKey: 'help_desc_reading_progress',
+        gradient: AppDesign.accentGradient,
+        ctaKey: 'help_cta_go_to_library',
+        ctaRoute: '/books',
+      ),
+      // Discovery
+      _HelpTopic(
+        icon: Icons.search,
+        titleKey: 'help_topic_external_search',
+        descKey: 'help_desc_external_search',
+        gradient: AppDesign.oceanGradient,
+        ctaKey: 'help_cta_search_catalogs',
+        ctaRoute: '/external-search',
+      ),
+      // Social Features
+      _HelpTopic(
+        icon: Icons.qr_code,
+        titleKey: 'help_topic_connect',
+        descKey: 'help_desc_connect',
+        gradient: AppDesign.primaryGradient,
+        ctaKey: 'help_cta_connect_library',
+        ctaRoute: '/p2p',
+      ),
+      _HelpTopic(
+        icon: Icons.people,
+        titleKey: 'help_topic_contacts',
+        descKey: 'help_desc_contacts',
+        gradient: AppDesign.successGradient,
+        ctaKey: 'help_cta_go_to_network',
+        ctaRoute: '/network',
+      ),
+      _HelpTopic(
+        icon: Icons.cloud_sync,
+        titleKey: 'help_topic_network',
+        descKey: 'help_desc_network',
+        gradient: AppDesign.darkGradient,
+        ctaKey: 'help_cta_explore_network',
+        ctaRoute: '/network',
+      ),
+      // Lending & Borrowing
+      _HelpTopic(
+        icon: Icons.import_contacts,
+        titleKey: 'help_topic_lend',
+        descKey: 'help_desc_lend',
+        gradient: AppDesign.oceanGradient,
+        ctaKey: 'help_cta_go_to_library',
+        ctaRoute: '/books',
+      ),
+      _HelpTopic(
+        icon: Icons.swap_horiz,
+        titleKey: 'help_topic_requests',
+        descKey: 'help_desc_requests',
+        gradient: AppDesign.warningGradient,
+        ctaKey: 'help_cta_view_requests',
+        ctaRoute: '/requests',
+      ),
+      // Advanced (conditional)
       if (collectionsEnabled)
         _HelpTopic(
           icon: Icons.inventory_2_outlined,
           titleKey: 'help_topic_collections',
           descKey: 'help_desc_collections',
           gradient: AppDesign.primaryGradient,
+          ctaKey: 'help_cta_go_to_collections',
+          ctaRoute: '/collections',
         ),
+      if (audioEnabled)
+        _HelpTopic(
+          icon: Icons.headphones,
+          titleKey: 'help_topic_audio',
+          descKey: 'help_desc_audio',
+          gradient: AppDesign.accentGradient,
+          ctaKey: 'help_cta_go_to_profile',
+          ctaRoute: '/profile',
+        ),
+      // Data & Privacy
+      _HelpTopic(
+        icon: Icons.shield_outlined,
+        titleKey: 'help_topic_data_privacy',
+        descKey: 'help_desc_data_privacy',
+        gradient: AppDesign.darkGradient,
+        ctaKey: 'help_cta_go_to_profile',
+        ctaRoute: '/profile',
+      ),
     ];
   }
 
@@ -246,20 +302,52 @@ class _HelpScreenState extends State<HelpScreen> {
               secondChild: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(AppDesign.radiusSmall),
-                  ),
-                  child: Text(
-                    TranslationService.translate(context, topic.descKey),
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(
+                          AppDesign.radiusSmall,
+                        ),
+                      ),
+                      child: Text(
+                        TranslationService.translate(context, topic.descKey),
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
                     ),
-                  ),
+                    // Call to Action button
+                    if (topic.ctaKey != null && topic.ctaRoute != null) ...[
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => context.push(topic.ctaRoute!),
+                          icon: const Icon(Icons.arrow_forward, size: 18),
+                          label: Text(
+                            TranslationService.translate(
+                                  context,
+                                  topic.ctaKey!,
+                                ) ??
+                                '',
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: topic.gradient.colors.first,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               crossFadeState: isExpanded
@@ -274,6 +362,9 @@ class _HelpScreenState extends State<HelpScreen> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
+    // Check if dev tools should be shown (via .env flag)
+    final showDevTools = dotenv.env['SHOW_DEV_TOOLS']?.toLowerCase() == 'true';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -286,13 +377,14 @@ class _HelpScreenState extends State<HelpScreen> {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
+        // First row: Quick Tour + Contact Us
         Row(
           children: [
             Expanded(
               child: _buildActionCard(
                 context,
-                icon: Icons.school,
-                label: TranslationService.translate(context, 'menu_tutorial'),
+                icon: Icons.explore,
+                label: TranslationService.translate(context, 'help_quick_tour'),
                 gradient: AppDesign.primaryGradient,
                 onTap: () => context.push('/onboarding'),
               ),
@@ -319,33 +411,45 @@ class _HelpScreenState extends State<HelpScreen> {
           ],
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
 
-        // Tests Section
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Text(
-                '🧪 ${TranslationService.translate(context, 'help_tests_title')}',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-            _buildActionCard(
-              context,
-              icon: Icons.animation,
-              label: TranslationService.translate(
-                context,
-                'help_animation_tests',
-              ),
-              gradient: AppDesign.accentGradient,
-              onTap: () => context.push('/animations-test'),
-            ),
-          ],
+        // Second row: Report a Problem
+        _buildActionCard(
+          context,
+          icon: Icons.bug_report,
+          label: TranslationService.translate(context, 'help_report_problem'),
+          gradient: AppDesign.warningGradient,
+          onTap: () => context.push('/feedback'),
         ),
+
+        // Developer Tools Section (only shown if SHOW_DEV_TOOLS=true in .env)
+        if (showDevTools) ...[
+          const SizedBox(height: 24),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: Text(
+                  TranslationService.translate(context, 'help_tests_title'),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              _buildActionCard(
+                context,
+                icon: Icons.animation,
+                label: TranslationService.translate(
+                  context,
+                  'help_animation_tests',
+                ),
+                gradient: AppDesign.accentGradient,
+                onTap: () => context.push('/animations-test'),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -390,11 +494,15 @@ class _HelpTopic {
   final String titleKey;
   final String descKey;
   final LinearGradient gradient;
+  final String? ctaKey; // Translation key for CTA button
+  final String? ctaRoute; // Route to navigate to
 
   const _HelpTopic({
     required this.icon,
     required this.titleKey,
     required this.descKey,
     required this.gradient,
+    this.ctaKey,
+    this.ctaRoute,
   });
 }

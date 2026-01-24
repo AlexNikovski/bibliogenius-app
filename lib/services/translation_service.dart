@@ -252,6 +252,7 @@ class TranslationService {
       'status_offline': 'Offline',
       'status_inactive': 'Inactive',
       'status_label': 'Status',
+      'status': 'Status',
       // Copy Availability
       'availability_label': 'Availability',
       'availability_available': 'Available',
@@ -446,6 +447,9 @@ class TranslationService {
       'date_select_option_pick': 'Pick a date',
       'date_select_option_none': 'No date',
       'filter_all': 'All',
+      'filter_all_books': 'All my books',
+      'status_uncategorized': 'Uncategorized (Owned)',
+      'include_borrowed_books': 'Include borrowed books',
       'filter_by_tag': 'Filter by Shelf',
       'filter_by_source': 'Source',
       'all_sources': 'All Sources',
@@ -521,6 +525,7 @@ class TranslationService {
       'nav_requests': 'Borrow Requests',
       'nav_profile': 'My Profile',
       'nav_statistics': 'Statistics',
+      'nav_settings': 'Settings',
       // Contacts Screen
       'delete_contact_title': 'Delete Contact',
       'delete_contact_confirm': 'Are you sure you want to delete this contact?',
@@ -879,24 +884,126 @@ class TranslationService {
       'help_topic_network': 'How to explore the network?',
       'help_desc_network':
           'The "Network" section lets you discover and browse catalogs of libraries you\'ve added. You can request to borrow books from there.',
-      'help_desc_network_p2p':
-          'Currently, you can connect with local libraries via QR code. In V4, we\'re building a true peer-to-peer network with NAT traversal, so you can connect with friends anywhere in the world without needing technical setup!',
       'help_topic_requests': 'How to manage requests?',
       'help_desc_requests':
           'In "Requests", you can see all incoming borrow requests (people wanting your books) and outgoing ones (your requests to others). Accept, decline, or mark as returned.',
-      'help_desc_requests_p2p':
-          'In "Requests", manage incoming borrow requests and your outgoing ones. Currently works on local network. With V4\'s P2P upgrade, you\'ll be able to lend and borrow with trusted friends globally!',
       'help_topic_organize_shelf': 'How to organize my shelves?',
       'help_desc_organize_shelf':
           '1. Create thematic shelves for your books (e.g., "SciFi", "Favorites").\n2. In your Library, tap a shelf to filter.\n3. Tap the Sort icon (≡) to enter reorder mode.\n4. Drag books to your preferred order, or tap A→Z for auto-sort by author.\n5. Tap ✓ to save your custom arrangement!',
+      'help_topic_collections': 'How to use Collections?',
+      'help_desc_collections':
+          'Collections let you group books into custom lists (sagas, themes, reading lists). Create a collection from the Collections tab, then add books from your library or import existing lists.',
+      'help_topic_external_search': 'How to search external catalogs?',
+      'help_desc_external_search':
+          'Use the search icon to find books in external catalogs like BNF (French National Library), OpenLibrary, and Inventaire. When you find a book, tap it to add it to your library with all its metadata.',
+      'help_topic_reading_progress': 'How to track reading progress?',
+      'help_desc_reading_progress':
+          'Open a book and tap "Mark as Reading" to start tracking. Update your progress as you read. When finished, mark it as "Read" to earn XP and unlock achievements!',
+      'help_topic_audio': 'How to use audio features?',
+      'help_desc_audio':
+          'The Audio module lets you manage audiobooks and track listening progress. Enable it in your profile settings, then add audiobook versions to any book in your library.',
+      'help_topic_data_privacy': 'Where is my data stored?',
+      'help_desc_data_privacy':
+          'Your library data is stored locally on your device. When you connect with friends, only the books you choose to share are visible to them. You can export a backup anytime from your Profile.',
       'help_welcome_title': 'How can we help?',
       'help_welcome_subtitle':
           'Find answers to common questions about using BiblioGenius',
       'help_faq_title': 'Frequently Asked Questions',
       'help_quick_actions': 'Quick Actions',
       'help_contact_us': 'Contact Us',
-      'help_tests_title': 'Tests',
+      'help_report_problem': 'Report a Problem',
+      'help_quick_tour': 'Quick Tour',
+      'help_tests_title': 'Developer Tools',
       'help_animation_tests': 'Animation Tests',
+      // Help CTAs
+      'help_cta_go_to_library': 'Go to Library',
+      'help_cta_manage_shelves': 'Manage Shelves',
+      'help_cta_search_catalogs': 'Search Catalogs',
+      'help_cta_connect_library': 'Connect Library',
+      'help_cta_go_to_network': 'Go to Network',
+      'help_cta_explore_network': 'Explore Network',
+      'help_cta_view_requests': 'View Requests',
+      'help_cta_go_to_collections': 'Go to Collections',
+      'help_cta_go_to_profile': 'Go to Profile',
+
+      // Contextual Help
+      'help_tips_title': 'Tips',
+      'help_ctx_network_title': 'Network Help',
+      'help_ctx_network_content':
+          'The Network screen lets you connect with friends and other libraries. You can browse their catalogs, request to borrow books, and share your own collection.',
+      'help_ctx_network_tip_add': 'Add a contact',
+      'help_ctx_network_tip_add_desc':
+          'Tap the + button to add a new contact or scan a QR code',
+      'help_ctx_network_tip_browse': 'Browse catalogs',
+      'help_ctx_network_tip_browse_desc':
+          'Tap on a contact to see their shared books',
+      'help_ctx_network_tip_request': 'Request a book',
+      'help_ctx_network_tip_request_desc':
+          'Find a book and tap "Request" to ask for a loan',
+
+      'help_ctx_library_title': 'Library Help',
+      'help_ctx_library_content':
+          'Your library contains all your books. You can organize them by shelves, search, filter, and manage each book\'s details and copies.',
+      'help_ctx_library_tip_add': 'Add a book',
+      'help_ctx_library_tip_add_desc':
+          'Tap + to add manually, scan a barcode, or search online',
+      'help_ctx_library_tip_shelves': 'Use shelves',
+      'help_ctx_library_tip_shelves_desc':
+          'Create shelves to organize books by genre, location, etc.',
+      'help_ctx_library_tip_search': 'Search & filter',
+      'help_ctx_library_tip_search_desc':
+          'Use the search bar or filter by reading status',
+
+      'help_ctx_settings_title': 'Settings Help',
+      'help_ctx_settings_content':
+          'Configure your app experience here. Enable or disable modules, manage security, set up search sources, and export your data.',
+      'help_ctx_settings_tip_modules': 'Toggle modules',
+      'help_ctx_settings_tip_modules_desc': 'Enable only the features you need',
+      'help_ctx_settings_tip_backup': 'Backup your data',
+      'help_ctx_settings_tip_backup_desc':
+          'Export regularly to keep your library safe',
+      'help_ctx_settings_tip_sources': 'Search sources',
+      'help_ctx_settings_tip_sources_desc':
+          'Choose which catalogs to search for book metadata',
+
+      'help_ctx_dashboard_title': 'Dashboard Help',
+      'help_ctx_dashboard_content':
+          'The dashboard gives you an overview of your library activity. See your reading progress, recent books, and quick stats.',
+      'help_ctx_dashboard_tip_stats': 'View statistics',
+      'help_ctx_dashboard_tip_stats_desc':
+          'Tap the Statistics tab for detailed insights',
+      'help_ctx_dashboard_tip_reading': 'Reading list',
+      'help_ctx_dashboard_tip_reading_desc':
+          'Books you\'re currently reading appear here',
+
+      'help_ctx_profile_title': 'Profile Help',
+      'help_ctx_profile_content':
+          'Your profile shows your reading achievements and preferences. Customize your display name, avatar, and theme.',
+      'help_ctx_profile_tip_theme': 'Change theme',
+      'help_ctx_profile_tip_theme_desc':
+          'Tap on a theme to personalize your experience',
+      'help_ctx_profile_tip_achievements': 'View achievements',
+      'help_ctx_profile_tip_achievements_desc':
+          'Track your reading milestones and badges',
+
+      'help_ctx_shelves_title': 'Shelves Help',
+      'help_ctx_shelves_content':
+          'Shelves help you organize your books into categories. Create custom shelves like "To Read", "Favorites", or by genre.',
+      'help_ctx_shelves_tip_create': 'Create a shelf',
+      'help_ctx_shelves_tip_create_desc': 'Tap + to add a new shelf',
+      'help_ctx_shelves_tip_assign': 'Assign books',
+      'help_ctx_shelves_tip_assign_desc':
+          'Edit a book to assign it to one or more shelves',
+
+      'help_ctx_collections_title': 'Collections Help',
+      'help_ctx_collections_content':
+          'Collections let you group related books together, like book series, reading challenges, or thematic lists.',
+      'help_ctx_collections_tip_create': 'Create a collection',
+      'help_ctx_collections_tip_create_desc': 'Tap + to start a new collection',
+      'help_ctx_collections_tip_order': 'Order books',
+      'help_ctx_collections_tip_order_desc':
+          'Drag books to arrange them in your preferred order',
+
       'anim_gamification_title': 'Gamification Animations',
       'anim_tap_to_test': 'Tap any button to test the animation',
       'anim_achievement_pop': 'Achievement Pop',
@@ -1059,8 +1166,6 @@ class TranslationService {
       'no_password_set': 'No password set',
       'first_time_password': 'Set a password to protect your data',
       'manage_login_credentials': 'Manage your login credentials',
-      // Integrations / MCP
-      'integrations': 'Integrations',
       'mcp_integration': 'AI Assistants (MCP)',
       'mcp_description':
           'Connect your library to Claude, Cursor, Continue, and other AI assistants',
@@ -1205,7 +1310,8 @@ class TranslationService {
       'source_openlibrary_desc': 'Great coverage, especially for English books',
       'source_inventaire_desc': 'Primary collaborative open database',
       'source_bnf_desc': 'National Library of France (French books)',
-      'source_google_desc': 'Excellent for covers and modern metadata',
+      'source_google_desc':
+          'International book database with a strong focus on metadata and covers',
       'min_one_source_error': 'At least one search source is required',
       // Collection screens
       'delete_collection_title': 'Delete Collection?',
@@ -1377,7 +1483,6 @@ class TranslationService {
       'first_time_password':
           'Définissez un mot de passe pour protéger vos données',
       // Intégrations / MCP
-      'integrations': 'Intégrations',
       'mcp_integration': 'Assistants IA (MCP)',
       'mcp_description':
           'Connectez votre bibliothèque à Claude, Cursor, Continue et autres assistants IA',
@@ -1426,6 +1531,7 @@ class TranslationService {
           'Inclure les livres empruntés dans la vue bibliothèque',
       'data_management': 'Gestion des données',
       'manage_shelves': 'Gérer les étagères',
+      'create': 'Créer',
       'create_shelf': 'Créer une étagère',
       'edit_shelf': 'Modifier l\'étagère',
       'delete_shelf': 'Supprimer l\'étagère',
@@ -1653,6 +1759,7 @@ class TranslationService {
       'action_scan_barcode': 'Scanner code-barres',
       'action_search_online': 'Recherche en ligne',
       'action_checkout_book': 'Emprunter un livre',
+      'action_share': 'Partager',
       'action_search_remote': 'Recherche distante',
       'action_change_view': 'Changer de vue',
       'action_refresh': 'Actualiser',
@@ -1859,6 +1966,9 @@ class TranslationService {
       'date_select_option_pick': 'Choisir une date',
       'date_select_option_none': 'Pas de date',
       'filter_all': 'Tout',
+      'filter_all_books': 'Tous mes livres',
+      'status_uncategorized': 'Non classés',
+      'include_borrowed_books': 'Afficher les livres empruntés',
       'filter_by_tag': 'Filtrer par étagère',
       'filter_by_source': 'Source',
       'all_sources': 'Toutes les sources',
@@ -1889,6 +1999,7 @@ class TranslationService {
       'nav_contacts': 'Contacts',
       'nav_p2p': 'Connexion',
       'nav_network': 'Réseau',
+      'nav_settings': 'Paramètres',
       'btn_scan_book': 'Scanner un livre',
       'btn_search_online_cta': 'Rechercher en ligne',
       'tab_members': 'Contacts',
@@ -2042,11 +2153,6 @@ class TranslationService {
 
       'avatar_professional_librarian': 'Bibliothécaire Pro',
       'avatar_robot': 'Robot',
-
-      // Help
-      'help_topic_collections': 'Gestion des Collections',
-      'help_desc_collections':
-          'Créez et organisez vos collections de livres (sagas, thèmes, listes de lecture). Vous pouvez importer des listes existantes ou créer les vôtres.',
 
       // Modules
       'modules': 'Modules',
@@ -2280,24 +2386,131 @@ class TranslationService {
       'help_topic_network': 'Comment explorer le réseau ?',
       'help_desc_network':
           'La section "Réseau" vous permet de découvrir et consulter les catalogues de bibliothèques ajoutées. Vous pouvez y faire des demandes d\'emprunt.',
-      'help_desc_network_p2p':
-          'Actuellement, vous pouvez vous connecter aux bibliothèques locales via QR code. En V4, nous construisons un vrai réseau pair-à-pair avec traversée NAT, pour vous connecter avec des amis partout dans le monde sans configuration technique !',
       'help_topic_requests': 'Gérer les demandes ?',
       'help_desc_requests':
           'Dans "Demandes", visualisez les demandes reçues (personnes souhaitant emprunter vos livres) et envoyées (vos demandes auprès d\'autres). Acceptez, refusez ou marquez comme rendu.',
-      'help_desc_requests_p2p':
-          'Dans "Demandes", gérez les demandes d\'emprunt reçues et envoyées. Fonctionne actuellement en réseau local. Avec la V4 P2P, vous pourrez prêter et emprunter avec vos amis de confiance dans le monde entier !',
       'help_topic_organize_shelf': 'Comment organiser mes étagères ?',
       'help_desc_organize_shelf':
           '1. Créez des étagères thématiques pour vos livres (ex : "SF", "Favoris").\n2. Dans votre Bibliothèque, appuyez sur une étagère pour filtrer.\n3. Appuyez sur l\'icône de tri (≡) pour entrer en mode réorganisation.\n4. Faites glisser les livres dans l\'ordre souhaité, ou appuyez sur A→Z pour un tri automatique par auteur.\n5. Appuyez sur ✓ pour sauvegarder !',
+      'help_topic_collections': 'Comment utiliser les Collections ?',
+      'help_desc_collections':
+          'Les Collections vous permettent de regrouper des livres en listes personnalisées (sagas, thèmes, listes de lecture). Créez une collection depuis l\'onglet Collections, puis ajoutez des livres de votre bibliothèque ou importez des listes existantes.',
+      'help_topic_external_search':
+          'Comment chercher dans les catalogues externes ?',
+      'help_desc_external_search':
+          'Utilisez l\'icône de recherche pour trouver des livres dans les catalogues externes comme la BNF, OpenLibrary et Inventaire. Quand vous trouvez un livre, appuyez dessus pour l\'ajouter à votre bibliothèque avec toutes ses métadonnées.',
+      'help_topic_reading_progress':
+          'Comment suivre ma progression de lecture ?',
+      'help_desc_reading_progress':
+          'Ouvrez un livre et appuyez sur "Marquer comme En lecture" pour commencer le suivi. Mettez à jour votre progression au fil de votre lecture. Une fois terminé, marquez-le comme "Lu" pour gagner des XP et débloquer des succès !',
+      'help_topic_audio': 'Comment utiliser les fonctionnalités audio ?',
+      'help_desc_audio':
+          'Le module Audio vous permet de gérer vos livres audio et de suivre votre progression d\'écoute. Activez-le dans les paramètres de votre profil, puis ajoutez des versions audio à n\'importe quel livre de votre bibliothèque.',
+      'help_topic_data_privacy': 'Où sont stockées mes données ?',
+      'help_desc_data_privacy':
+          'Les données de votre bibliothèque sont stockées localement sur votre appareil. Quand vous vous connectez avec des amis, seuls les livres que vous choisissez de partager leur sont visibles. Vous pouvez exporter une sauvegarde à tout moment depuis votre Profil.',
       'help_welcome_title': 'Comment pouvons-nous aider ?',
       'help_welcome_subtitle':
           'Trouvez les réponses aux questions fréquentes sur BiblioGenius',
       'help_faq_title': 'Questions Fréquentes',
       'help_quick_actions': 'Actions Rapides',
       'help_contact_us': 'Contactez-nous',
-      'help_tests_title': 'Tests',
+      'help_report_problem': 'Signaler un problème',
+      'help_quick_tour': 'Visite rapide',
+      'help_tests_title': 'Outils développeur',
       'help_animation_tests': 'Tests d\'animations',
+      // Help CTAs
+      'help_cta_go_to_library': 'Aller à la bibliothèque',
+      'help_cta_manage_shelves': 'Gérer les étagères',
+      'help_cta_search_catalogs': 'Rechercher dans les catalogues',
+      'help_cta_connect_library': 'Connecter une bibliothèque',
+      'help_cta_go_to_network': 'Aller au réseau',
+      'help_cta_explore_network': 'Explorer le réseau',
+      'help_cta_view_requests': 'Voir les demandes',
+      'help_cta_go_to_collections': 'Aller aux collections',
+      'help_cta_go_to_profile': 'Aller au profil',
+
+      // Contextual Help
+      'help_tips_title': 'Conseils',
+      'help_ctx_network_title': 'Aide Réseau',
+      'help_ctx_network_content':
+          'L\'écran Réseau vous permet de vous connecter avec des amis et d\'autres bibliothèques. Parcourez leurs catalogues, demandez à emprunter des livres et partagez votre collection.',
+      'help_ctx_network_tip_add': 'Ajouter un contact',
+      'help_ctx_network_tip_add_desc':
+          'Appuyez sur + pour ajouter un contact ou scanner un QR code',
+      'help_ctx_network_tip_browse': 'Parcourir les catalogues',
+      'help_ctx_network_tip_browse_desc':
+          'Appuyez sur un contact pour voir ses livres partagés',
+      'help_ctx_network_tip_request': 'Demander un livre',
+      'help_ctx_network_tip_request_desc':
+          'Trouvez un livre et appuyez sur "Demander" pour un prêt',
+
+      'help_ctx_library_title': 'Aide Bibliothèque',
+      'help_ctx_library_content':
+          'Votre bibliothèque contient tous vos livres. Organisez-les par étagères, recherchez, filtrez et gérez les détails de chaque livre.',
+      'help_ctx_library_tip_add': 'Ajouter un livre',
+      'help_ctx_library_tip_add_desc':
+          'Appuyez sur + pour ajouter manuellement, scanner ou rechercher en ligne',
+      'help_ctx_library_tip_shelves': 'Utiliser les étagères',
+      'help_ctx_library_tip_shelves_desc':
+          'Créez des étagères pour organiser par genre, emplacement, etc.',
+      'help_ctx_library_tip_search': 'Rechercher et filtrer',
+      'help_ctx_library_tip_search_desc':
+          'Utilisez la barre de recherche ou filtrez par statut de lecture',
+
+      'help_ctx_settings_title': 'Aide Paramètres',
+      'help_ctx_settings_content':
+          'Configurez votre expérience ici. Activez ou désactivez les modules, gérez la sécurité, configurez les sources de recherche et exportez vos données.',
+      'help_ctx_settings_tip_modules': 'Activer les modules',
+      'help_ctx_settings_tip_modules_desc':
+          'N\'activez que les fonctionnalités dont vous avez besoin',
+      'help_ctx_settings_tip_backup': 'Sauvegarder vos données',
+      'help_ctx_settings_tip_backup_desc':
+          'Exportez régulièrement pour garder votre bibliothèque en sécurité',
+      'help_ctx_settings_tip_sources': 'Sources de recherche',
+      'help_ctx_settings_tip_sources_desc':
+          'Choisissez les catalogues pour les métadonnées des livres',
+
+      'help_ctx_dashboard_title': 'Aide Tableau de bord',
+      'help_ctx_dashboard_content':
+          'Le tableau de bord vous donne un aperçu de votre activité. Voyez votre progression de lecture, vos livres récents et vos statistiques.',
+      'help_ctx_dashboard_tip_stats': 'Voir les statistiques',
+      'help_ctx_dashboard_tip_stats_desc':
+          'Appuyez sur l\'onglet Statistiques pour des analyses détaillées',
+      'help_ctx_dashboard_tip_reading': 'Liste de lecture',
+      'help_ctx_dashboard_tip_reading_desc':
+          'Les livres que vous lisez actuellement apparaissent ici',
+
+      'help_ctx_profile_title': 'Aide Profil',
+      'help_ctx_profile_content':
+          'Votre profil affiche vos réalisations et préférences de lecture. Personnalisez votre nom, avatar et thème.',
+      'help_ctx_profile_tip_theme': 'Changer de thème',
+      'help_ctx_profile_tip_theme_desc':
+          'Appuyez sur un thème pour personnaliser votre expérience',
+      'help_ctx_profile_tip_achievements': 'Voir les succès',
+      'help_ctx_profile_tip_achievements_desc':
+          'Suivez vos étapes de lecture et vos badges',
+
+      'help_ctx_shelves_title': 'Aide Étagères',
+      'help_ctx_shelves_content':
+          'Les étagères vous aident à organiser vos livres en catégories. Créez des étagères comme "À lire", "Favoris", ou par genre.',
+      'help_ctx_shelves_tip_create': 'Créer une étagère',
+      'help_ctx_shelves_tip_create_desc':
+          'Appuyez sur + pour ajouter une nouvelle étagère',
+      'help_ctx_shelves_tip_assign': 'Assigner des livres',
+      'help_ctx_shelves_tip_assign_desc':
+          'Modifiez un livre pour l\'assigner à une ou plusieurs étagères',
+
+      'help_ctx_collections_title': 'Aide Collections',
+      'help_ctx_collections_content':
+          'Les collections regroupent des livres liés ensemble, comme des séries, des défis de lecture ou des listes thématiques.',
+      'help_ctx_collections_tip_create': 'Créer une collection',
+      'help_ctx_collections_tip_create_desc':
+          'Appuyez sur + pour créer une nouvelle collection',
+      'help_ctx_collections_tip_order': 'Ordonner les livres',
+      'help_ctx_collections_tip_order_desc':
+          'Glissez les livres pour les arranger dans l\'ordre souhaité',
+
       'anim_gamification_title': 'Animations de gamification',
       'anim_tap_to_test': 'Appuyez sur un bouton pour tester l\'animation',
       'anim_achievement_pop': 'Succès débloqué',
@@ -2559,7 +2772,7 @@ class TranslationService {
       'source_inventaire_desc': 'Base de données collaborative principale',
       'source_bnf_desc': 'Bibliothèque nationale de France (livres français)',
       'source_google_desc':
-          'Excellent pour les couvertures et métadonnées modernes',
+          'Base de données internationale avec un fort accent sur les métadonnées et les couvertures',
       'min_one_source_error': 'Au moins une source de recherche est requise',
       // Collection screens
       'delete_collection_title': 'Supprimer la collection ?',
@@ -2687,6 +2900,14 @@ class TranslationService {
       'data_management': 'Gestión de datos',
       'export_backup': 'Exportar copia de seguridad',
       'import_csv': 'Importar de Goodreads/LibraryThing',
+      // Integrations / MCP
+      'mcp_integration': 'Asistentes de IA (MCP)',
+      'mcp_description':
+          'Conecta tu biblioteca con Claude, Cursor y otros asistentes de IA',
+      'copy_mcp_config': 'Copiar config MCP',
+      'mcp_config_copied': '¡Configuración MCP copiada al portapapeles!',
+      'mcp_instructions':
+          'Pega esta configuración en el archivo de ajustes de tu asistente IA (ej: claude_desktop_config.json para Claude Desktop)',
       'app_settings': 'Configuración de la aplicación',
       'logout': 'Cerrar sesión',
       'no_copies_available': 'No hay copias disponibles',
@@ -2906,6 +3127,7 @@ class TranslationService {
       'nav_network': 'Red de bibliotecas',
       'nav_p2p_connect': 'Conexión',
       'nav_help': 'Ayuda',
+      'nav_settings': 'Configuración',
       'help_title': 'Ayuda y Soporte',
       'help_topic_add_book': '¿Cómo añadir un libro?',
       'help_desc_add_book':
@@ -2916,6 +3138,53 @@ class TranslationService {
       'help_topic_connect': '¿Cómo conectar con amigos?',
       'help_desc_connect':
           'Ve a "Conectar biblioteca" para compartir tu código QR o escanear el de un amigo.',
+      'help_topic_contacts': '¿Cómo gestionar contactos?',
+      'help_desc_contacts':
+          'Ve a "Red" para añadir amigos o bibliotecas. Puedes añadir prestatarios (que pueden tomar prestados tus libros) o bibliotecas (cuyo catálogo puedes consultar).',
+      'help_topic_network': '¿Cómo explorar la red?',
+      'help_desc_network':
+          'La sección "Red" te permite descubrir y explorar catálogos de bibliotecas que has añadido. Puedes solicitar préstamos desde allí.',
+      'help_topic_requests': '¿Cómo gestionar solicitudes?',
+      'help_desc_requests':
+          'En "Solicitudes", puedes ver todas las solicitudes de préstamo entrantes (personas que quieren tus libros) y salientes (tus solicitudes a otros). Acepta, rechaza o marca como devuelto.',
+      'help_topic_organize_shelf': '¿Cómo organizar mis estantes?',
+      'help_desc_organize_shelf':
+          '1. Crea estantes temáticos para tus libros (ej: "SciFi", "Favoritos").\n2. En tu Biblioteca, toca un estante para filtrar.\n3. Toca el icono de ordenar (≡) para entrar en modo reorganización.\n4. Arrastra los libros a tu orden preferido, o toca A→Z para ordenar por autor.\n5. ¡Toca ✓ para guardar!',
+      'help_topic_collections': '¿Cómo usar Colecciones?',
+      'help_desc_collections':
+          'Las Colecciones te permiten agrupar libros en listas personalizadas (sagas, temas, listas de lectura). Crea una colección desde la pestaña Colecciones, luego añade libros de tu biblioteca o importa listas existentes.',
+      'help_topic_external_search': '¿Cómo buscar en catálogos externos?',
+      'help_desc_external_search':
+          'Usa el icono de búsqueda para encontrar libros en catálogos externos como BNF (Biblioteca Nacional de Francia), OpenLibrary e Inventaire. Cuando encuentres un libro, tócalo para añadirlo a tu biblioteca con todos sus metadatos.',
+      'help_topic_reading_progress': '¿Cómo seguir mi progreso de lectura?',
+      'help_desc_reading_progress':
+          'Abre un libro y toca "Marcar como Leyendo" para comenzar el seguimiento. Actualiza tu progreso mientras lees. Cuando termines, márcalo como "Leído" para ganar XP y desbloquear logros.',
+      'help_topic_audio': '¿Cómo usar las funciones de audio?',
+      'help_desc_audio':
+          'El módulo de Audio te permite gestionar audiolibros y seguir tu progreso de escucha. Actívalo en los ajustes de tu perfil, luego añade versiones de audio a cualquier libro de tu biblioteca.',
+      'help_topic_data_privacy': '¿Dónde se almacenan mis datos?',
+      'help_desc_data_privacy':
+          'Los datos de tu biblioteca se almacenan localmente en tu dispositivo. Cuando te conectas con amigos, solo los libros que elijas compartir son visibles para ellos. Puedes exportar una copia de seguridad en cualquier momento desde tu Perfil.',
+      'help_welcome_title': '¿Cómo podemos ayudar?',
+      'help_welcome_subtitle':
+          'Encuentra respuestas a preguntas frecuentes sobre BiblioGenius',
+      'help_faq_title': 'Preguntas Frecuentes',
+      'help_quick_actions': 'Acciones Rápidas',
+      'help_contact_us': 'Contáctanos',
+      'help_report_problem': 'Reportar un problema',
+      'help_quick_tour': 'Tour rápido',
+      'help_tests_title': 'Herramientas de desarrollo',
+      'help_animation_tests': 'Pruebas de animación',
+      // Help CTAs
+      'help_cta_go_to_library': 'Ir a la biblioteca',
+      'help_cta_manage_shelves': 'Gestionar estantes',
+      'help_cta_search_catalogs': 'Buscar en catálogos',
+      'help_cta_connect_library': 'Conectar biblioteca',
+      'help_cta_go_to_network': 'Ir a la red',
+      'help_cta_explore_network': 'Explorar la red',
+      'help_cta_view_requests': 'Ver solicitudes',
+      'help_cta_go_to_collections': 'Ir a colecciones',
+      'help_cta_go_to_profile': 'Ir al perfil',
       'add_contact_title': 'Añadir contacto',
       'contact_type_label': 'Tipo',
       'role_borrower': 'Prestatario',
@@ -3373,6 +3642,14 @@ class TranslationService {
       'show_borrowed_subtitle': 'Geliehene Bücher in der Bibliothek anzeigen',
       'data_management': 'Datenverwaltung',
       'export_backup': 'Backup exportieren',
+      // Integrations / MCP
+      'mcp_integration': 'KI-Assistenten (MCP)',
+      'mcp_description':
+          'Verbinden Sie Ihre Bibliothek mit Claude, Cursor und anderen KI-Assistenten',
+      'copy_mcp_config': 'MCP-Konfiguration kopieren',
+      'mcp_config_copied': 'MCP-Konfiguration in die Zwischenablage kopiert!',
+      'mcp_instructions':
+          'Fügen Sie diese Konfiguration in die Einstellungsdatei Ihres KI-Assistenten ein (z.B. claude_desktop_config.json für Claude Desktop)',
       'no_copies_available': 'Keine Exemplare verfügbar',
       'import_csv': 'Von Goodreads/LibraryThing importieren',
       'app_settings': 'App-Einstellungen',
@@ -3665,6 +3942,68 @@ class TranslationService {
       'nav_requests': 'Ausleihanfragen',
       'nav_profile': 'Mein Profil',
       'nav_statistics': 'Statistiken',
+      'nav_p2p_connect': 'Verbinden',
+      'nav_help': 'Hilfe',
+      'nav_report_bug': 'Fehler melden',
+      'nav_settings': 'Einstellungen',
+      // Help & Support
+      'help_title': 'Hilfe & Support',
+      'help_topic_add_book': 'Wie füge ich ein Buch hinzu?',
+      'help_desc_add_book':
+          'Gehen Sie zu "Meine Bibliothek" und tippen Sie auf "+". Sie können einen Barcode scannen oder nach Titel/ISBN suchen.',
+      'help_topic_lend': 'Wie verleihe ich ein Buch?',
+      'help_desc_lend':
+          'Finden Sie das Buch, tippen Sie auf "Exemplare verwalten", dann auf "Verleihen". Wählen Sie einen Kontakt.',
+      'help_topic_connect': 'Wie verbinde ich mich mit Freunden?',
+      'help_desc_connect':
+          'Gehen Sie zu "Bibliothek verbinden", um Ihren QR-Code zu teilen oder den Code eines Freundes zu scannen.',
+      'help_topic_contacts': 'Wie verwalte ich Kontakte?',
+      'help_desc_contacts':
+          'Gehen Sie zu "Netzwerk", um Freunde oder Bibliotheken hinzuzufügen. Sie können Ausleiher (die Ihre Bücher ausleihen können) oder Bibliotheken (deren Katalog Sie durchsuchen können) hinzufügen.',
+      'help_topic_network': 'Wie erkunde ich das Netzwerk?',
+      'help_desc_network':
+          'Der Bereich "Netzwerk" ermöglicht es Ihnen, Kataloge von hinzugefügten Bibliotheken zu entdecken und zu durchsuchen. Von dort können Sie Ausleiheanfragen stellen.',
+      'help_topic_requests': 'Wie verwalte ich Anfragen?',
+      'help_desc_requests':
+          'Unter "Anfragen" sehen Sie alle eingehenden Ausleiheanfragen (Personen, die Ihre Bücher möchten) und ausgehenden (Ihre Anfragen an andere). Akzeptieren, ablehnen oder als zurückgegeben markieren.',
+      'help_topic_organize_shelf': 'Wie organisiere ich meine Regale?',
+      'help_desc_organize_shelf':
+          '1. Erstellen Sie thematische Regale für Ihre Bücher (z.B. "SciFi", "Favoriten").\n2. Tippen Sie in Ihrer Bibliothek auf ein Regal zum Filtern.\n3. Tippen Sie auf das Sortier-Symbol (≡) für den Neuordnungsmodus.\n4. Ziehen Sie Bücher in Ihre bevorzugte Reihenfolge oder tippen Sie auf A→Z für Auto-Sortierung.\n5. Tippen Sie auf ✓ zum Speichern!',
+      'help_topic_collections': 'Wie nutze ich Sammlungen?',
+      'help_desc_collections':
+          'Mit Sammlungen können Sie Bücher in benutzerdefinierten Listen gruppieren (Reihen, Themen, Leselisten). Erstellen Sie eine Sammlung über den Sammlungen-Tab und fügen Sie Bücher aus Ihrer Bibliothek hinzu oder importieren Sie bestehende Listen.',
+      'help_topic_external_search': 'Wie suche ich in externen Katalogen?',
+      'help_desc_external_search':
+          'Verwenden Sie das Such-Symbol, um Bücher in externen Katalogen wie BNF (Französische Nationalbibliothek), OpenLibrary und Inventaire zu finden. Wenn Sie ein Buch finden, tippen Sie darauf, um es mit allen Metadaten zu Ihrer Bibliothek hinzuzufügen.',
+      'help_topic_reading_progress': 'Wie verfolge ich meinen Lesefortschritt?',
+      'help_desc_reading_progress':
+          'Öffnen Sie ein Buch und tippen Sie auf "Als lesend markieren". Aktualisieren Sie Ihren Fortschritt beim Lesen. Wenn Sie fertig sind, markieren Sie es als "Gelesen", um XP zu verdienen und Erfolge freizuschalten!',
+      'help_topic_audio': 'Wie nutze ich Audio-Funktionen?',
+      'help_desc_audio':
+          'Das Audio-Modul ermöglicht die Verwaltung von Hörbüchern und die Verfolgung des Hörfortschritts. Aktivieren Sie es in Ihren Profileinstellungen und fügen Sie dann Audio-Versionen zu jedem Buch in Ihrer Bibliothek hinzu.',
+      'help_topic_data_privacy': 'Wo werden meine Daten gespeichert?',
+      'help_desc_data_privacy':
+          'Ihre Bibliotheksdaten werden lokal auf Ihrem Gerät gespeichert. Wenn Sie sich mit Freunden verbinden, sind nur die Bücher sichtbar, die Sie teilen möchten. Sie können jederzeit eine Sicherung über Ihr Profil exportieren.',
+      'help_welcome_title': 'Wie können wir helfen?',
+      'help_welcome_subtitle':
+          'Finden Sie Antworten auf häufige Fragen zur Nutzung von BiblioGenius',
+      'help_faq_title': 'Häufig gestellte Fragen',
+      'help_quick_actions': 'Schnellaktionen',
+      'help_contact_us': 'Kontaktieren Sie uns',
+      'help_report_problem': 'Problem melden',
+      'help_quick_tour': 'Schnelltour',
+      'help_tests_title': 'Entwicklerwerkzeuge',
+      'help_animation_tests': 'Animationstests',
+      // Help CTAs
+      'help_cta_go_to_library': 'Zur Bibliothek',
+      'help_cta_manage_shelves': 'Regale verwalten',
+      'help_cta_search_catalogs': 'Kataloge durchsuchen',
+      'help_cta_connect_library': 'Bibliothek verbinden',
+      'help_cta_go_to_network': 'Zum Netzwerk',
+      'help_cta_explore_network': 'Netzwerk erkunden',
+      'help_cta_view_requests': 'Anfragen anzeigen',
+      'help_cta_go_to_collections': 'Zu Sammlungen',
+      'help_cta_go_to_profile': 'Zum Profil',
       // Contacts Screen
       'delete_contact_title': 'Kontakt löschen',
       'delete_contact_confirm':

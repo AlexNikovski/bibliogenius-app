@@ -17,6 +17,7 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool automaticallyImplyLeading;
   final bool showQuickActions; // Legacy direct buttons
   final List<Widget>? contextualQuickActions; // For the new Quick Actions menu
+  final bool showBackButton;
 
   const GenieAppBar({
     super.key,
@@ -29,6 +30,7 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.transparent = false,
     this.showQuickActions = false,
     this.contextualQuickActions,
+    this.showBackButton = true,
   });
 
   final bool transparent;
@@ -64,9 +66,21 @@ class GenieAppBar extends StatelessWidget implements PreferredSizeWidget {
       // We can just empty the list or use transparent colors
     }
 
+    final canPop = GoRouter.of(context).canPop();
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    final bool shouldShowBackButton =
+        showBackButton && canPop && currentRoute != '/onboarding';
+
     return AppBar(
       automaticallyImplyLeading: automaticallyImplyLeading,
-      leading: leading,
+      leading:
+          leading ??
+          (shouldShowBackButton
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => GoRouter.of(context).pop(),
+                )
+              : null),
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: transparent

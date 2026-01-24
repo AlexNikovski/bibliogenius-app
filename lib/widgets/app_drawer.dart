@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/translation_service.dart';
-import '../utils/app_constants.dart';
-import 'package:provider/provider.dart';
-import '../providers/theme_provider.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -52,25 +49,7 @@ class AppDrawer extends StatelessWidget {
               context.go('/books');
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.shelves),
-            title: Text(
-              TranslationService.translate(context, 'shelves') ?? 'Shelves',
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              context.go('/shelves');
-            },
-          ),
-          if (Provider.of<ThemeProvider>(context).collectionsEnabled)
-            ListTile(
-              leading: const Icon(Icons.collections_bookmark),
-              title: Text(TranslationService.translate(context, 'collections')),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/collections');
-              },
-            ),
+
           // Unified Network screen (contacts + peers merged)
           ListTile(
             leading: const Icon(Icons.cloud_sync),
@@ -80,15 +59,7 @@ class AppDrawer extends StatelessWidget {
               context.go('/network');
             },
           ),
-          if (AppConstants.enableP2PFeatures)
-            ListTile(
-              leading: const Icon(Icons.swap_horiz),
-              title: Text(TranslationService.translate(context, 'loans_menu')),
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/requests');
-              },
-            ),
+
           // P2P Connect removed from drawer to simplify UX. Accessed via Network > Add.
           const Divider(),
           ListTile(
@@ -107,12 +78,13 @@ class AppDrawer extends StatelessWidget {
               context.go('/dashboard');
             },
           ),
+
           ListTile(
-            leading: const Icon(Icons.school),
-            title: Text(TranslationService.translate(context, 'menu_tutorial')),
+            leading: const Icon(Icons.settings),
+            title: Text(TranslationService.translate(context, 'nav_settings')),
             onTap: () {
               Navigator.pop(context);
-              context.push('/onboarding');
+              context.go('/settings');
             },
           ),
           ListTile(
@@ -123,6 +95,7 @@ class AppDrawer extends StatelessWidget {
               context.go('/help');
             },
           ),
+          // TODO: Move "Signaler un bug" to Settings after testing phase
           ListTile(
             leading: const Icon(Icons.bug_report),
             title: Text(

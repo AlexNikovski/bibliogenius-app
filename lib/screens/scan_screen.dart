@@ -240,6 +240,16 @@ class _ScanScreenState extends State<ScanScreen> {
         throw Exception("Impossible de créer ou récupérer le livre (ID null)");
       }
 
+      // 4. Create copy (Availability) - Always create a copy when scanning in batch mode
+      // unless logic dictates otherwise. Assuming "Scan" implies "Add to inventory".
+      // We check if we just added it to the library.
+      if (bookId != null) {
+        await api.createCopy({
+          'book_id': bookId,
+          'status': 'available', // Default status
+        });
+      }
+
       setState(() {
         _batchCount++;
         _lastAddedTitle = bookTitle ?? isbn;

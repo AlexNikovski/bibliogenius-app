@@ -98,12 +98,12 @@ class ScaffoldWithNav extends StatelessWidget {
           label: Text(TranslationService.translate(context, 'dashboard')),
         ),
       ),
+
       _NavItem(
-        route: '/onboarding',
-        isPush: true,
+        route: '/settings',
         destination: NavigationRailDestination(
-          icon: const Icon(Icons.school),
-          label: Text(TranslationService.translate(context, 'menu_tutorial')),
+          icon: const Icon(Icons.settings),
+          label: Text(TranslationService.translate(context, 'nav_settings')),
         ),
       ),
       _NavItem(
@@ -113,6 +113,7 @@ class ScaffoldWithNav extends StatelessWidget {
           label: Text(TranslationService.translate(context, 'nav_help')),
         ),
       ),
+      // TODO: Move to Settings after testing phase
       _NavItem(
         route: '/feedback',
         isPush: true,

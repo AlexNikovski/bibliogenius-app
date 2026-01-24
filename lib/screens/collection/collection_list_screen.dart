@@ -7,6 +7,7 @@ import '../../models/collection.dart';
 import 'import_curated_list_screen.dart' as import_curated;
 import 'import_shared_list_screen.dart';
 import '../../widgets/genie_app_bar.dart';
+import '../../widgets/contextual_help_sheet.dart';
 
 class CollectionListScreen extends StatefulWidget {
   final bool isTabView;
@@ -163,6 +164,25 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
                 _refreshCollections();
               }
             },
+          ),
+          const SizedBox(width: 4),
+          ContextualHelpIconButton(
+            titleKey: 'help_ctx_collections_title',
+            contentKey: 'help_ctx_collections_content',
+            tips: const [
+              HelpTip(
+                icon: Icons.add_circle,
+                color: Colors.blue,
+                titleKey: 'help_ctx_collections_tip_create',
+                descriptionKey: 'help_ctx_collections_tip_create_desc',
+              ),
+              HelpTip(
+                icon: Icons.reorder,
+                color: Colors.green,
+                titleKey: 'help_ctx_collections_tip_order',
+                descriptionKey: 'help_ctx_collections_tip_order_desc',
+              ),
+            ],
           ),
           const SizedBox(width: 8),
         ],

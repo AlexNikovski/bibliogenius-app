@@ -12,7 +12,7 @@ import '../services/translation_service.dart';
 import '../providers/theme_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_design.dart';
-import '../utils/global_keys.dart';
+
 import '../utils/book_url_helper.dart';
 import 'web_view_screen.dart';
 
@@ -721,7 +721,6 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
     final theme = Provider.of<ThemeProvider>(context);
     final useEditionBrowser = theme.editionBrowserEnabled;
 
@@ -734,18 +733,10 @@ class _ExternalSearchScreenState extends State<ExternalSearchScreen> {
       child: Scaffold(
         appBar: GenieAppBar(
           title: TranslationService.translate(context, 'external_search_title'),
-          leading: isMobile
-              ? IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: () {
-                    GlobalKeys.rootScaffoldKey.currentState?.openDrawer();
-                  },
-                )
-              : IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => context.pop(_booksAdded),
-                ),
-          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
+            onPressed: () => context.pop(_booksAdded),
+          ),
         ),
         extendBodyBehindAppBar: true,
         body: Container(

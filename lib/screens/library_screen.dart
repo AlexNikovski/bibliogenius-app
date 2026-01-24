@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../services/translation_service.dart';
 import '../widgets/genie_app_bar.dart';
+import '../widgets/contextual_help_sheet.dart';
 import '../providers/theme_provider.dart';
 import 'book_list_screen.dart';
 import 'shelves_screen.dart';
@@ -81,6 +82,32 @@ class _LibraryScreenState extends State<LibraryScreen>
               )
             : null,
         automaticallyImplyLeading: false,
+        actions: [
+          ContextualHelpIconButton(
+            titleKey: 'help_ctx_library_title',
+            contentKey: 'help_ctx_library_content',
+            tips: const [
+              HelpTip(
+                icon: Icons.add_circle,
+                color: Colors.blue,
+                titleKey: 'help_ctx_library_tip_add',
+                descriptionKey: 'help_ctx_library_tip_add_desc',
+              ),
+              HelpTip(
+                icon: Icons.shelves,
+                color: Colors.green,
+                titleKey: 'help_ctx_library_tip_shelves',
+                descriptionKey: 'help_ctx_library_tip_shelves_desc',
+              ),
+              HelpTip(
+                icon: Icons.search,
+                color: Colors.orange,
+                titleKey: 'help_ctx_library_tip_search',
+                descriptionKey: 'help_ctx_library_tip_search_desc',
+              ),
+            ],
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
@@ -117,7 +144,7 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
           ],
         ),
-        actions: _buildActions(context),
+        contextualQuickActions: _buildQuickActions(context),
       ),
       body: IndexedStack(
         index: _tabController.index,
@@ -148,152 +175,20 @@ class _LibraryScreenState extends State<LibraryScreen>
     );
   }
 
-  List<Widget> _buildActions(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width <= 600;
-
-    // Books Tab (Index 0)
-    if (_tabController.index == 0) {
-      if (isMobile) {
-        return [
-          IconButton(
-            icon: const Icon(Icons.camera_alt, color: Colors.white),
-            tooltip: TranslationService.translate(context, 'btn_scan_book'),
-            onPressed: () async {
-              final isbn = await context.push<String>('/scan');
-              if (isbn != null && context.mounted) {
-                final result = await context.push(
-                  '/books/add',
-                  extra: {'isbn': isbn},
-                );
-                if (result == true) {
-                  _refreshNotifier.value++;
-                }
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.travel_explore, color: Colors.white),
-            tooltip: TranslationService.translate(
-              context,
-              'btn_search_online_cta',
-            ),
-            onPressed: () async {
-              final result = await context.push('/search/external');
-              if (result == true) {
-                _refreshNotifier.value++;
-              }
-            },
-          ),
-        ];
-      }
-
-      return [
-        TextButton.icon(
-          icon: const Icon(Icons.camera_alt, color: Colors.white),
-          label: Text(
-            TranslationService.translate(context, 'btn_scan_book'),
-            style: const TextStyle(color: Colors.white),
-          ),
-          onPressed: () async {
-            final isbn = await context.push<String>('/scan');
-            if (isbn != null && context.mounted) {
-              final result = await context.push(
-                '/books/add',
-                extra: {'isbn': isbn},
-              );
-              // Trigger refresh if book was added
-              if (result == true) {
-                _refreshNotifier.value++;
-              }
-            }
-          },
-        ),
-        TextButton.icon(
-          icon: const Icon(Icons.travel_explore, color: Colors.white),
-          label: Text(
-            TranslationService.translate(context, 'btn_search_online_cta'),
-            style: const TextStyle(color: Colors.white),
-          ),
-          onPressed: () async {
-            final result = await context.push('/search/external');
-            // Trigger refresh if book was added from search
-            if (result == true) {
-              _refreshNotifier.value++;
-            }
-          },
-        ),
-      ];
-    }
+  List<Widget> _buildQuickActions(BuildContext context) {
+    // Books Tab (Index 0) -> Standard Quick Actions (Scan, Search) are already in the sheet.
 
     // Collections Tab (Index 2 if enabled)
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     if (themeProvider.collectionsEnabled && _tabController.index == 2) {
-      if (isMobile) {
-        return [
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
-            icon: const Icon(Icons.auto_awesome, size: 16),
-            label: Text(
-              TranslationService.translate(context, 'discover'),
-              style: const TextStyle(fontSize: 11),
-            ),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const import_curated.ImportCuratedListScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 4),
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-            ),
-            icon: const Icon(Icons.file_open, size: 16),
-            label: Text(
-              TranslationService.translate(context, 'import_list'),
-              style: const TextStyle(fontSize: 11),
-            ),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ImportSharedListScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-        ];
-      }
-
       return [
-        TextButton.icon(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+        ListTile(
+          leading: const Icon(Icons.auto_awesome, color: Colors.purple),
+          title: Text(
+            TranslationService.translate(context, 'discover') ?? 'Discover',
           ),
-          icon: const Icon(Icons.auto_awesome, size: 16),
-          label: Text(TranslationService.translate(context, 'discover')),
-          onPressed: () async {
+          onTap: () async {
+            Navigator.pop(context);
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -303,18 +198,14 @@ class _LibraryScreenState extends State<LibraryScreen>
             );
           },
         ),
-        const SizedBox(width: 4),
-        TextButton.icon(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+        ListTile(
+          leading: const Icon(Icons.file_open, color: Colors.blue),
+          title: Text(
+            TranslationService.translate(context, 'import_list') ??
+                'Import List',
           ),
-          icon: const Icon(Icons.file_open, size: 16),
-          label: Text(TranslationService.translate(context, 'import_list')),
-          onPressed: () async {
+          onTap: () async {
+            Navigator.pop(context);
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -323,7 +214,6 @@ class _LibraryScreenState extends State<LibraryScreen>
             );
           },
         ),
-        const SizedBox(width: 8),
       ];
     }
 

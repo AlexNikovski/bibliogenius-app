@@ -1,6 +1,7 @@
 import 'package:bibliogenius/screens/scan_qr_screen.dart';
 import 'package:flutter/material.dart';
 import '../widgets/genie_app_bar.dart';
+import '../widgets/contextual_help_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
@@ -143,45 +144,6 @@ class _NetworkScreenState extends State<NetworkScreen>
     return Scaffold(
       appBar: GenieAppBar(
         title: TranslationService.translate(context, 'nav_network'),
-        contextualQuickActions: [
-          ListTile(
-            leading: const Icon(Icons.qr_code, color: Colors.purple),
-            title: Text(TranslationService.translate(context, 'show_my_code')),
-            onTap: () {
-              Navigator.pop(context);
-              showDialog(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: Text(
-                    TranslationService.translate(context, 'show_my_code'),
-                  ),
-                  content: const ShareContactView(),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(dialogContext),
-                      child: Text(
-                        TranslationService.translate(context, 'close'),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person_add, color: Colors.blue),
-            title: Text(
-              TranslationService.translate(context, 'enter_manually'),
-            ),
-            onTap: () async {
-              Navigator.pop(context);
-              final result = await context.push('/contacts/add');
-              if (result == true) {
-                _contactsListKey.currentState?.reloadMembers();
-              }
-            },
-          ),
-        ],
         leading: isMobile
             ? IconButton(
                 icon: const Icon(Icons.menu, color: Colors.white),
@@ -189,6 +151,32 @@ class _NetworkScreenState extends State<NetworkScreen>
               )
             : null,
         automaticallyImplyLeading: false,
+        actions: [
+          ContextualHelpIconButton(
+            titleKey: 'help_ctx_network_title',
+            contentKey: 'help_ctx_network_content',
+            tips: const [
+              HelpTip(
+                icon: Icons.person_add,
+                color: Colors.blue,
+                titleKey: 'help_ctx_network_tip_add',
+                descriptionKey: 'help_ctx_network_tip_add_desc',
+              ),
+              HelpTip(
+                icon: Icons.library_books,
+                color: Colors.green,
+                titleKey: 'help_ctx_network_tip_browse',
+                descriptionKey: 'help_ctx_network_tip_browse_desc',
+              ),
+              HelpTip(
+                icon: Icons.bookmark_add,
+                color: Colors.orange,
+                titleKey: 'help_ctx_network_tip_request',
+                descriptionKey: 'help_ctx_network_tip_request_desc',
+              ),
+            ],
+          ),
+        ],
         bottom: TabBar(
           controller: _mainTabController,
           indicatorColor: Colors.white,

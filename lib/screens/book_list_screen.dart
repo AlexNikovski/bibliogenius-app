@@ -62,8 +62,6 @@ class _BookListScreenState extends State<BookListScreen>
   final GlobalKey _addKey = GlobalKey();
   final GlobalKey _searchKey = GlobalKey();
   final GlobalKey _viewKey = GlobalKey();
-  final GlobalKey _scanKey = GlobalKey();
-  final GlobalKey _externalSearchKey = GlobalKey();
 
   @override
   void initState() {
@@ -379,41 +377,61 @@ class _BookListScreenState extends State<BookListScreen>
                 });
               },
             ),
-            IconButton(
-              key: _scanKey,
-              icon: const Icon(Icons.camera_alt, color: Colors.white),
-              tooltip: TranslationService.translate(context, 'scan_isbn_title'),
-              onPressed: () async {
-                final isbn = await context.push<String>('/scan');
+          ],
+        ],
+        contextualQuickActions: [
+          // Context-aware actions
+          if (_currentShelf != null) ...[
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner, color: Colors.orange),
+              title: Text(
+                '${TranslationService.translate(context, 'quick_scan_barcode')} ${TranslationService.translate(context, 'into_shelf') ?? 'into'} "${_currentShelf!.name}"',
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final shelfId = _currentShelf!.id;
+                final shelfName = _currentShelf!.fullPath;
+                final isbn = await context.push<String>(
+                  '/scan',
+                  extra: {'shelfId': shelfId, 'shelfName': shelfName},
+                );
                 if (isbn != null && mounted) {
+                  // If single scan returns handled by scan screen usually, but if manual entry:
+                  // The scan screen logic might need to be "batch" aware or we pass it to add book
+                  // Here we assume standard scan flow but pre-filling shelf would be handled by /books/add
+                  // Actually, /scan usually returns ISBN.
+                  // We should pass shelf context to /books/add
                   final result = await context.push(
                     '/books/add',
-                    extra: {'isbn': isbn},
+                    extra: {
+                      'isbn': isbn,
+                      'shelfId': shelfId, // Pass shelf context
+                    },
                   );
                   if (result == true && mounted) {
-                    _fetchBooks(); // Refresh list after book was added
+                    _fetchBooks();
                   }
                 }
               },
             ),
-            // Online search - show on all devices
-            IconButton(
-              key: _externalSearchKey,
-              icon: const Icon(Icons.travel_explore, color: Colors.white),
-              tooltip: TranslationService.translate(
-                context,
-                'btn_search_online',
+            ListTile(
+              leading: const Icon(Icons.travel_explore, color: Colors.blue),
+              title: Text(
+                '${TranslationService.translate(context, 'quick_search_online')} ${TranslationService.translate(context, 'into_shelf') ?? 'into'} "${_currentShelf!.name}"',
               ),
-              onPressed: () async {
-                final result = await context.push('/search/external');
+              onTap: () async {
+                Navigator.pop(context);
+                final result = await context.push(
+                  '/search/external',
+                  extra: {'shelfId': _currentShelf!.id},
+                );
                 if (result == true) {
                   _fetchBooks();
                 }
               },
             ),
+            const Divider(),
           ],
-        ],
-        contextualQuickActions: [
           ListTile(
             leading: const Icon(Icons.filter_list),
             title: Text(
@@ -895,20 +913,17 @@ class _BookListScreenState extends State<BookListScreen>
                 ),
               ),
             ),
-
           const SizedBox(width: 4),
 
           // 3. Consolidated Status Filter Dropdown
           PopupMenuButton<String>(
             onSelected: (value) {
               setState(() {
-                if (value == 'all_visibility') {
-                  _showAllBooks = !_showAllBooks;
-                  _selectedStatus =
-                      null; // Reset specific status if toggling "All"
-                } else if (value == 'clear') {
+                if (value == 'clear') {
                   _showAllBooks = false;
                   _selectedStatus = null;
+                } else if (value == 'toggle_borrowed') {
+                  _showAllBooks = !_showAllBooks;
                 } else {
                   _showAllBooks = false;
                   _selectedStatus = value;
@@ -920,113 +935,281 @@ class _BookListScreenState extends State<BookListScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'clear',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.filter_list_off,
+            itemBuilder: (context) {
+              final theme = Theme.of(context);
+              return [
+                // HEADER: Statut
+                PopupMenuItem<String>(
+                  enabled: false,
+                  height: 32,
+                  child: Text(
+                    TranslationService.translate(
+                          context,
+                          'status',
+                        )?.toUpperCase() ??
+                        'STATUS',
+                    style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.disabledColor,
-                      size: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: 12),
-                    Text(TranslationService.translate(context, 'filter_all')),
-                  ],
+                  ),
                 ),
-              ),
-              const PopupMenuDivider(),
-              _buildPopupItem(
-                'reading',
-                Icons.menu_book,
-                TranslationService.translate(context, 'reading_status_reading'),
-                Colors.blue,
-              ),
-              _buildPopupItem(
-                'to_read',
-                Icons.bookmark_border,
-                TranslationService.translate(context, 'reading_status_to_read'),
-                Colors.orange,
-              ),
-              _buildPopupItem(
-                'wanting',
-                Icons.favorite_border,
-                TranslationService.translate(context, 'reading_status_wanting'),
-                Colors.pink,
-              ),
-              _buildPopupItem(
-                'read',
-                Icons.check_circle_outline,
-                TranslationService.translate(context, 'reading_status_read'),
-                Colors.green,
-              ),
-              _buildPopupItem(
-                'owned',
-                Icons.inventory_2_outlined,
-                TranslationService.translate(context, 'owned_status'),
-                Colors.purple,
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem(
-                value: 'all_visibility',
-                child: Row(
-                  children: [
-                    Icon(
-                      _showAllBooks ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      TranslationService.translate(
-                        context,
-                        'show_borrowed_books',
+                // Tous mes livres (Clear)
+                PopupMenuItem(
+                  value: 'clear',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.library_books,
+                        color: _selectedStatus == null
+                            ? theme.primaryColor
+                            : theme.iconTheme.color,
+                        size: 20,
                       ),
-                    ), // Reuse 'Show borrowed' or 'All'
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        TranslationService.translate(
+                              context,
+                              'filter_all_books',
+                            ) ??
+                            'Tous mes livres',
+                        style: TextStyle(
+                          fontWeight: _selectedStatus == null
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedStatus == null
+                              ? theme.primaryColor
+                              : null,
+                        ),
+                      ),
+                      if (_selectedStatus == null) ...[
+                        const Spacer(),
+                        Icon(Icons.check, size: 18, color: theme.primaryColor),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                // Lecture en cours
+                PopupMenuItem(
+                  value: 'reading',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.auto_stories,
+                        color: _selectedStatus == 'reading'
+                            ? Colors.blue
+                            : theme.iconTheme.color,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        TranslationService.translate(
+                              context,
+                              'reading_status_reading',
+                            ) ??
+                            'Lecture en cours',
+                        style: TextStyle(
+                          fontWeight: _selectedStatus == 'reading'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedStatus == 'reading'
+                              ? Colors.blue
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // À lire
+                PopupMenuItem(
+                  value: 'to_read',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.bookmark_border,
+                        color: _selectedStatus == 'to_read'
+                            ? Colors.orange
+                            : theme.iconTheme.color,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        TranslationService.translate(
+                              context,
+                              'reading_status_to_read',
+                            ) ??
+                            'À lire',
+                        style: TextStyle(
+                          fontWeight: _selectedStatus == 'to_read'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedStatus == 'to_read'
+                              ? Colors.orange
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Lu
+                PopupMenuItem(
+                  value: 'read',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        color: _selectedStatus == 'read'
+                            ? Colors.green
+                            : theme.iconTheme.color,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        TranslationService.translate(
+                              context,
+                              'reading_status_read',
+                            ) ??
+                            'Lu',
+                        style: TextStyle(
+                          fontWeight: _selectedStatus == 'read'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedStatus == 'read'
+                              ? Colors.green
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Non classés (Owned)
+                PopupMenuItem(
+                  value: 'owned',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        color: _selectedStatus == 'owned'
+                            ? Colors.blueGrey
+                            : Colors.blueGrey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        TranslationService.translate(
+                              context,
+                              'status_uncategorized',
+                            ) ??
+                            'Non classés',
+                        style: TextStyle(
+                          fontWeight: _selectedStatus == 'owned'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedStatus == 'owned'
+                              ? Colors.blueGrey
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Envie de lire (Wishlist)
+                PopupMenuItem(
+                  value: 'wanting',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.favorite_border,
+                        color: _selectedStatus == 'wanting'
+                            ? Colors.red
+                            : Colors.red,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        TranslationService.translate(
+                              context,
+                              'reading_status_wanting',
+                            ) ??
+                            'Envie de lire',
+                        style: TextStyle(
+                          fontWeight: _selectedStatus == 'wanting'
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedStatus == 'wanting'
+                              ? Colors.red
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const PopupMenuDivider(),
+
+                // TOGGLE: Include Borrowed
+                PopupMenuItem(
+                  value: 'toggle_borrowed',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _showAllBooks ? Icons.visibility : Icons.visibility_off,
+                        color: theme.iconTheme.color?.withOpacity(0.7),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          TranslationService.translate(
+                                context,
+                                'include_borrowed_books',
+                              ) ??
+                              'Afficher les livres empruntés',
+                        ),
+                      ),
+                      Switch(
+                        value: _showAllBooks,
+                        onChanged: (val) {
+                          Navigator.pop(context, 'toggle_borrowed');
+                        },
+                        activeColor: theme.primaryColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ];
+            },
             child: Container(
               height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: isFilterActive
-                    ? theme.primaryColor
+                    ? theme.primaryColor.withOpacity(0.1)
                     : (isDark ? theme.cardColor : Colors.white),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isFilterActive
-                      ? Colors.transparent
+                      ? theme.primaryColor
                       : (isDark
                             ? Colors.white24
                             : Colors.grey.withOpacity(0.3)),
                 ),
-                boxShadow: isFilterActive
-                    ? [
-                        BoxShadow(
-                          color: theme.primaryColor.withOpacity(0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
               ),
               child: Row(
                 children: [
                   Icon(
                     filterIcon,
-                    size: 16,
+                    size: 18,
                     color: isFilterActive
-                        ? Colors.white
-                        : (isDark ? Colors.white : Colors.black87),
+                        ? theme.primaryColor
+                        : theme.iconTheme.color,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Text(
                     filterLabel,
                     style: TextStyle(
                       color: isFilterActive
-                          ? Colors.white
+                          ? theme.primaryColor
                           : (isDark ? Colors.white : Colors.black87),
                       fontWeight: FontWeight.w500,
                     ),
@@ -1034,46 +1217,15 @@ class _BookListScreenState extends State<BookListScreen>
                   const SizedBox(width: 4),
                   Icon(
                     Icons.arrow_drop_down,
-                    size: 18,
-                    color: isFilterActive ? Colors.white70 : Colors.grey,
+                    size: 20,
+                    color: isFilterActive
+                        ? theme.primaryColor
+                        : theme.iconTheme.color?.withOpacity(0.5),
                   ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _buildPopupItem(
-    String value,
-    IconData icon,
-    String label,
-    Color color,
-  ) {
-    final isSelected = _selectedStatus == value;
-    return PopupMenuItem(
-      value: value,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? color : color.withOpacity(0.7),
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? color : null,
-            ),
-          ),
-          if (isSelected) ...[
-            const Spacer(),
-            Icon(Icons.check, color: color, size: 18),
-          ],
         ],
       ),
     );
