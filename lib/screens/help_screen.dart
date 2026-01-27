@@ -131,6 +131,15 @@ class _HelpScreenState extends State<HelpScreen> {
         ctaKey: 'help_cta_go_to_profile',
         ctaRoute: '/profile',
       ),
+      // Import (FAQ)
+      _HelpTopic(
+        icon: Icons.get_app_outlined,
+        titleKey: 'help_topic_import',
+        descKey: 'help_desc_import',
+        gradient: AppDesign.primaryGradient,
+        ctaKey: 'help_cta_migrate',
+        ctaRoute: '/settings/migration-wizard',
+      ),
     ];
   }
 
@@ -413,13 +422,32 @@ class _HelpScreenState extends State<HelpScreen> {
 
         const SizedBox(height: 12),
 
-        // Second row: Report a Problem
-        _buildActionCard(
-          context,
-          icon: Icons.bug_report,
-          label: TranslationService.translate(context, 'help_report_problem'),
-          gradient: AppDesign.warningGradient,
-          onTap: () => context.push('/feedback'),
+        // Second row: Report a Problem & Import from App
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                context,
+                icon: Icons.bug_report,
+                label: TranslationService.translate(
+                  context,
+                  'help_report_problem',
+                ),
+                gradient: AppDesign.warningGradient,
+                onTap: () => context.push('/feedback'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                context,
+                icon: Icons.input_rounded,
+                label: TranslationService.translate(context, 'help_import_app'),
+                gradient: AppDesign.accentGradient,
+                onTap: () => context.push('/settings/migration-wizard'),
+              ),
+            ),
+          ],
         ),
 
         // Developer Tools Section (only shown if SHOW_DEV_TOOLS=true in .env)

@@ -57,10 +57,29 @@ class _MigrationWizardScreenState extends State<MigrationWizardScreen> {
                         onTap: () => context.push('/settings/gleeph-import'),
                         color: Colors.purple.shade400,
                       ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 14, color: Colors.grey.shade500),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'En cas d\'échec, demandez un export de votre bibliothèque Gleeph et utilisez l\'option "Autre CSV" ci-dessous.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade500,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       _buildMigrationCard(
                         context,
-                        title: 'Goodreads / Babelio / Autre CSV',
+                        title: 'Goodreads / Babelio / Gleeph CSV',
                         description:
                             'Importez un fichier CSV exporté depuis une autre plateforme.',
                         icon: Icons.import_contacts,
@@ -125,21 +144,27 @@ class _MigrationWizardScreenState extends State<MigrationWizardScreen> {
     String title,
     String subtitle,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: isDark ? Colors.white : Colors.blueGrey.shade900,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8)),
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.white70 : Colors.blueGrey.shade600,
+          ),
         ),
       ],
     );

@@ -311,7 +311,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     if (_tags.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       _buildSectionTitle(
-                        TranslationService.translate(context, 'shelf_statistics'),
+                        TranslationService.translate(
+                          context,
+                          'shelf_statistics',
+                        ),
                         Icons.shelves,
                         AppDesign.warningGradient,
                       ),
@@ -322,7 +325,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     if (_collections.isNotEmpty) ...[
                       const SizedBox(height: 32),
                       _buildSectionTitle(
-                        TranslationService.translate(context, 'collection_statistics'),
+                        TranslationService.translate(
+                          context,
+                          'collection_statistics',
+                        ),
                         Icons.collections_bookmark,
                         AppDesign.darkGradient,
                       ),
@@ -380,7 +386,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ),
           child: Icon(icon, size: 18, color: Colors.white),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Text(
           title,
           style: Theme.of(
@@ -431,7 +437,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 children: [
                   Icon(
                     isGoalReached ? Icons.emoji_events : Icons.track_changes,
-                    color: isGoalReached ? Colors.white : const Color(0xFFF59E0B),
+                    color: isGoalReached
+                        ? Colors.white
+                        : const Color(0xFFF59E0B),
                     size: 28,
                   ),
                   const SizedBox(width: 12),
@@ -449,7 +457,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         ),
                       ),
                       Text(
-                        TranslationService.translate(context, 'reading_challenge'),
+                        TranslationService.translate(
+                          context,
+                          'reading_challenge',
+                        ),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -462,7 +473,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               ),
               if (isGoalReached)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -509,13 +523,19 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                                       colors: [Colors.white, Color(0xFFFFF8DC)],
                                     )
                                   : const LinearGradient(
-                                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                      colors: [
+                                        Color(0xFFF59E0B),
+                                        Color(0xFFD97706),
+                                      ],
                                     ),
                               borderRadius: BorderRadius.circular(6),
                               boxShadow: [
                                 BoxShadow(
-                                  color: (isGoalReached ? Colors.white : const Color(0xFFF59E0B))
-                                      .withValues(alpha: 0.4),
+                                  color:
+                                      (isGoalReached
+                                              ? Colors.white
+                                              : const Color(0xFFF59E0B))
+                                          .withValues(alpha: 0.4),
                                   blurRadius: 4,
                                 ),
                               ],
@@ -849,7 +869,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       case 'wanting':
         return TranslationService.translate(context, 'reading_status_wanting');
       case 'abandoned':
-        return TranslationService.translate(context, 'reading_status_abandoned');
+        return TranslationService.translate(
+          context,
+          'reading_status_abandoned',
+        );
       case 'owned':
         return TranslationService.translate(context, 'owned_status');
       case 'lent':
@@ -1484,11 +1507,13 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
   Widget _buildShelfStatisticsSection() {
     final totalShelves = _tags.length;
-    final totalBooksInShelves = _tags.fold<int>(0, (sum, tag) => sum + tag.count);
+    final totalBooksInShelves = _tags.fold<int>(
+      0,
+      (sum, tag) => sum + tag.count,
+    );
 
     // Top shelves (by book count)
-    var topShelves = _tags.toList()
-      ..sort((a, b) => b.count.compareTo(a.count));
+    var topShelves = _tags.toList()..sort((a, b) => b.count.compareTo(a.count));
     if (topShelves.length > 5) topShelves = topShelves.sublist(0, 5);
 
     return Container(
@@ -1586,7 +1611,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     // Top collections (by book count)
     var topCollections = _collections.toList()
       ..sort((a, b) => b.totalBooks.compareTo(a.totalBooks));
-    if (topCollections.length > 5) topCollections = topCollections.sublist(0, 5);
+    if (topCollections.length > 5)
+      topCollections = topCollections.sublist(0, 5);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -1648,7 +1674,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                             style: const TextStyle(fontSize: 13),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (col.description != null && col.description!.isNotEmpty)
+                          if (col.description != null &&
+                              col.description!.isNotEmpty)
                             Text(
                               col.description!,
                               style: TextStyle(
@@ -1735,7 +1762,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 }
 
 /// Embeddable statistics content widget (without Scaffold)
-/// Used in Dashboard tabs
+/// Used in Dashboard tabs - Now includes all statistics from StatisticsScreen
 class StatisticsContent extends StatefulWidget {
   const StatisticsContent({super.key});
 
@@ -1745,12 +1772,12 @@ class StatisticsContent extends StatefulWidget {
 
 class _StatisticsContentState extends State<StatisticsContent>
     with TickerProviderStateMixin {
-  String _capitalizeFirstLetter(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
-  }
-
   List<Book> _books = [];
+  List<dynamic> _loans = [];
+  Map<int, Contact> _contactsMap = {};
+  List<Tag> _tags = [];
+  List<Collection> _collections = [];
+  Map<String, dynamic>? _salesStats;
   bool _isLoading = true;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -1781,9 +1808,70 @@ class _StatisticsContentState extends State<StatisticsContent>
     try {
       final books = await api.getBooks();
 
+      // Fetch loans
+      List<dynamic> loans = [];
+      try {
+        final loansRes = await api.getLoans();
+        if (loansRes.statusCode == 200) {
+          loans = loansRes.data['loans'] ?? loansRes.data ?? [];
+        }
+      } catch (e) {
+        debugPrint('Error fetching loans: $e');
+      }
+
+      // Fetch contacts for names
+      Map<int, Contact> contactsMap = {};
+      try {
+        final contactsRes = await api.getContacts();
+        if (contactsRes.statusCode == 200) {
+          final List<dynamic> list = contactsRes.data['contacts'] ?? [];
+          for (var json in list) {
+            final c = Contact.fromJson(json);
+            if (c.id != null) {
+              contactsMap[c.id!] = c;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error fetching contacts: $e');
+      }
+
+      // Fetch tags (shelves)
+      List<Tag> tags = [];
+      try {
+        tags = await api.getTags();
+      } catch (e) {
+        debugPrint('Error fetching tags: $e');
+      }
+
+      // Fetch collections
+      List<Collection> collections = [];
+      try {
+        collections = await api.getCollections();
+      } catch (e) {
+        debugPrint('Error fetching collections: $e');
+      }
+
+      Map<String, dynamic>? salesStats;
+      if (Provider.of<ThemeProvider>(context, listen: false).isBookseller) {
+        try {
+          final statsRes = await api.getSalesStatistics();
+          if (statsRes.statusCode == 200) {
+            salesStats = statsRes.data;
+          }
+        } catch (e) {
+          debugPrint('Error fetching sales stats: $e');
+        }
+      }
+
       if (mounted) {
         setState(() {
           _books = books;
+          _loans = loans;
+          _contactsMap = contactsMap;
+          _tags = tags;
+          _collections = collections;
+          _salesStats = salesStats;
           _isLoading = false;
         });
         _animController.forward();
@@ -1834,15 +1922,12 @@ class _StatisticsContentState extends State<StatisticsContent>
       );
     }
 
-    // Reuse the full StatisticsScreen by navigating to it
-    // This is a simplified placeholder - for full functionality,
-    // consider extracting shared widgets
     return FadeTransition(
       opacity: _fadeAnim,
       child: RefreshIndicator(
         onRefresh: _fetchData,
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(
+          padding: const EdgeInsets.only(
             top: 20,
             left: 16.0,
             right: 16.0,
@@ -1852,6 +1937,50 @@ class _StatisticsContentState extends State<StatisticsContent>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSummaryCards(),
+              // Monthly Reading Progress
+              if (_hasReadingHistory()) ...[
+                const SizedBox(height: 32),
+                _buildSectionTitle(
+                  TranslationService.translate(context, 'monthly_progress'),
+                  Icons.show_chart,
+                  AppDesign.successGradient,
+                ),
+                const SizedBox(height: 16),
+                _buildMonthlyProgressChart(),
+              ],
+              // Average Rating & Reading Speed
+              const SizedBox(height: 32),
+              _buildSectionTitle(
+                TranslationService.translate(context, 'reading_insights'),
+                Icons.insights,
+                AppDesign.primaryGradient,
+              ),
+              const SizedBox(height: 16),
+              _buildReadingInsightsSection(),
+              // Genre Diversity
+              if (_hasGenreData()) ...[
+                const SizedBox(height: 32),
+                _buildSectionTitle(
+                  TranslationService.translate(context, 'genre_diversity') ??
+                      'Diversité des Genres',
+                  Icons.category,
+                  AppDesign.warningGradient,
+                ),
+                const SizedBox(height: 16),
+                _buildGenreDiversitySection(),
+              ],
+              // Sales Statistics (for booksellers)
+              if (_salesStats != null) ...[
+                const SizedBox(height: 32),
+                _buildSectionTitle(
+                  TranslationService.translate(context, 'sales_statistics'),
+                  Icons.monetization_on,
+                  AppDesign.successGradient,
+                ),
+                const SizedBox(height: 16),
+                _buildSalesStatisticsSection(),
+              ],
+              // Reading Habits
               const SizedBox(height: 32),
               _buildSectionTitle(
                 TranslationService.translate(context, 'reading_habits'),
@@ -1860,6 +1989,72 @@ class _StatisticsContentState extends State<StatisticsContent>
               ),
               const SizedBox(height: 16),
               _buildStatusPieChart(),
+              // Top Authors
+              const SizedBox(height: 32),
+              _buildSectionTitle(
+                TranslationService.translate(context, 'top_authors'),
+                Icons.person,
+                AppDesign.successGradient,
+              ),
+              const SizedBox(height: 16),
+              _buildTopAuthorsChart(),
+              // Publication Timeline
+              const SizedBox(height: 32),
+              _buildSectionTitle(
+                TranslationService.translate(context, 'publication_timeline'),
+                Icons.timeline,
+                AppDesign.oceanGradient,
+              ),
+              const SizedBox(height: 16),
+              _buildPublicationYearChart(),
+              // Loan Statistics
+              const SizedBox(height: 32),
+              _buildSectionTitle(
+                TranslationService.translate(context, 'loan_statistics'),
+                Icons.swap_horiz,
+                AppDesign.accentGradient,
+              ),
+              const SizedBox(height: 16),
+              _buildLoanStatisticsSection(),
+              // Borrowed Statistics - hidden for librarians
+              if (!Provider.of<ThemeProvider>(
+                context,
+                listen: false,
+              ).isLibrarian) ...[
+                const SizedBox(height: 32),
+                _buildSectionTitle(
+                  TranslationService.translate(context, 'borrowed_statistics'),
+                  Icons.arrow_downward,
+                  AppDesign.oceanGradient,
+                ),
+                const SizedBox(height: 16),
+                _buildBorrowedStatisticsSection(),
+              ],
+              // Shelf Statistics - only if shelves exist
+              if (_tags.isNotEmpty) ...[
+                const SizedBox(height: 32),
+                _buildSectionTitle(
+                  TranslationService.translate(context, 'shelf_statistics'),
+                  Icons.shelves,
+                  AppDesign.warningGradient,
+                ),
+                const SizedBox(height: 16),
+                _buildShelfStatisticsSection(),
+              ],
+              // Collection Statistics - only if collections exist
+              if (_collections.isNotEmpty) ...[
+                const SizedBox(height: 32),
+                _buildSectionTitle(
+                  TranslationService.translate(
+                    context,
+                    'collection_statistics',
+                  ),
+                  Icons.collections_bookmark,
+                  AppDesign.darkGradient,
+                ),
+                const SizedBox(height: 16),
+                _buildCollectionStatisticsSection(),
+              ],
               const SizedBox(height: 40),
             ],
           ),
@@ -1868,249 +2063,354 @@ class _StatisticsContentState extends State<StatisticsContent>
     );
   }
 
-  Widget _buildSummaryCards() {
-    final totalBooks = _books.length;
-    final readBooks = _books.where((b) => b.readingStatus == 'read').length;
-    final toReadBooks = _books
-        .where((b) => b.readingStatus == 'to_read')
-        .length;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 600) {
-          // Mobile: Stack vertically
-          return Column(
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: _buildSummaryCard(
-                  TranslationService.translate(context, 'total_books'),
-                  totalBooks.toString(),
-                  Icons.menu_book,
-                  AppDesign.pastelPrimaryGradient,
-                  onTap: () => context.go('/books'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: _buildSummaryCard(
-                  TranslationService.translate(context, 'books_read'),
-                  readBooks.toString(),
-                  Icons.check_circle,
-                  AppDesign.pastelSuccessGradient,
-                  onTap: () => context.go('/books?status=read'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: _buildSummaryCard(
-                  _capitalizeFirstLetter(
-                    TranslationService.translate(
-                      context,
-                      'reading_status_to_read',
-                    ),
-                  ),
-                  toReadBooks.toString(),
-                  Icons.bookmark,
-                  AppDesign.pastelAccentGradient,
-                  onTap: () => context.go('/books?status=to_read'),
-                ),
-              ),
-            ],
-          );
-        } else {
-          // Desktop/Tablet: Row
-          return Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  TranslationService.translate(context, 'total_books'),
-                  totalBooks.toString(),
-                  Icons.menu_book,
-                  AppDesign.pastelPrimaryGradient,
-                  onTap: () => context.go('/books'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  TranslationService.translate(context, 'books_read'),
-                  readBooks.toString(),
-                  Icons.check_circle,
-                  AppDesign.pastelSuccessGradient,
-                  onTap: () => context.go('/books?status=read'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  _capitalizeFirstLetter(
-                    TranslationService.translate(
-                      context,
-                      'reading_status_to_read',
-                    ),
-                  ),
-                  toReadBooks.toString(),
-                  Icons.bookmark,
-                  AppDesign.pastelAccentGradient,
-                  onTap: () => context.go('/books?status=to_read'),
-                ),
-              ),
-            ],
-          );
-        }
-      },
-    );
-  }
-
-  Widget _buildSummaryCard(
-    String label,
-    String value,
-    IconData icon,
-    Gradient gradient, {
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  (gradient is LinearGradient
-                          ? gradient.colors.first
-                          : Colors.blue)
-                      .withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Decorative background icon
-            Positioned(
-              right: -15,
-              top: -15,
-              child: ShaderMask(
-                shaderCallback: (rect) => LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.2),
-                    Colors.white.withValues(alpha: 0.05),
-                  ],
-                ).createShader(rect),
-                child: Icon(icon, size: 100, color: Colors.white),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Icon wrapper
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 20),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        value,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          height: 1.0,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSectionTitle(String title, IconData icon, Gradient gradient) {
     return Row(
       children: [
-        ShaderMask(
-          shaderCallback: (bounds) => gradient.createShader(bounds),
-          child: Icon(icon, size: 24, color: Colors.white),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: Colors.white),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Text(
           title,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
   }
 
+  Widget _buildSummaryCards() {
+    final totalBooks = _books.length;
+    final readBooks = _books.where((b) => b.readingStatus == 'read').length;
+    final borrowedBooks = _books.where((b) => !b.owned).length;
+    final uniqueAuthors = _books
+        .where((b) => b.author != null && b.author!.isNotEmpty)
+        .map((b) => b.author!)
+        .toSet()
+        .length;
+    final completionRate = totalBooks > 0
+        ? (readBooks / totalBooks * 100).toStringAsFixed(0)
+        : '0';
+    final booksWithYears = _books
+        .where((b) => b.publicationYear != null && b.publicationYear! > 1800)
+        .toList();
+    final oldestYear = booksWithYears.isEmpty
+        ? null
+        : booksWithYears
+              .map((b) => b.publicationYear!)
+              .reduce((a, b) => a < b ? a : b);
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'stat_total_books'),
+                totalBooks.toString(),
+                Icons.library_books,
+                AppDesign.primaryGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'stat_read'),
+                readBooks.toString(),
+                Icons.check_circle,
+                AppDesign.successGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'stat_borrowed'),
+                borrowedBooks.toString(),
+                Icons.people,
+                AppDesign.accentGradient,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'stat_unique_authors'),
+                uniqueAuthors.toString(),
+                Icons.person_outline,
+                AppDesign.warningGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'stat_completion'),
+                "$completionRate%",
+                Icons.trending_up,
+                AppDesign.oceanGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'stat_oldest_book'),
+                oldestYear?.toString() ?? "N/A",
+                Icons.history,
+                AppDesign.darkGradient,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Gradient gradient,
+  ) {
+    return Container(
+      height: 140,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color:
+                (gradient is LinearGradient
+                        ? gradient.colors.first
+                        : Colors.blue)
+                    .withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -15,
+            top: -15,
+            child: ShaderMask(
+              shaderCallback: (rect) => LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.2),
+                  Colors.white.withValues(alpha: 0.05),
+                ],
+              ).createShader(rect),
+              child: Icon(icon, size: 100, color: Colors.white),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.0,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatusPieChart() {
     final statusCounts = <String, int>{};
-    for (final book in _books) {
+    for (var book in _books) {
       final status = book.readingStatus ?? 'unknown';
       statusCounts[status] = (statusCounts[status] ?? 0) + 1;
     }
 
-    if (statusCounts.isEmpty) {
+    final colors = {
+      'read': const Color(0xFF10B981),
+      'reading': const Color(0xFF0EA5E9),
+      'to_read': const Color(0xFFF59E0B),
+      'wanting': const Color(0xFFEC4899),
+      'abandoned': const Color(0xFFEF4444),
+      'owned': const Color(0xFF607D8B),
+      'borrowed': const Color(0xFF8B5CF6),
+      'unknown': Colors.grey,
+    };
+
+    final List<PieChartSectionData> sections = [];
+    statusCounts.forEach((status, count) {
+      final color = colors[status] ?? Colors.grey;
+      final percentage = (count / _books.length * 100).toStringAsFixed(0);
+      sections.add(
+        PieChartSectionData(
+          color: color,
+          value: count.toDouble(),
+          title: '$percentage%',
+          radius: 70,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    });
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                sections: sections,
+                centerSpaceRadius: 50,
+                sectionsSpace: 3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: statusCounts.entries.map((e) {
+              final color = colors[e.key] ?? Colors.grey;
+              final label = _formatStatusLabel(e.key);
+              return _buildLegendItem(color, label, e.value);
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatStatusLabel(String status) {
+    switch (status) {
+      case 'read':
+        return TranslationService.translate(context, 'reading_status_read');
+      case 'reading':
+        return TranslationService.translate(context, 'reading_status_reading');
+      case 'to_read':
+        return TranslationService.translate(context, 'reading_status_to_read');
+      case 'wanting':
+        return TranslationService.translate(context, 'reading_status_wanting');
+      case 'abandoned':
+        return TranslationService.translate(
+          context,
+          'reading_status_abandoned',
+        );
+      case 'owned':
+        return TranslationService.translate(context, 'owned_status');
+      case 'lent':
+        return TranslationService.translate(context, 'reading_status_lent');
+      case 'borrowed':
+        return TranslationService.translate(context, 'reading_status_borrowed');
+      default:
+        return status.replaceAll('_', ' ');
+    }
+  }
+
+  Widget _buildLegendItem(Color color, String label, int count) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$label ($count)',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopAuthorsChart() {
+    final authorCounts = <String, int>{};
+    for (var book in _books) {
+      if (book.author != null && book.author!.isNotEmpty) {
+        authorCounts[book.author!] = (authorCounts[book.author!] ?? 0) + 1;
+      }
+    }
+
+    var sortedAuthors = authorCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    if (sortedAuthors.length > 5) {
+      sortedAuthors = sortedAuthors.sublist(0, 5);
+    }
+
+    if (sortedAuthors.isEmpty) {
       return Container(
-        height: 200,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
           boxShadow: AppDesign.cardShadow,
         ),
         child: Center(
-          child: Text(
-            TranslationService.translate(context, 'no_data_available'),
-          ),
+          child: Text(TranslationService.translate(context, 'no_author_data')),
         ),
       );
     }
-
-    final colors = {
-      'read': const Color(0xFF10B981),
-      'reading': const Color(0xFF6366F1),
-      'to_read': const Color(0xFFF59E0B),
-      'wanting': const Color(0xFFEC4899),
-      'abandoned': const Color(0xFFEF4444),
-      'borrowed': const Color(0xFF8B5CF6),
-      'unknown': Colors.grey,
-    };
 
     return Container(
       height: 280,
@@ -2120,62 +2420,1341 @@ class _StatisticsContentState extends State<StatisticsContent>
         borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
         boxShadow: AppDesign.cardShadow,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: PieChart(
-              PieChartData(
-                sections: statusCounts.entries.map((e) {
-                  return PieChartSectionData(
-                    value: e.value.toDouble(),
-                    title: e.value.toString(),
-                    color: colors[e.key] ?? Colors.grey,
-                    radius: 60,
-                    titleStyle: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  );
-                }).toList(),
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-              ),
-            ),
-          ),
-          const SizedBox(width: 24),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: statusCounts.entries.map((e) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: sortedAuthors.first.value.toDouble() + 1,
+          barTouchData: BarTouchData(
+            enabled: true,
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (group) => const Color(0xFF1E293B),
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  '${sortedAuthors[groupIndex].key}\n',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                   children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: colors[e.key] ?? Colors.grey,
-                        borderRadius: BorderRadius.circular(3),
+                    TextSpan(
+                      text: '${rod.toY.toInt()} books',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      TranslationService.translate(
-                        context,
-                        'reading_status_${e.key}',
-                      ),
-                      style: const TextStyle(fontSize: 12),
                     ),
                   ],
+                );
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (double value, TitleMeta meta) {
+                  if (value.toInt() >= sortedAuthors.length) {
+                    return const SizedBox.shrink();
+                  }
+                  final author = sortedAuthors[value.toInt()].key;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      author.length > 10
+                          ? '${author.substring(0, 8)}...'
+                          : author,
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  );
+                },
+                reservedSize: 40,
+              ),
+            ),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+          ),
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          barGroups: sortedAuthors.asMap().entries.map((e) {
+            final gradient = AppDesign.featureGradient(e.key);
+            return BarChartGroupData(
+              x: e.key,
+              barRods: [
+                BarChartRodData(
+                  toY: e.value.value.toDouble(),
+                  gradient: gradient,
+                  width: 24,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(6),
+                  ),
                 ),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPublicationYearChart() {
+    final yearCounts = <int, int>{};
+    for (var book in _books) {
+      if (book.publicationYear != null && book.publicationYear! > 1800) {
+        final decade = (book.publicationYear! ~/ 10) * 10;
+        yearCounts[decade] = (yearCounts[decade] ?? 0) + 1;
+      }
+    }
+
+    final sortedYears = yearCounts.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    if (sortedYears.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+          boxShadow: AppDesign.cardShadow,
+        ),
+        child: Center(
+          child: Text(
+            TranslationService.translate(context, 'no_pub_year_data'),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      height: 280,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 1,
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: Colors.black.withValues(alpha: 0.5),
+                strokeWidth: 1,
               );
-            }).toList(),
+            },
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < sortedYears.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        sortedYears[index].key.toString(),
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+                interval: 1,
+                reservedSize: 30,
+              ),
+            ),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: sortedYears.asMap().entries.map((e) {
+                return FlSpot(e.key.toDouble(), e.value.value.toDouble());
+              }).toList(),
+              isCurved: true,
+              gradient: AppDesign.oceanGradient,
+              barWidth: 4,
+              isStrokeCapRound: true,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) {
+                  return FlDotCirclePainter(
+                    radius: 5,
+                    color: const Color(0xFF0EA5E9),
+                    strokeWidth: 2,
+                    strokeColor: Colors.white,
+                  );
+                },
+              ),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF0EA5E9).withValues(alpha: 0.3),
+                    const Color(0xFF0EA5E9).withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (touchedSpot) => const Color(0xFF1E293B),
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  final year = sortedYears[spot.x.toInt()].key;
+                  return LineTooltipItem(
+                    '${year}s\n',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${spot.y.toInt()} books',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // === UNIQUE STATISTICS METHODS ===
+
+  bool _hasReadingHistory() {
+    return _books.any((b) => b.finishedReadingAt != null);
+  }
+
+  bool _hasGenreData() {
+    return _books.any((b) => b.subjects != null && b.subjects!.isNotEmpty);
+  }
+
+  Widget _buildMonthlyProgressChart() {
+    // Get books read in the last 12 months
+    final now = DateTime.now();
+    final monthlyData = <String, int>{};
+
+    for (int i = 11; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i, 1);
+      final key = DateFormat('MMM').format(month);
+      monthlyData[key] = 0;
+    }
+
+    for (var book in _books) {
+      if (book.finishedReadingAt != null) {
+        final finishedDate = book.finishedReadingAt!;
+        final monthsDiff =
+            (now.year - finishedDate.year) * 12 +
+            (now.month - finishedDate.month);
+        if (monthsDiff >= 0 && monthsDiff < 12) {
+          final key = DateFormat('MMM').format(finishedDate);
+          if (monthlyData.containsKey(key)) {
+            monthlyData[key] = monthlyData[key]! + 1;
+          }
+        }
+      }
+    }
+
+    final sortedData = monthlyData.entries.toList();
+    final maxValue = sortedData
+        .map((e) => e.value)
+        .reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: (maxValue + 1).toDouble(),
+          barTouchData: BarTouchData(
+            enabled: true,
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (group) => const Color(0xFF1E293B),
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  '${sortedData[groupIndex].key}: ${rod.toY.toInt()} ${TranslationService.translate(context, 'books')}',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                );
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  if (value.toInt() >= sortedData.length)
+                    return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      sortedData[value.toInt()].key,
+                      style: const TextStyle(fontSize: 9),
+                    ),
+                  );
+                },
+                reservedSize: 30,
+              ),
+            ),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+          ),
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          barGroups: sortedData.asMap().entries.map((e) {
+            final isCurrentMonth = e.key == sortedData.length - 1;
+            return BarChartGroupData(
+              x: e.key,
+              barRods: [
+                BarChartRodData(
+                  toY: e.value.value.toDouble(),
+                  gradient: isCurrentMonth
+                      ? AppDesign.accentGradient
+                      : AppDesign.primaryGradient,
+                  width: 16,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(4),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadingInsightsSection() {
+    // Calculate average rating
+    final ratedBooks = _books
+        .where((b) => b.userRating != null && b.userRating! > 0)
+        .toList();
+    final avgRating = ratedBooks.isNotEmpty
+        ? ratedBooks.map((b) => b.userRating!).reduce((a, b) => a + b) /
+              ratedBooks.length
+        : 0.0;
+
+    // Calculate average reading duration
+    final booksWithDuration = _books
+        .where(
+          (b) =>
+              b.startedReadingAt != null &&
+              b.finishedReadingAt != null &&
+              b.finishedReadingAt!.isAfter(b.startedReadingAt!),
+        )
+        .toList();
+
+    double avgDays = 0;
+    if (booksWithDuration.isNotEmpty) {
+      final totalDays = booksWithDuration
+          .map(
+            (b) => b.finishedReadingAt!.difference(b.startedReadingAt!).inDays,
+          )
+          .reduce((a, b) => a + b);
+      avgDays = totalDays / booksWithDuration.length;
+    }
+
+    // Fastest book read
+    int? fastestDays;
+    String? fastestBookTitle;
+    int? fastestBookId;
+    for (var book in booksWithDuration) {
+      final days = book.finishedReadingAt!
+          .difference(book.startedReadingAt!)
+          .inDays;
+      if (fastestDays == null || days < fastestDays) {
+        fastestDays = days;
+        fastestBookTitle = book.title;
+        fastestBookId = book.id;
+      }
+    }
+
+    // Highest rated book - tie break with most recent finished date
+    Book? highestRatedBook;
+    for (var book in ratedBooks) {
+      if (highestRatedBook == null) {
+        highestRatedBook = book;
+      } else {
+        if ((book.userRating ?? 0) > (highestRatedBook.userRating ?? 0)) {
+          highestRatedBook = book;
+        } else if (book.userRating == highestRatedBook.userRating) {
+          // Tie break: most recently finished
+          if (book.finishedReadingAt != null &&
+              (highestRatedBook.finishedReadingAt == null ||
+                  book.finishedReadingAt!.isAfter(
+                    highestRatedBook.finishedReadingAt!,
+                  ))) {
+            highestRatedBook = book;
+          }
+        }
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildInsightCard(
+                  Icons.star_rate,
+                  avgRating > 0 ? avgRating.toStringAsFixed(1) : '-',
+                  TranslationService.translate(context, 'avg_rating'),
+                  avgRating > 0 ? ' stars' : '',
+                  const Color(0xFFF59E0B),
+                  useStarDisplay: avgRating > 0,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInsightCard(
+                  Icons.timer,
+                  avgDays > 0 ? avgDays.toStringAsFixed(0) : '-',
+                  TranslationService.translate(context, 'avg_reading_time'),
+                  TranslationService.translate(context, 'days'),
+                  const Color(0xFF0EA5E9),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInsightCard(
+                  Icons.speed,
+                  fastestDays?.toString() ?? '-',
+                  TranslationService.translate(context, 'fastest_read'),
+                  TranslationService.translate(context, 'days'),
+                  const Color(0xFF10B981),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInsightCard(
+                  Icons.workspace_premium,
+                  highestRatedBook?.userRating?.toString() ?? '-',
+                  TranslationService.translate(context, 'best_rated'),
+                  highestRatedBook != null ? ' stars' : '',
+                  const Color(0xFFEC4899),
+                  useStarDisplay: highestRatedBook != null,
+                ),
+              ),
+            ],
+          ),
+          // Show book titles if available
+          if (fastestBookTitle != null || highestRatedBook != null) ...[
+            if (fastestBookTitle != null)
+              _buildBookMention(
+                context: context,
+                icon: Icons.speed,
+                label: TranslationService.translate(context, 'fastest_book'),
+                bookTitle: fastestBookTitle,
+                bookId: fastestBookId,
+                color: const Color(0xFF10B981),
+              ),
+            if (highestRatedBook != null) ...[
+              const SizedBox(height: 8),
+              _buildBookMention(
+                context: context,
+                icon: Icons.workspace_premium,
+                label: TranslationService.translate(context, 'favorite_book'),
+                bookTitle: highestRatedBook.title,
+                bookId: highestRatedBook.id,
+                color: const Color(0xFFEC4899),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookMention({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String bookTitle,
+    int? bookId,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: bookId != null ? () => context.push('/books/$bookId') : null,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 8),
+            Text(
+              '$label: ',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            Expanded(
+              child: Text(
+                bookTitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                  decoration: bookId != null ? TextDecoration.underline : null,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsightCard(
+    IconData icon,
+    String value,
+    String label,
+    String suffix,
+    Color color, {
+    bool useStarDisplay = false,
+  }) {
+    final double? ratingValue = double.tryParse(value);
+    final double starRating = useStarDisplay && ratingValue != null
+        ? (ratingValue / 2.0).clamp(0.0, 5.0)
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 12),
+          if (useStarDisplay && ratingValue != null)
+            Row(
+              children: List.generate(5, (index) {
+                final starIndex = index + 1;
+                IconData iconData;
+                if (starIndex <= starRating) {
+                  iconData = Icons.star;
+                } else if (starIndex - 0.5 <= starRating) {
+                  iconData = Icons.star_half;
+                } else {
+                  iconData = Icons.star_outline;
+                }
+                return Icon(iconData, size: 16, color: color);
+              }),
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  suffix,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: color.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGenreDiversitySection() {
+    final genreCounts = <String, int>{};
+    for (var book in _books) {
+      if (book.subjects != null) {
+        for (var subject in book.subjects!) {
+          genreCounts[subject] = (genreCounts[subject] ?? 0) + 1;
+        }
+      }
+    }
+
+    var sortedGenres = genreCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    if (sortedGenres.length > 8) sortedGenres = sortedGenres.sublist(0, 8);
+
+    final totalGenres = genreCounts.length;
+    final colors = [
+      const Color(0xFF6366F1),
+      const Color(0xFF10B981),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEF4444),
+      const Color(0xFF8B5CF6),
+      const Color(0xFF0EA5E9),
+      const Color(0xFFEC4899),
+      const Color(0xFF14B8A6),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Diversity Score
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: AppDesign.warningGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.diversity_3,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$totalGenres ${TranslationService.translate(context, 'genres_explored') ?? 'genres explorés'}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    TranslationService.translate(
+                          context,
+                          'diversity_encouragement',
+                        ) ??
+                        'Continuez à explorer !',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Genre Bars
+          ...sortedGenres.asMap().entries.map((entry) {
+            final index = entry.key;
+            final genre = entry.value;
+            final maxCount = sortedGenres.first.value;
+            final percentage = genre.value / maxCount;
+            final color = colors[index % colors.length];
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          genre.key,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '${genre.value}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Stack(
+                    children: [
+                      Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: percentage,
+                        child: Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.4),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoanStatisticsSection() {
+    final totalLoans = _loans.length;
+    final activeLoans = _loans.where((l) => l['return_date'] == null).length;
+    final returnedLoans = _loans.where((l) => l['return_date'] != null).length;
+
+    double avgDuration = 0;
+    final returnedWithDates = _loans
+        .where((l) => l['return_date'] != null && l['loan_date'] != null)
+        .toList();
+
+    if (returnedWithDates.isNotEmpty) {
+      int totalDays = 0;
+      for (var loan in returnedWithDates) {
+        try {
+          final loanDate = DateTime.parse(loan['loan_date']);
+          final returnDate = DateTime.parse(loan['return_date']);
+          totalDays += returnDate.difference(loanDate).inDays;
+        } catch (_) {}
+      }
+      avgDuration = totalDays / returnedWithDates.length;
+    }
+
+    final borrowerCounts = <String, int>{};
+    for (var loan in _loans) {
+      String contactName = 'Unknown';
+      final contactId = loan['contact_id'];
+
+      if (contactId != null && _contactsMap.containsKey(contactId)) {
+        final contact = _contactsMap[contactId]!;
+        contactName = contact.fullName;
+      } else {
+        contactName =
+            loan['contact_name'] ?? loan['contact']?['name'] ?? 'Unknown';
+      }
+
+      borrowerCounts[contactName] = (borrowerCounts[contactName] ?? 0) + 1;
+    }
+    var topBorrowers = borrowerCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    if (topBorrowers.length > 5) topBorrowers = topBorrowers.sublist(0, 5);
+
+    final bookCounts = <String, int>{};
+    for (var loan in _loans) {
+      final bookTitle =
+          loan['book_title'] ?? loan['book']?['title'] ?? 'Unknown';
+      bookCounts[bookTitle] = (bookCounts[bookTitle] ?? 0) + 1;
+    }
+    var mostLentBooks = bookCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    if (mostLentBooks.length > 5) mostLentBooks = mostLentBooks.sublist(0, 5);
+
+    final returnRate = totalLoans > 0
+        ? (returnedLoans / totalLoans * 100).toStringAsFixed(0)
+        : '0';
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'total_loans'),
+                  totalLoans.toString(),
+                  Icons.swap_horiz,
+                  const Color(0xFF8B4513),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'active_loans'),
+                  activeLoans.toString(),
+                  Icons.arrow_upward,
+                  Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'return_rate'),
+                  '$returnRate%',
+                  Icons.check_circle,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'avg_duration'),
+                  '${avgDuration.toStringAsFixed(0)}j',
+                  Icons.timer,
+                  const Color(0xFFD4A855),
+                ),
+              ),
+            ],
+          ),
+          if (topBorrowers.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              TranslationService.translate(context, 'top_borrowers'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            ...topBorrowers.map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.person_outline,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        e.key,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B4513).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${e.value} ${TranslationService.translate(context, 'loans_label')}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF8B4513),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (mostLentBooks.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              TranslationService.translate(context, 'most_lent_books'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            ...mostLentBooks.map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.menu_book, size: 18, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        e.key,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4A855).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${e.value}x',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFFD4A855),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBorrowedStatisticsSection() {
+    final borrowedBooks = _books.where((b) => !b.owned).toList();
+    final totalBorrowed = borrowedBooks.length;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'books_borrowed'),
+                  totalBorrowed.toString(),
+                  Icons.arrow_downward,
+                  Colors.teal,
+                ),
+              ),
+            ],
+          ),
+          if (borrowedBooks.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              TranslationService.translate(context, 'borrowed_books_list'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            ...borrowedBooks
+                .take(5)
+                .map(
+                  (book) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.menu_book,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                book.title,
+                                style: const TextStyle(fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (book.author != null)
+                                Text(
+                                  book.author!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+          ] else ...[
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                TranslationService.translate(context, 'no_borrowed_books'),
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShelfStatisticsSection() {
+    final totalShelves = _tags.length;
+    final totalBooksInShelves = _tags.fold<int>(
+      0,
+      (sum, tag) => sum + tag.count,
+    );
+
+    var topShelves = _tags.toList()..sort((a, b) => b.count.compareTo(a.count));
+    if (topShelves.length > 5) topShelves = topShelves.sublist(0, 5);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'total_shelves'),
+                  totalShelves.toString(),
+                  Icons.shelves,
+                  const Color(0xFFF59E0B),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'books_in_shelves'),
+                  totalBooksInShelves.toString(),
+                  Icons.menu_book,
+                  const Color(0xFFD97706),
+                ),
+              ),
+            ],
+          ),
+          if (topShelves.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              TranslationService.translate(context, 'top_shelves'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            ...topShelves.map(
+              (tag) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.label_outline,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        tag.name,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${tag.count}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFFF59E0B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollectionStatisticsSection() {
+    final totalCollections = _collections.length;
+    final totalBooksInCollections = _collections.fold<int>(
+      0,
+      (sum, col) => sum + col.totalBooks,
+    );
+
+    var topCollections = _collections.toList()
+      ..sort((a, b) => b.totalBooks.compareTo(a.totalBooks));
+    if (topCollections.length > 5)
+      topCollections = topCollections.sublist(0, 5);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'total_collections'),
+                  totalCollections.toString(),
+                  Icons.collections_bookmark,
+                  const Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMiniStat(
+                  TranslationService.translate(context, 'books_in_collections'),
+                  totalBooksInCollections.toString(),
+                  Icons.menu_book,
+                  const Color(0xFF475569),
+                ),
+              ),
+            ],
+          ),
+          if (topCollections.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              TranslationService.translate(context, 'top_collections'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            ...topCollections.map(
+              (col) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.bookmark_outline,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            col.name,
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (col.description != null &&
+                              col.description!.isNotEmpty)
+                            Text(
+                              col.description!,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${col.totalBooks}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesStatisticsSection() {
+    if (_salesStats == null) return const SizedBox.shrink();
+
+    final totalRevenue =
+        (_salesStats!['total_revenue'] as num?)?.toDouble() ?? 0.0;
+    final totalSales = (_salesStats!['total_sales'] as num?)?.toInt() ?? 0;
+    final avgPrice = (_salesStats!['average_price'] as num?)?.toDouble() ?? 0.0;
+
+    final currencyFormat = NumberFormat.currency(locale: 'fr_FR', symbol: '€');
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'total_revenue'),
+                currencyFormat.format(totalRevenue),
+                Icons.euro,
+                AppDesign.successGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'sales_count'),
+                totalSales.toString(),
+                Icons.shopping_cart,
+                AppDesign.primaryGradient,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                TranslationService.translate(context, 'average_price'),
+                currencyFormat.format(avgPrice),
+                Icons.price_check,
+                AppDesign.oceanGradient,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

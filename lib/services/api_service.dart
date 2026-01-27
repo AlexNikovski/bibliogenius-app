@@ -2823,9 +2823,17 @@ class ApiService {
 
     try {
       final currentLang = locale?.languageCode ?? 'en';
-      // Use _getLocalDio() in FFI mode to ensure correct base URL
-      final dio = useFfi ? await _getLocalDio() : _dio;
-      final response = await dio.get(
+      // Use a dedicated Dio instance with longer timeout for lookups
+      // The backend may chain BNF → Inventaire → OpenLibrary → Google Books,
+      // which can take 15+ seconds for difficult ISBNs
+      final lookupDio = Dio(
+        BaseOptions(
+          baseUrl: useFfi ? 'http://127.0.0.1:$httpPort' : _dio.options.baseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 20),
+        ),
+      );
+      final response = await lookupDio.get(
         '/api/lookup/$isbn',
         queryParameters: {'lang': currentLang},
       );

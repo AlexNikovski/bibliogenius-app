@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/genie_app_bar.dart';
 import '../widgets/contextual_help_sheet.dart';
+import '../widgets/streak_celebration.dart';
 import '../services/api_service.dart';
 import '../services/translation_service.dart';
 import '../models/book.dart';
@@ -208,6 +209,25 @@ class _DashboardScreenState extends State<DashboardScreen>
             setState(() {
               _userName = statusData['name'];
             });
+
+            // Show streak celebration if gamification is enabled
+            if (themeProvider.gamificationEnabled) {
+              final streakData = statusData['streak'] as Map<String, dynamic>?;
+              if (streakData != null) {
+                final currentStreak = streakData['current'] as int? ?? 0;
+                final longestStreak = streakData['longest'] as int? ?? 0;
+                // Delay slightly to let UI render first
+                Future.delayed(const Duration(milliseconds: 800), () {
+                  if (mounted) {
+                    StreakCelebration.showIfNeeded(
+                      context,
+                      currentStreak: currentStreak,
+                      longestStreak: longestStreak,
+                    );
+                  }
+                });
+              }
+            }
           }
         }
 

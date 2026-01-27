@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
+import '../models/tag.dart';
 import '../theme/app_design.dart';
 import '../providers/theme_provider.dart';
 
@@ -21,6 +22,15 @@ class GleephBookCandidate {
   bool isLoading;
   bool metadataFailed;
 
+  // Gleeph-specific data
+  String? gleephStatus; // Raw status from Gleeph: "J'ai", "Wishlist", "Je lis", "J'ai lu"
+  int? gleephRating; // Rating 1-5 from Gleeph
+
+  // Mapped BiblioGenius data
+  String? readingStatus; // Mapped status: to_read, reading, read, wanting
+  int? userRating; // Converted to 0-10 scale
+  bool owned;
+
   GleephBookCandidate({
     required this.isbn,
     this.title,
@@ -32,7 +42,51 @@ class GleephBookCandidate {
     this.isAlreadyInLibrary = false,
     this.isLoading = true,
     this.metadataFailed = false,
+    this.gleephStatus,
+    this.gleephRating,
+    this.readingStatus,
+    this.userRating,
+    this.owned = true,
   });
+
+  /// Map Gleeph status to BiblioGenius reading_status and owned flag
+  void mapGleephStatus() {
+    switch (gleephStatus?.toLowerCase()) {
+      case "j'ai":
+      case 'owned':
+      case 'possédé':
+        readingStatus = 'to_read';
+        owned = true;
+        break;
+      case 'wishlist':
+      case 'envie':
+      case 'à lire':
+        readingStatus = 'wanting';
+        owned = false;
+        break;
+      case 'je lis':
+      case 'en cours':
+      case 'reading':
+        readingStatus = 'reading';
+        owned = true;
+        break;
+      case "j'ai lu":
+      case 'lu':
+      case 'read':
+        readingStatus = 'read';
+        owned = true;
+        break;
+      default:
+        // Default: owned but not read yet
+        readingStatus = 'to_read';
+        owned = true;
+    }
+
+    // Convert Gleeph rating (1-5) to BiblioGenius rating (0-10)
+    if (gleephRating != null && gleephRating! > 0) {
+      userRating = gleephRating! * 2; // 1->2, 2->4, 3->6, 4->8, 5->10
+    }
+  }
 }
 
 class GleephImportScreen extends StatefulWidget {
@@ -51,6 +105,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
   bool _isResolvingMetadata = false;
   bool _isImporting = false;
   String? _currentUrl;
+  int _extractionBookCount = 0; // Books found during extraction scrolling
 
   // Data
   List<GleephBookCandidate> _candidates = [];
@@ -60,6 +115,14 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
   int _importSkippedCount = 0;
   int _importErrorCount = 0;
   String? _currentImportingTitle;
+
+  // Shelf and status data
+  String? _detectedGleephShelf; // Shelf name detected from Gleeph page
+  String _selectedReadingStatus = "À lire"; // Reading status: À lire, Je lis, J'ai lu, Wishlist
+  bool _selectedOwned = true; // Whether books are owned (J'ai)
+  List<Tag> _availableShelves = []; // BiblioGenius shelves
+  String? _selectedShelfName; // Target shelf for import (null = no shelf)
+  bool _createNewShelf = false; // Whether to create a new shelf
 
   // View state
   bool _showPreview = false;
@@ -132,92 +195,29 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
     }
   }
 
-  /// Check if user appears to be logged in
-  Future<bool> _isLoggedIn() async {
-    try {
-      // Look for common logged-in indicators (profile link, avatar, etc.)
-      final result = await _controller.runJavaScriptReturningResult('''
-        (function() {
-          var profileLinks = document.querySelectorAll('a[href*="/profile"], a[href*="/@"], [class*="avatar"], [class*="user-menu"]');
-          return profileLinks.length > 0 ? "true" : "false";
-        })()
-      ''');
-      return result.toString().contains('true');
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Try to navigate to user's library automatically
-  Future<void> _navigateToLibrary() async {
-    try {
-      // First, try to find and click on profile/library links
-      const script = '''
-(function() {
-  // Common selectors for profile/library links on Gleeph
-  var selectors = [
-    'a[href*="/shelf/"]',
-    'a[href*="/library"]',
-    'a[href*="/bibliotheque"]',
-    'a[href*="/@"]',
-    'a[href*="/profile"]',
-    'a[href*="/user/"]',
-    '[class*="profile"]',
-    '[class*="library"]',
-    '[class*="shelf"]'
-  ];
-
-  for (var i = 0; i < selectors.length; i++) {
-    var el = document.querySelector(selectors[i]);
-    if (el && el.click) {
-      el.click();
-      return "clicked: " + selectors[i];
-    }
-  }
-
-  // List available navigation links for debugging
-  var navLinks = document.querySelectorAll('nav a, header a, [class*="nav"] a');
-  var links = [];
-  for (var j = 0; j < navLinks.length && j < 10; j++) {
-    links.push(navLinks[j].href + " | " + (navLinks[j].textContent || "").trim().substring(0, 30));
-  }
-  return "no-match, available: " + links.join(" ; ");
-})()
-''';
-
-      final result = await _controller.runJavaScriptReturningResult(script);
-      debugPrint('Navigate to library result: $result');
-
-      if (result.toString().contains('clicked')) {
-        _showSnackBar('Navigation vers la bibliothèque...');
-        // Wait for page to load
-        await Future.delayed(const Duration(seconds: 2));
-        await _updateCurrentUrl();
-      } else {
-        _showSnackBar(
-          'Navigation auto impossible. Naviguez manuellement vers votre bibliothèque.',
-          isError: true,
-        );
-        debugPrint('Available links: $result');
-      }
-    } catch (e) {
-      debugPrint('Navigation error: $e');
-      _showSnackBar('Erreur de navigation: $e', isError: true);
-    }
-  }
-
-  /// Click "Load more" buttons if present
+  /// Click "Voir plus" button if present (Gleeph uses this to load more books)
   Future<bool> _clickLoadMore() async {
     try {
       const script = '''
 (function() {
+  // First, try to find the "VOIR PLUS" button by text content
+  var buttons = document.querySelectorAll('button, a, div[role="button"]');
+  for (var i = 0; i < buttons.length; i++) {
+    var text = (buttons[i].innerText || buttons[i].textContent || '').trim().toLowerCase();
+    if (text === 'voir plus' || text === 'load more' || text === 'charger plus') {
+      buttons[i].click();
+      return "clicked";
+    }
+  }
+
+  // Fallback: try common selectors
   var selectors = [
     'button[class*="load"]',
     'button[class*="more"]',
     '[class*="load-more"]',
     '[class*="loadmore"]',
-    'button:contains("plus")',
-    'button:contains("more")',
+    '[class*="voir-plus"]',
+    '[class*="voirplus"]',
     'a[class*="load"]',
     '[class*="pagination"] a:last-child'
   ];
@@ -321,103 +321,288 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
       _isExtracting = true;
       _candidates = [];
       _showPreview = false;
+      _extractionBookCount = 0;
     });
 
     try {
-      // Step 1: Adaptive scrolling with "Load more" button support
-      int previousHeight = 0;
-      int noChangeCount = 0;
+      // Step 1: Scroll and collect ISBNs incrementally (handles virtualized lists)
+      final Set<String> collectedIsbns = {};
+      int noNewBooksCount = 0;
       int scrollCount = 0;
       int loadMoreClicks = 0;
-      const maxScrolls = 100; // Safety limit for very large libraries
+      const maxScrolls = 200; // Safety limit for very large libraries
+      const maxNoNewBooks = 8; // Stop after 8 scrolls without new books
 
-      while (noChangeCount < 4 && scrollCount < maxScrolls) {
-        scrollCount++;
-
-        // Get current page height
-        int currentHeight = 0;
-        try {
-          final heightResult = await _controller.runJavaScriptReturningResult('document.body.scrollHeight');
-          currentHeight = int.tryParse(heightResult.toString()) ?? 0;
-        } catch (e) {
-          debugPrint('Height check error: $e');
-        }
-
-        // Check if new content was loaded
-        if (currentHeight == previousHeight) {
-          noChangeCount++;
-
-          // Try clicking "Load more" button when scrolling doesn't load more
-          if (noChangeCount >= 2) {
-            final clicked = await _clickLoadMore();
-            if (clicked) {
-              loadMoreClicks++;
-              noChangeCount = 0; // Reset counter, we might have more content
-              debugPrint('Clicked "Load more" button ($loadMoreClicks times)');
-              await Future.delayed(const Duration(milliseconds: 1000));
-              continue;
-            }
-          }
-        } else {
-          noChangeCount = 0;
-          previousHeight = currentHeight;
-        }
-
-        // Scroll to bottom
-        try {
-          await _controller.runJavaScript('window.scrollTo(0, document.body.scrollHeight)');
-        } catch (e) {
-          debugPrint('Scroll error: $e');
-        }
-
-        // Wait for content to load (longer wait to ensure lazy loading completes)
-        await Future.delayed(const Duration(milliseconds: 800));
-
-        // Update UI with progress
-        if (mounted && scrollCount % 5 == 0) {
-          debugPrint('Scrolling... ($scrollCount scrolls, height: $currentHeight, loadMore: $loadMoreClicks)');
-        }
-      }
-
-      debugPrint('Scrolling complete after $scrollCount scrolls, $loadMoreClicks "load more" clicks');
-
-      // Scroll back to top
-      await _controller.runJavaScript('window.scrollTo(0, 0)');
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // Step 2: Extract ISBNs with a simpler script
-      const extractScript = '''
+      // Script to extract ISBNs currently visible in DOM
+      const extractVisibleIsbnsScript = '''
 (function() {
+  var isbns = [];
+  var seen = {};
+
+  // Method 1: Links with /ean/ pattern
   var links = document.querySelectorAll('a[href*="/ean/"]');
-  var eans = [];
   for (var i = 0; i < links.length; i++) {
     var href = links[i].href;
     var parts = href.split('/ean/');
     if (parts.length > 1) {
       var ean = parts[1].split('/')[0].split('?')[0];
-      if (ean && ean.length === 13 && /^[0-9]+\$/.test(ean)) {
-        if (eans.indexOf(ean) === -1) {
-          eans.push(ean);
+      // Accept ISBN-13 (13 digits) or ISBN-10 (10 chars, may end with X)
+      if (ean && (ean.length === 13 || ean.length === 10) && /^[0-9]+[0-9X]?\$/.test(ean)) {
+        if (!seen[ean]) {
+          seen[ean] = true;
+          isbns.push(ean);
         }
       }
     }
   }
-  return JSON.stringify(eans);
+
+  // Method 2: Links with /isbn/ pattern
+  var isbnLinks = document.querySelectorAll('a[href*="/isbn/"]');
+  for (var i = 0; i < isbnLinks.length; i++) {
+    var href = isbnLinks[i].href;
+    var parts = href.split('/isbn/');
+    if (parts.length > 1) {
+      var isbn = parts[1].split('/')[0].split('?')[0];
+      if (isbn && (isbn.length === 13 || isbn.length === 10) && /^[0-9]+[0-9X]?\$/.test(isbn)) {
+        if (!seen[isbn]) {
+          seen[isbn] = true;
+          isbns.push(isbn);
+        }
+      }
+    }
+  }
+
+  // Method 2b: Look for ISBN in any URL segment (broader search)
+  var allBookLinks = document.querySelectorAll('a[href*="gleeph"]');
+  for (var i = 0; i < allBookLinks.length; i++) {
+    var href = allBookLinks[i].href;
+    // Look for 13-digit or 10-digit sequences in URL
+    var matches = href.match(/\\/(97[89][0-9]{10}|[0-9]{9}[0-9X])(\\/|\\?|\$)/);
+    if (matches && matches[1]) {
+      if (!seen[matches[1]]) {
+        seen[matches[1]] = true;
+        isbns.push(matches[1]);
+      }
+    }
+  }
+
+  // Method 3: Look for ISBN in data attributes
+  var elements = document.querySelectorAll('[data-isbn], [data-ean]');
+  for (var i = 0; i < elements.length; i++) {
+    var isbn = elements[i].getAttribute('data-isbn') || elements[i].getAttribute('data-ean');
+    if (isbn && (isbn.length === 13 || isbn.length === 10) && /^[0-9]+[0-9X]?\$/.test(isbn)) {
+      if (!seen[isbn]) {
+        seen[isbn] = true;
+        isbns.push(isbn);
+      }
+    }
+  }
+
+  // Method 4: Look for ISBN patterns in text (last resort)
+  var bookCards = document.querySelectorAll('[class*="book"], [class*="card"], [class*="item"]');
+  for (var i = 0; i < bookCards.length; i++) {
+    var text = bookCards[i].innerText || '';
+    var matches = text.match(/\\b(97[89][0-9]{10}|[0-9]{9}[0-9X])\\b/g);
+    if (matches) {
+      for (var j = 0; j < matches.length; j++) {
+        if (!seen[matches[j]]) {
+          seen[matches[j]] = true;
+          isbns.push(matches[j]);
+        }
+      }
+    }
+  }
+
+  // Debug: count total book-like elements on page
+  var allLinks = document.querySelectorAll('a[href*="/ean/"], a[href*="/book/"], a[href*="/livre/"]');
+  console.log('Gleeph extraction: found ' + isbns.length + ' ISBNs, ' + allLinks.length + ' book links total');
+
+  return JSON.stringify(isbns);
 })()
-''';
+      ''';
 
-      final result = await _controller.runJavaScriptReturningResult(extractScript);
-
-      // Parse result (handle different formats)
-      String cleanResult = result.toString();
-      if (cleanResult.startsWith('"') && cleanResult.endsWith('"')) {
-        cleanResult = cleanResult
-            .substring(1, cleanResult.length - 1)
-            .replaceAll('\\"', '"');
+      // Collect ISBNs from initial view
+      try {
+        final result = await _controller.runJavaScriptReturningResult(extractVisibleIsbnsScript);
+        String cleaned = result.toString();
+        if (cleaned.startsWith('"')) cleaned = cleaned.substring(1, cleaned.length - 1).replaceAll('\\"', '"');
+        final List<dynamic> isbns = jsonDecode(cleaned);
+        collectedIsbns.addAll(isbns.cast<String>());
+      } catch (e) {
+        debugPrint('Initial ISBN extraction error: $e');
       }
 
-      final List<dynamic> isbns = jsonDecode(cleanResult);
-      final isbnList = isbns.cast<String>().toList();
+      // Strategy: Click "Voir Plus" button repeatedly to load all books
+      // Gleeph doesn't use infinite scroll - it uses a "Voir Plus" button
+      bool foundMoreBooks = true;
+      while (foundMoreBooks && scrollCount < maxScrolls) {
+        scrollCount++;
+        final previousCount = collectedIsbns.length;
+
+        // Try clicking "Voir Plus" button first
+        final clicked = await _clickLoadMore();
+        if (clicked) {
+          loadMoreClicks++;
+          debugPrint('Clicked "Voir Plus" button ($loadMoreClicks times)');
+          // Wait for new content to load
+          await Future.delayed(const Duration(milliseconds: 1500));
+        } else {
+          // If no button found, scroll down to find it
+          try {
+            await _controller.runJavaScript('window.scrollTo(0, document.body.scrollHeight)');
+          } catch (e) {
+            debugPrint('Scroll error: $e');
+          }
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Try clicking again after scrolling
+          final clickedAfterScroll = await _clickLoadMore();
+          if (clickedAfterScroll) {
+            loadMoreClicks++;
+            debugPrint('Clicked "Voir Plus" button after scroll ($loadMoreClicks times)');
+            await Future.delayed(const Duration(milliseconds: 1500));
+          }
+        }
+
+        // Extract ISBNs from current view and add to collection
+        try {
+          final result = await _controller.runJavaScriptReturningResult(extractVisibleIsbnsScript);
+          String cleaned = result.toString();
+          if (cleaned.startsWith('"')) cleaned = cleaned.substring(1, cleaned.length - 1).replaceAll('\\"', '"');
+          final List<dynamic> isbns = jsonDecode(cleaned);
+          collectedIsbns.addAll(isbns.cast<String>());
+        } catch (e) {
+          debugPrint('ISBN extraction error: $e');
+        }
+
+        // Check if we found new books
+        if (collectedIsbns.length == previousCount) {
+          noNewBooksCount++;
+          if (noNewBooksCount >= maxNoNewBooks) {
+            foundMoreBooks = false;
+          }
+        } else {
+          noNewBooksCount = 0;
+        }
+
+        // Update UI with progress
+        if (mounted && collectedIsbns.length != _extractionBookCount) {
+          setState(() {
+            _extractionBookCount = collectedIsbns.length;
+          });
+          debugPrint('Progress: $loadMoreClicks "Voir Plus" clicks, ${collectedIsbns.length} livres uniques trouvés');
+        }
+      }
+
+      debugPrint('Extraction complete: $scrollCount iterations, $loadMoreClicks "Voir Plus" clicks, ${collectedIsbns.length} unique ISBNs found');
+
+      // Count total visible book elements and find books without ISBN
+      try {
+        const countBooksScript = '''
+(function() {
+  // Count EAN links (books with ISBN)
+  var eanLinks = document.querySelectorAll('a[href*="/ean/"]');
+  var uniqueEans = new Set();
+  for (var i = 0; i < eanLinks.length; i++) {
+    uniqueEans.add(eanLinks[i].href);
+  }
+
+  // Try to find book cards/items that might not have EAN links
+  // Look for common book card patterns
+  var bookCards = document.querySelectorAll('[class*="BookCard"], [class*="book-card"], [class*="bookCard"], [class*="book-item"], [class*="BookItem"]');
+
+  // Also count by looking at the grid/list structure
+  var gridItems = document.querySelectorAll('[class*="grid"] > div, [class*="list"] > div, [class*="books"] > div');
+
+  var result = {
+    eanLinks: uniqueEans.size,
+    bookCards: bookCards.length,
+    gridItems: gridItems.length
+  };
+
+  // Try to find books without /ean/ link
+  var booksWithoutIsbn = [];
+  var allLinks = document.querySelectorAll('a[href*="gleeph.com"]');
+  for (var i = 0; i < allLinks.length; i++) {
+    var href = allLinks[i].href;
+    // Look for book/work links that don't have /ean/
+    if ((href.includes('/work/') || href.includes('/edition/')) && !href.includes('/ean/')) {
+      var title = allLinks[i].innerText || allLinks[i].title || '';
+      if (title && title.length > 2 && title.length < 200) {
+        booksWithoutIsbn.push({href: href, title: title.substring(0, 50)});
+      }
+    }
+  }
+  result.booksWithoutIsbn = booksWithoutIsbn.slice(0, 20); // Limit to first 20
+
+  return JSON.stringify(result);
+})()
+''';
+        final countResult = await _controller.runJavaScriptReturningResult(countBooksScript);
+        String cleaned = countResult.toString();
+        if (cleaned.startsWith('"')) cleaned = cleaned.substring(1, cleaned.length - 1).replaceAll('\\"', '"');
+        final Map<String, dynamic> counts = jsonDecode(cleaned);
+        debugPrint('Page analysis: ${counts['eanLinks']} EAN links, ${counts['bookCards']} book cards, ${counts['gridItems']} grid items');
+        debugPrint('ISBNs extracted: ${collectedIsbns.length}');
+
+        final booksWithoutIsbn = counts['booksWithoutIsbn'] as List<dynamic>? ?? [];
+        if (booksWithoutIsbn.isNotEmpty) {
+          debugPrint('Books without ISBN found (${booksWithoutIsbn.length}):');
+          for (final book in booksWithoutIsbn) {
+            debugPrint('  - ${book['title']} -> ${book['href']}');
+          }
+        }
+      } catch (e) {
+        debugPrint('Could not analyze page: $e');
+      }
+
+      // Scroll back to top
+      await _controller.runJavaScript('window.scrollTo(0, 0)');
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // Convert collected ISBNs to list for further processing
+      final List<String> isbnList = collectedIsbns.toList();
+
+      // Step 2: Detect shelf name from page
+      String? detectedShelf;
+      try {
+        const shelfDetectScript = '''
+(function() {
+  var shelfName = null;
+
+  // Try to find shelf name from page title
+  var pageTitle = document.querySelector('h1, h2, [class*="shelf-title"], [class*="page-title"], [class*="etagere"]');
+  if (pageTitle) {
+    var titleText = (pageTitle.innerText || '').trim();
+    // Skip status-based titles
+    if (!/^(j'ai( lu)?|je lis|wishlist|ma bibliothèque)\$/i.test(titleText)) {
+      if (titleText && titleText.length > 0 && titleText.length < 100) {
+        shelfName = titleText;
+      }
+    }
+  }
+
+  // Try breadcrumb for shelf name
+  if (!shelfName) {
+    var breadcrumb = document.querySelector('[class*="breadcrumb"] a:last-child, [class*="path"] span:last-child');
+    if (breadcrumb) {
+      var crumbText = (breadcrumb.innerText || '').trim();
+      if (crumbText && crumbText.length > 0 && crumbText.length < 100) {
+        shelfName = crumbText;
+      }
+    }
+  }
+
+  return shelfName || '';
+})()
+''';
+        final shelfResult = await _controller.runJavaScriptReturningResult(shelfDetectScript);
+        String shelfStr = shelfResult.toString();
+        if (shelfStr.startsWith('"')) shelfStr = shelfStr.substring(1, shelfStr.length - 1);
+        if (shelfStr.isNotEmpty) detectedShelf = shelfStr;
+      } catch (e) {
+        debugPrint('Shelf detection error: $e');
+      }
 
       if (isbnList.isEmpty) {
         _showSnackBar(
@@ -428,10 +613,34 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         return;
       }
 
-      // Create candidates
+      // Store detected shelf name
+      _detectedGleephShelf = detectedShelf;
+      debugPrint('Detected Gleeph shelf: $detectedShelf');
+
+      // Create candidates with default status (user can change in preview)
       setState(() {
-        _candidates =
-            isbnList.map((isbn) => GleephBookCandidate(isbn: isbn)).toList();
+        _candidates = isbnList.map((isbn) {
+          final candidate = GleephBookCandidate(
+            isbn: isbn,
+            gleephStatus: _selectedReadingStatus,
+            owned: _selectedOwned,
+          );
+          // Apply status mapping based on current selection
+          switch (_selectedReadingStatus) {
+            case "J'ai lu":
+              candidate.readingStatus = 'read';
+              break;
+            case "Je lis":
+              candidate.readingStatus = 'reading';
+              break;
+            case "Wishlist":
+              candidate.readingStatus = 'wanting';
+              break;
+            default:
+              candidate.readingStatus = 'to_read';
+          }
+          return candidate;
+        }).toList();
         _isExtracting = false;
         _isResolvingMetadata = true;
         _resolvedCount = 0;
@@ -457,13 +666,26 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         .map((b) => b.isbn!.replaceAll(RegExp(r'[^0-9X]'), ''))
         .toSet();
 
+    // Build a map of existing books by ISBN for quick lookup
+    final existingBooksMap = <String, Map<String, dynamic>>{};
+    for (final book in existingBooks) {
+      if (book.isbn != null) {
+        final cleanIsbn = book.isbn!.replaceAll(RegExp(r'[^0-9X]'), '');
+        existingBooksMap[cleanIsbn] = {
+          'title': book.title,
+          'author': book.author,
+          'cover_url': book.coverUrl,
+        };
+      }
+    }
+
     // Process candidates in batches of 5 for better UX
     const batchSize = 5;
     for (var i = 0; i < _candidates.length; i += batchSize) {
       final batch = _candidates.skip(i).take(batchSize).toList();
 
       await Future.wait(
-        batch.map((candidate) => _resolveSingleCandidate(api, candidate, existingIsbns)),
+        batch.map((candidate) => _resolveSingleCandidate(api, candidate, existingIsbns, existingBooksMap)),
       );
 
       if (mounted) {
@@ -471,6 +693,30 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
           _resolvedCount = (_resolvedCount + batch.length).clamp(0, _candidates.length);
         });
       }
+    }
+
+    // Load available shelves from BiblioGenius
+    try {
+      _availableShelves = await api.getTags();
+      debugPrint('Loaded ${_availableShelves.length} shelves');
+
+      // If a shelf was detected from Gleeph, check if it exists in BiblioGenius
+      if (_detectedGleephShelf != null) {
+        final matchingShelf = _availableShelves.where(
+          (s) => s.name.toLowerCase() == _detectedGleephShelf!.toLowerCase()
+        ).firstOrNull;
+
+        if (matchingShelf != null) {
+          _selectedShelfName = matchingShelf.name;
+          _createNewShelf = false;
+        } else {
+          // Suggest creating new shelf with the detected name
+          _selectedShelfName = _detectedGleephShelf;
+          _createNewShelf = true;
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to load shelves: $e');
     }
 
     if (mounted) {
@@ -486,6 +732,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
     ApiService api,
     GleephBookCandidate candidate,
     Set<String> existingIsbns,
+    Map<String, Map<String, dynamic>> existingBooksMap,
   ) async {
     try {
       // Check if already in library
@@ -494,6 +741,13 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         candidate.isAlreadyInLibrary = true;
         candidate.isSelected = false;
         candidate.isLoading = false;
+        // Fetch metadata from existing library book
+        final existingBook = existingBooksMap[cleanIsbn];
+        if (existingBook != null) {
+          candidate.title = existingBook['title'] as String?;
+          candidate.author = existingBook['author'] as String?;
+          candidate.coverUrl = existingBook['cover_url'] as String?;
+        }
         return;
       }
 
@@ -538,6 +792,23 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
 
     final api = Provider.of<ApiService>(context, listen: false);
 
+    // Create new shelf if needed
+    if (_createNewShelf && _selectedShelfName != null) {
+      try {
+        await api.createTag(_selectedShelfName!);
+        debugPrint('Created new shelf: $_selectedShelfName');
+        _createNewShelf = false; // Mark as created
+      } catch (e) {
+        debugPrint('Failed to create shelf: $e');
+        // Continue anyway - books will be imported without shelf
+      }
+    }
+
+    // Prepare subjects list for books
+    final List<String>? subjects = _selectedShelfName != null
+        ? [_selectedShelfName!]
+        : null;
+
     for (final candidate in selectedCandidates) {
       if (!mounted) break;
 
@@ -552,7 +823,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
           _importSkippedCount++;
           candidate.isAlreadyInLibrary = true;
         } else {
-          // Create the book
+          // Create the book with mapped status, rating, and shelf
           final response = await api.createBook({
             'isbn': candidate.isbn,
             'title': candidate.title,
@@ -560,8 +831,10 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
             'publisher': candidate.publisher,
             'publication_year': candidate.year,
             'cover_url': candidate.coverUrl,
-            'owned': true,
-            'reading_status': 'read', // Default for imported library
+            'owned': candidate.owned,
+            'reading_status': candidate.readingStatus ?? 'to_read',
+            if (candidate.userRating != null) 'user_rating': candidate.userRating,
+            if (subjects != null) 'subjects': subjects,
           });
 
           if (response.statusCode == 200 || response.statusCode == 201) {
@@ -690,7 +963,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
   Widget _buildWebViewScreen() {
     return Column(
       children: [
-        // Instruction banner with current URL for debug
+        // Instruction banner
         if (!_isOnLibraryPage && !_isLoadingPage && !_isExtracting)
           Container(
             width: double.infinity,
@@ -707,46 +980,42 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
                   children: [
                     const Icon(Icons.lightbulb, color: Colors.white, size: 20),
                     const SizedBox(width: 8),
-                    Expanded(
+                    const Expanded(
                       child: Text(
-                        'Connectez-vous, puis accédez à votre bibliothèque.',
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        'Comment importer depuis Gleeph :',
+                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _navigateToLibrary,
-                      icon: const Icon(Icons.library_books, size: 16),
-                      label: const Text('Ma bibliothèque'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.orange.shade700,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'ou naviguez manuellement',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11),
-                      ),
-                    ),
-                  ],
+                const Text(
+                  '1. Connectez-vous à votre compte Gleeph\n'
+                  '2. Accédez à votre bibliothèque\n'
+                  '3. Allez dans l\'étagère à importer, filtrez si besoin par statut (J\'ai lu, Je lis...)\n'
+                  '4. Cliquez sur "Extraire"',
+                  style: TextStyle(color: Colors.white, fontSize: 12, height: 1.4),
                 ),
-                if (_currentUrl != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'URL: ${_currentUrl!.length > 50 ? '...${_currentUrl!.substring(_currentUrl!.length - 50)}' : _currentUrl}',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      Icon(Icons.tips_and_updates, color: Colors.yellow.shade200, size: 16),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Astuce : Importez étagère par étagère et sélectionnez le statut correspondant dans l\'écran de prévisualisation.',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -761,15 +1030,25 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
                 colors: [Colors.green.shade400, Colors.green.shade600],
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Page bibliothèque détectée ! Cliquez sur "Extraire" quand prêt.',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Page bibliothèque détectée !',
+                        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Naviguez dans l\'étagère souhaitée puis cliquez sur "Extraire". Vous pourrez ensuite choisir le statut de lecture.',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ],
             ),
@@ -798,9 +1077,32 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Scrolling automatique pour charger tous les livres',
+                      const Text(
+                        'Clic automatique sur "Voir Plus" pour charger tous les livres',
                         style: TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.book, color: Colors.white, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$_extractionBookCount livres trouvés',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -906,6 +1208,12 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                // Status selector
+                _buildStatusSelector(),
+                const SizedBox(height: 12),
+                // Shelf selector
+                _buildShelfSelector(),
                 const SizedBox(height: 12),
                 // Select all / Deselect all
                 Row(
@@ -1245,6 +1553,35 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
                         ],
                       ),
                     ],
+                    // Display status badges
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (candidate.owned)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.inventory_2, size: 10, color: Colors.orange.shade700),
+                                const SizedBox(width: 3),
+                                Text(
+                                  "J'ai",
+                                  style: TextStyle(fontSize: 9, color: Colors.orange.shade700, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (candidate.gleephStatus != null)
+                          _buildStatusChip(candidate.gleephStatus!, candidate.readingStatus),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -1271,6 +1608,360 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
       ),
     );
   }
+
+  /// Build status selector widget with ownership toggle and reading status
+  Widget _buildStatusSelector() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.purple.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bookmark, size: 18, color: Colors.purple.shade600),
+              const SizedBox(width: 8),
+              Text(
+                'Statut des livres',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Sélectionnez le statut correspondant à la page Gleeph extraite',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.purple.shade600,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Ownership toggle (J'ai)
+          InkWell(
+            onTap: () => _updateOwnership(!_selectedOwned),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: _selectedOwned
+                    ? Colors.orange.withValues(alpha: 0.2)
+                    : Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _selectedOwned
+                      ? Colors.orange.withValues(alpha: 0.5)
+                      : Colors.grey.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _selectedOwned ? Icons.check_box : Icons.check_box_outline_blank,
+                    size: 20,
+                    color: _selectedOwned ? Colors.orange.shade700 : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "J'ai (possédé)",
+                    style: TextStyle(
+                      fontWeight: _selectedOwned ? FontWeight.w600 : FontWeight.normal,
+                      color: _selectedOwned ? Colors.orange.shade700 : Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '→ Crée une copie',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _selectedOwned ? Colors.orange.shade600 : Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Reading status selector
+          Text(
+            'Statut de lecture :',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.purple.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildReadingStatusOption("J'ai lu", Icons.check_circle, Colors.green),
+              _buildReadingStatusOption("Je lis", Icons.auto_stories, Colors.blue),
+              _buildReadingStatusOption("Wishlist", Icons.star_border, Colors.amber),
+              _buildReadingStatusOption("À lire", Icons.library_books, Colors.grey),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateOwnership(bool owned) {
+    setState(() {
+      _selectedOwned = owned;
+      // If selecting Wishlist, typically you don't own it
+      // But allow override
+      _applyStatusToAllCandidates();
+    });
+  }
+
+  Widget _buildReadingStatusOption(String label, IconData icon, Color color) {
+    final isSelected = _selectedReadingStatus == label;
+    return ChoiceChip(
+      avatar: Icon(icon, size: 16, color: isSelected ? Colors.white : color),
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: color,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : null,
+        fontWeight: isSelected ? FontWeight.bold : null,
+      ),
+      onSelected: (_) {
+        setState(() {
+          _selectedReadingStatus = label;
+          // If selecting Wishlist, suggest unchecking "J'ai"
+          if (label == "Wishlist" && _selectedOwned) {
+            _selectedOwned = false;
+          }
+          // If selecting other statuses, suggest checking "J'ai"
+          if (label != "Wishlist" && !_selectedOwned) {
+            _selectedOwned = true;
+          }
+          _applyStatusToAllCandidates();
+        });
+      },
+    );
+  }
+
+  void _applyStatusToAllCandidates() {
+    for (final candidate in _candidates) {
+      // Map reading status
+      switch (_selectedReadingStatus) {
+        case "J'ai lu":
+          candidate.readingStatus = 'read';
+          break;
+        case "Je lis":
+          candidate.readingStatus = 'reading';
+          break;
+        case "Wishlist":
+          candidate.readingStatus = 'wanting';
+          break;
+        case "À lire":
+        default:
+          candidate.readingStatus = 'to_read';
+      }
+      candidate.owned = _selectedOwned;
+      candidate.gleephStatus = _selectedReadingStatus;
+    }
+  }
+
+  /// Build shelf selector widget
+  Widget _buildShelfSelector() {
+    final hasDetectedShelf = _detectedGleephShelf != null;
+    final shelfExists = _availableShelves.any(
+      (s) => s.name.toLowerCase() == _selectedShelfName?.toLowerCase()
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.folder_special, size: 18, color: Colors.blue.shade600),
+              const SizedBox(width: 8),
+              Text(
+                'Étagère de destination',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+            ],
+          ),
+          if (hasDetectedShelf) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Étagère détectée : $_detectedGleephShelf',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // No shelf option
+              ChoiceChip(
+                label: const Text('Aucune'),
+                selected: _selectedShelfName == null,
+                onSelected: (_) {
+                  setState(() {
+                    _selectedShelfName = null;
+                    _createNewShelf = false;
+                  });
+                },
+              ),
+              // Existing shelves
+              ..._availableShelves.map((shelf) => ChoiceChip(
+                label: Text(shelf.name),
+                selected: _selectedShelfName == shelf.name && !_createNewShelf,
+                onSelected: (_) {
+                  setState(() {
+                    _selectedShelfName = shelf.name;
+                    _createNewShelf = false;
+                  });
+                },
+              )),
+              // Create new shelf option (if detected shelf doesn't exist)
+              if (hasDetectedShelf && !shelfExists)
+                ChoiceChip(
+                  avatar: const Icon(Icons.add, size: 16),
+                  label: Text('Créer "$_detectedGleephShelf"'),
+                  selected: _createNewShelf,
+                  selectedColor: Colors.green.shade100,
+                  onSelected: (_) {
+                    setState(() {
+                      _selectedShelfName = _detectedGleephShelf;
+                      _createNewShelf = true;
+                    });
+                  },
+                ),
+              // Manual new shelf option
+              ActionChip(
+                avatar: const Icon(Icons.add, size: 16),
+                label: const Text('Nouvelle...'),
+                onPressed: () => _showCreateShelfDialog(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show dialog to create a new shelf
+  Future<void> _showCreateShelfDialog() async {
+    final controller = TextEditingController(text: _detectedGleephShelf ?? '');
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nouvelle étagère'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nom de l\'étagère',
+            hintText: 'Ex: Science-Fiction',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.pop(context, name);
+              }
+            },
+            child: const Text('Créer'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      setState(() {
+        _selectedShelfName = result;
+        _createNewShelf = true;
+      });
+    }
+  }
+
+  /// Build a chip showing the Gleeph status with color coding
+  Widget _buildStatusChip(String gleephStatus, String? mappedStatus) {
+    Color chipColor;
+    IconData chipIcon;
+
+    switch (mappedStatus) {
+      case 'read':
+        chipColor = Colors.green;
+        chipIcon = Icons.check_circle;
+        break;
+      case 'reading':
+        chipColor = Colors.blue;
+        chipIcon = Icons.auto_stories;
+        break;
+      case 'wanting':
+        chipColor = Colors.purple;
+        chipIcon = Icons.bookmark_border;
+        break;
+      case 'to_read':
+      default:
+        chipColor = Colors.orange;
+        chipIcon = Icons.library_books;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: chipColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: chipColor.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(chipIcon, size: 12, color: chipColor),
+          const SizedBox(width: 4),
+          Text(
+            gleephStatus,
+            style: TextStyle(
+              fontSize: 10,
+              color: chipColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
