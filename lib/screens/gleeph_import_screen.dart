@@ -188,10 +188,9 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         setState(() {
           _currentUrl = url;
         });
-        debugPrint('Gleeph URL updated: $url');
       }
     } catch (e) {
-      debugPrint('Error getting URL: $e');
+      // Ignore URL fetch errors
     }
   }
 
@@ -244,8 +243,6 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
 
   bool get _isOnLibraryPage {
     final url = _currentUrl?.toLowerCase() ?? '';
-    // Debug: print URL to help identify patterns
-    debugPrint('Gleeph current URL: $url');
 
     // Check various URL patterns used by Gleeph
     return url.contains('/library') ||
@@ -329,7 +326,6 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
       final Set<String> collectedIsbns = {};
       int noNewBooksCount = 0;
       int scrollCount = 0;
-      int loadMoreClicks = 0;
       const maxScrolls = 200; // Safety limit for very large libraries
       const maxNoNewBooks = 8; // Stop after 8 scrolls without new books
 
@@ -429,7 +425,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         final List<dynamic> isbns = jsonDecode(cleaned);
         collectedIsbns.addAll(isbns.cast<String>());
       } catch (e) {
-        debugPrint('Initial ISBN extraction error: $e');
+        // Ignore initial extraction errors
       }
 
       // Strategy: Click "Voir Plus" button repeatedly to load all books
@@ -442,8 +438,6 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         // Try clicking "Voir Plus" button first
         final clicked = await _clickLoadMore();
         if (clicked) {
-          loadMoreClicks++;
-          debugPrint('Clicked "Voir Plus" button ($loadMoreClicks times)');
           // Wait for new content to load
           await Future.delayed(const Duration(milliseconds: 1500));
         } else {
@@ -451,15 +445,13 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
           try {
             await _controller.runJavaScript('window.scrollTo(0, document.body.scrollHeight)');
           } catch (e) {
-            debugPrint('Scroll error: $e');
+            // Ignore scroll errors
           }
           await Future.delayed(const Duration(milliseconds: 500));
 
           // Try clicking again after scrolling
           final clickedAfterScroll = await _clickLoadMore();
           if (clickedAfterScroll) {
-            loadMoreClicks++;
-            debugPrint('Clicked "Voir Plus" button after scroll ($loadMoreClicks times)');
             await Future.delayed(const Duration(milliseconds: 1500));
           }
         }
@@ -472,7 +464,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
           final List<dynamic> isbns = jsonDecode(cleaned);
           collectedIsbns.addAll(isbns.cast<String>());
         } catch (e) {
-          debugPrint('ISBN extraction error: $e');
+          // Ignore extraction errors
         }
 
         // Check if we found new books
@@ -490,70 +482,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
           setState(() {
             _extractionBookCount = collectedIsbns.length;
           });
-          debugPrint('Progress: $loadMoreClicks "Voir Plus" clicks, ${collectedIsbns.length} livres uniques trouvés');
         }
-      }
-
-      debugPrint('Extraction complete: $scrollCount iterations, $loadMoreClicks "Voir Plus" clicks, ${collectedIsbns.length} unique ISBNs found');
-
-      // Count total visible book elements and find books without ISBN
-      try {
-        const countBooksScript = '''
-(function() {
-  // Count EAN links (books with ISBN)
-  var eanLinks = document.querySelectorAll('a[href*="/ean/"]');
-  var uniqueEans = new Set();
-  for (var i = 0; i < eanLinks.length; i++) {
-    uniqueEans.add(eanLinks[i].href);
-  }
-
-  // Try to find book cards/items that might not have EAN links
-  // Look for common book card patterns
-  var bookCards = document.querySelectorAll('[class*="BookCard"], [class*="book-card"], [class*="bookCard"], [class*="book-item"], [class*="BookItem"]');
-
-  // Also count by looking at the grid/list structure
-  var gridItems = document.querySelectorAll('[class*="grid"] > div, [class*="list"] > div, [class*="books"] > div');
-
-  var result = {
-    eanLinks: uniqueEans.size,
-    bookCards: bookCards.length,
-    gridItems: gridItems.length
-  };
-
-  // Try to find books without /ean/ link
-  var booksWithoutIsbn = [];
-  var allLinks = document.querySelectorAll('a[href*="gleeph.com"]');
-  for (var i = 0; i < allLinks.length; i++) {
-    var href = allLinks[i].href;
-    // Look for book/work links that don't have /ean/
-    if ((href.includes('/work/') || href.includes('/edition/')) && !href.includes('/ean/')) {
-      var title = allLinks[i].innerText || allLinks[i].title || '';
-      if (title && title.length > 2 && title.length < 200) {
-        booksWithoutIsbn.push({href: href, title: title.substring(0, 50)});
-      }
-    }
-  }
-  result.booksWithoutIsbn = booksWithoutIsbn.slice(0, 20); // Limit to first 20
-
-  return JSON.stringify(result);
-})()
-''';
-        final countResult = await _controller.runJavaScriptReturningResult(countBooksScript);
-        String cleaned = countResult.toString();
-        if (cleaned.startsWith('"')) cleaned = cleaned.substring(1, cleaned.length - 1).replaceAll('\\"', '"');
-        final Map<String, dynamic> counts = jsonDecode(cleaned);
-        debugPrint('Page analysis: ${counts['eanLinks']} EAN links, ${counts['bookCards']} book cards, ${counts['gridItems']} grid items');
-        debugPrint('ISBNs extracted: ${collectedIsbns.length}');
-
-        final booksWithoutIsbn = counts['booksWithoutIsbn'] as List<dynamic>? ?? [];
-        if (booksWithoutIsbn.isNotEmpty) {
-          debugPrint('Books without ISBN found (${booksWithoutIsbn.length}):');
-          for (final book in booksWithoutIsbn) {
-            debugPrint('  - ${book['title']} -> ${book['href']}');
-          }
-        }
-      } catch (e) {
-        debugPrint('Could not analyze page: $e');
       }
 
       // Scroll back to top
@@ -601,7 +530,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         if (shelfStr.startsWith('"')) shelfStr = shelfStr.substring(1, shelfStr.length - 1);
         if (shelfStr.isNotEmpty) detectedShelf = shelfStr;
       } catch (e) {
-        debugPrint('Shelf detection error: $e');
+        // Ignore shelf detection errors
       }
 
       if (isbnList.isEmpty) {
@@ -615,7 +544,6 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
 
       // Store detected shelf name
       _detectedGleephShelf = detectedShelf;
-      debugPrint('Detected Gleeph shelf: $detectedShelf');
 
       // Create candidates with default status (user can change in preview)
       setState(() {
@@ -649,7 +577,6 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
       // Resolve metadata and check duplicates
       await _resolveAllMetadata();
     } catch (e) {
-      debugPrint('Extraction error: $e');
       _showSnackBar('Erreur lors de l\'extraction: $e', isError: true);
       setState(() => _isExtracting = false);
     }
@@ -698,7 +625,6 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
     // Load available shelves from BiblioGenius
     try {
       _availableShelves = await api.getTags();
-      debugPrint('Loaded ${_availableShelves.length} shelves');
 
       // If a shelf was detected from Gleeph, check if it exists in BiblioGenius
       if (_detectedGleephShelf != null) {
@@ -716,7 +642,7 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Failed to load shelves: $e');
+      // Ignore shelf loading errors
     }
 
     if (mounted) {
@@ -764,7 +690,6 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
         candidate.title = 'ISBN: ${candidate.isbn}';
       }
     } catch (e) {
-      debugPrint('Metadata lookup failed for ${candidate.isbn}: $e');
       candidate.metadataFailed = true;
       candidate.title = 'ISBN: ${candidate.isbn}';
     } finally {
@@ -796,10 +721,8 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
     if (_createNewShelf && _selectedShelfName != null) {
       try {
         await api.createTag(_selectedShelfName!);
-        debugPrint('Created new shelf: $_selectedShelfName');
         _createNewShelf = false; // Mark as created
       } catch (e) {
-        debugPrint('Failed to create shelf: $e');
         // Continue anyway - books will be imported without shelf
       }
     }
@@ -841,12 +764,10 @@ class _GleephImportScreenState extends State<GleephImportScreen> {
             _importSuccessCount++;
           } else {
             _importErrorCount++;
-            debugPrint('Import failed for ${candidate.isbn}: ${response.statusCode}');
           }
         }
       } catch (e) {
         _importErrorCount++;
-        debugPrint('Import error for ${candidate.isbn}: $e');
       }
 
       if (mounted) {

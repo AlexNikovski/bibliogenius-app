@@ -7,16 +7,16 @@ import 'dart:math' as math;
 /// Streak milestone rewards configuration
 class StreakMilestone {
   final int days;
-  final String titleKey;
-  final String descriptionKey;
+  final String title;
+  final String description;
   final IconData icon;
   final Color color;
   final List<Color> gradientColors;
 
   const StreakMilestone({
     required this.days,
-    required this.titleKey,
-    required this.descriptionKey,
+    required this.title,
+    required this.description,
     required this.icon,
     required this.color,
     required this.gradientColors,
@@ -27,56 +27,56 @@ class StreakMilestone {
 const List<StreakMilestone> streakMilestones = [
   StreakMilestone(
     days: 3,
-    titleKey: 'streak_milestone_3',
-    descriptionKey: 'streak_milestone_3_desc',
+    title: 'streak_milestone_3',
+    description: 'streak_milestone_3_desc',
     icon: Icons.local_fire_department,
     color: Color(0xFFF59E0B),
     gradientColors: [Color(0xFFF59E0B), Color(0xFFD97706)],
   ),
   StreakMilestone(
     days: 7,
-    titleKey: 'streak_milestone_7',
-    descriptionKey: 'streak_milestone_7_desc',
+    title: 'streak_milestone_7',
+    description: 'streak_milestone_7_desc',
     icon: Icons.whatshot,
     color: Color(0xFFEF4444),
     gradientColors: [Color(0xFFEF4444), Color(0xFFDC2626)],
   ),
   StreakMilestone(
     days: 14,
-    titleKey: 'streak_milestone_14',
-    descriptionKey: 'streak_milestone_14_desc',
+    title: 'streak_milestone_14',
+    description: 'streak_milestone_14_desc',
     icon: Icons.star,
     color: Color(0xFF8B5CF6),
     gradientColors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
   ),
   StreakMilestone(
     days: 30,
-    titleKey: 'streak_milestone_30',
-    descriptionKey: 'streak_milestone_30_desc',
+    title: 'streak_milestone_30',
+    description: 'streak_milestone_30_desc',
     icon: Icons.emoji_events,
     color: Color(0xFFFFD700),
     gradientColors: [Color(0xFFFFD700), Color(0xFFFFA500)],
   ),
   StreakMilestone(
     days: 60,
-    titleKey: 'streak_milestone_60',
-    descriptionKey: 'streak_milestone_60_desc',
+    title: 'streak_milestone_60',
+    description: 'streak_milestone_60_desc',
     icon: Icons.military_tech,
     color: Color(0xFFC0C0C0),
     gradientColors: [Color(0xFFE8E8E8), Color(0xFFC0C0C0)],
   ),
   StreakMilestone(
     days: 100,
-    titleKey: 'streak_milestone_100',
-    descriptionKey: 'streak_milestone_100_desc',
+    title: 'streak_milestone_100',
+    description: 'streak_milestone_100_desc',
     icon: Icons.diamond,
     color: Color(0xFF0EA5E9),
     gradientColors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
   ),
   StreakMilestone(
     days: 365,
-    titleKey: 'streak_milestone_365',
-    descriptionKey: 'streak_milestone_365_desc',
+    title: 'streak_milestone_365',
+    description: 'streak_milestone_365_desc',
     icon: Icons.auto_awesome,
     color: Color(0xFFEC4899),
     gradientColors: [Color(0xFFEC4899), Color(0xFFDB2777)],
@@ -390,7 +390,7 @@ class _MilestoneCelebrationSheetState extends State<_MilestoneCelebrationSheet>
                 const SizedBox(height: 24),
                 // Title
                 Text(
-                  TranslationService.translate(context, widget.milestone.titleKey),
+                  TranslationService.translate(context, widget.milestone.title),
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -417,7 +417,7 @@ class _MilestoneCelebrationSheetState extends State<_MilestoneCelebrationSheet>
                 const SizedBox(height: 16),
                 // Description
                 Text(
-                  TranslationService.translate(context, widget.milestone.descriptionKey),
+                  TranslationService.translate(context, widget.milestone.description),
                   style: TextStyle(
                     fontSize: 15,
                     color: Colors.grey[600],
