@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../theme/app_design.dart';
 import '../providers/theme_provider.dart';
 
@@ -656,8 +657,12 @@ class _MigrationWizardScreenState extends State<MigrationWizardScreen> {
     try {
       setState(() => _isProcessing = true);
       final apiService = Provider.of<ApiService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
       await apiService.resetApp();
+      await authService.clearAll(); // Clear all auth data
+      await themeProvider.resetSetup(); // Reset setup state
 
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -667,8 +672,8 @@ class _MigrationWizardScreenState extends State<MigrationWizardScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        // Navigate to home after full reset
-        context.go('/');
+        // Navigate to setup screen after full reset
+        context.go('/setup');
       }
     } catch (e) {
       if (mounted) {

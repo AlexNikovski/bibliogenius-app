@@ -181,6 +181,9 @@ class _LibraryScreenState extends State<LibraryScreen>
             CollectionListScreen(
               key: ValueKey('collections_$_collectionsRefreshKey'),
               isTabView: true,
+              onImportSuccess: () {
+                _refreshNotifier.value++;
+              },
             ),
         ],
       ),
@@ -247,8 +250,9 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
             );
             if (result == true && mounted) {
+              _refreshNotifier.value++; // Refresh book list
               setState(() {
-                _collectionsRefreshKey++;
+                _collectionsRefreshKey++; // Refresh collections list
               });
             }
           },
@@ -268,8 +272,9 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
             );
             if (result == true && mounted) {
+              _refreshNotifier.value++; // Refresh book list
               setState(() {
-                _collectionsRefreshKey++;
+                _collectionsRefreshKey++; // Refresh collections list
               });
             }
           },

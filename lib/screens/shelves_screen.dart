@@ -520,6 +520,189 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
     );
   }
 
+    // Methods for editing and deleting shelves
+
+  void _showEditShelfDialog(Tag tag) {
+    final controller = TextEditingController(text: tag.name);
+    final formKey = GlobalKey<FormState>();
+    // Find the parent tag object from the list of all tags
+    Tag? selectedParent;
+    if (tag.parentId != null) {
+      try {
+        selectedParent = _allTags.firstWhere((t) => t.id == tag.parentId);
+      } catch (e) {
+        // Parent not found, can happen if tags are out of sync
+        selectedParent = null;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(TranslationService.translate(context, 'edit_shelf') ?? 'Edit Shelf'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: controller,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: TranslationService.translate(context, 'shelf_name') ?? 'Shelf Name',
+                        border: const OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return TranslationService.translate(context, 'field_required') ?? 'This field is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (AppConstants.enableHierarchicalTags && _allTags.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<Tag?>(
+                        value: selectedParent,
+                        decoration: InputDecoration(
+                          labelText: TranslationService.translate(context, 'parent_shelf') ?? 'Parent Shelf (optional)',
+                          border: const OutlineInputBorder(),
+                        ),
+                        isExpanded: true,
+                        items: [
+                          DropdownMenuItem<Tag?>(
+                            value: null,
+                            child: Text(
+                              TranslationService.translate(context, 'none') ?? 'None (root level)',
+                              style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                          // Exclude the current tag and its children from being a parent
+                          ..._allTags.where((t) => t.id != tag.id).map((t) => DropdownMenuItem<Tag?>(
+                            value: t,
+                            child: Text(t.name),
+                          )),
+                        ],
+                        onChanged: (Tag? value) {
+                          setDialogState(() {
+                            selectedParent = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.pop(context);
+                      await _updateShelf(
+                        tag.id,
+                        controller.text.trim(),
+                        parentId: selectedParent?.id,
+                      );
+                    }
+                  },
+                  child: Text(TranslationService.translate(context, 'update') ?? 'Update'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _updateShelf(int id, String name, {int? parentId}) async {
+    try {
+      final api = Provider.of<ApiService>(context, listen: false);
+      await api.updateTag(id, name, parentId: parentId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(TranslationService.translate(context, 'shelf_updated') ?? 'Shelf updated'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _refreshTags();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _showDeleteConfirmDialog(Tag tag) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(TranslationService.translate(context, 'delete_shelf') ?? 'Delete Shelf'),
+          content: Text(
+            (TranslationService.translate(context, 'delete_shelf_confirm') ?? 'Are you sure you want to delete the shelf "%s"? This action cannot be undone.')
+                .replaceAll('%s', tag.name),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(TranslationService.translate(context, 'cancel') ?? 'Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: Text(
+                TranslationService.translate(context, 'delete') ?? 'Delete',
+                style: const TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteShelf(tag);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteShelf(Tag tag) async {
+    try {
+      final api = Provider.of<ApiService>(context, listen: false);
+      await api.deleteTag(tag.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              (TranslationService.translate(context, 'shelf_deleted') ?? 'Shelf "%s" deleted.')
+                  .replaceAll('%s', tag.name),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _refreshTags();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Widget _buildShelfCard(BuildContext context, Tag tag, int index) {
     final themeStyle = Provider.of<ThemeProvider>(
       context,
@@ -590,6 +773,40 @@ class _ShelvesScreenState extends State<ShelvesScreen> {
                   color: Colors.white.withValues(alpha: 0.1),
                 ),
               ),
+
+              // Edit/delete menu
+              Positioned(
+                top: 8,
+                right: 8,
+                child: PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showEditShelfDialog(tag);
+                    } else if (value == 'delete') {
+                      _showDeleteConfirmDialog(tag);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    PopupMenuItem<String>(
+                      value: 'edit',
+                      child: ListTile(
+                        leading: const Icon(Icons.edit),
+                        title: Text(TranslationService.translate(context, 'edit_shelf') ?? 'Edit'),
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: const Icon(Icons.delete),
+                        title: Text(TranslationService.translate(context, 'delete_shelf') ?? 'Delete'),
+                      ),
+                    ),
+                  ],
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+              ),
+
               // Content
               Padding(
                 padding: const EdgeInsets.all(20),

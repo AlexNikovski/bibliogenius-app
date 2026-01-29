@@ -11,8 +11,9 @@ import '../../widgets/contextual_help_sheet.dart';
 
 class CollectionListScreen extends StatefulWidget {
   final bool isTabView;
+  final VoidCallback? onImportSuccess;
 
-  const CollectionListScreen({super.key, this.isTabView = false});
+  const CollectionListScreen({super.key, this.isTabView = false, this.onImportSuccess});
 
   @override
   State<CollectionListScreen> createState() => _CollectionListScreenState();
@@ -145,6 +146,7 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
               );
               if (result == true) {
                 _refreshCollections();
+                widget.onImportSuccess?.call();
               }
             },
           ),
@@ -162,6 +164,7 @@ class _CollectionListScreenState extends State<CollectionListScreen> {
               );
               if (result == true) {
                 _refreshCollections();
+                widget.onImportSuccess?.call();
               }
             },
           ),

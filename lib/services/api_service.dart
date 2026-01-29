@@ -1918,7 +1918,8 @@ class ApiService {
       final ownIdx = headers.indexWhere((h) => h == 'own');
       final readingIdx = headers.indexWhere((h) => h == 'reading');
       final readIdx = headers.indexWhere((h) => h == 'read');
-      // Note: favorite and shelves columns are parsed but not yet used
+      final shelvesIdx = headers.indexWhere((h) => h == 'shelves');
+      // Note: favorite column is parsed but not yet used
 
       if (titleIdx == -1) {
         return Response(
@@ -1929,6 +1930,57 @@ class ApiService {
                 'Title column not found. Expected "book_title" or "Title" column.',
           },
         );
+      }
+
+      // Collect unique shelf names from all rows
+      final Set<String> uniqueShelves = {};
+      if (shelvesIdx >= 0) {
+        for (int i = 1; i < sheet.rows.length; i++) {
+          final row = sheet.rows[i];
+          if (row.isEmpty || shelvesIdx >= row.length) continue;
+          final cell = row[shelvesIdx];
+          if (cell?.value != null) {
+            final cellValue = cell!.value;
+            String shelfName;
+            if (cellValue is xlsx.TextCellValue) {
+              shelfName = cellValue.value.text ?? '';
+            } else {
+              shelfName = cellValue.toString();
+            }
+            shelfName = shelfName.trim();
+            if (shelfName.isNotEmpty && shelfName != 'null') {
+              uniqueShelves.add(shelfName);
+            }
+          }
+        }
+      }
+
+      // Get existing shelves and create missing ones
+      final Set<String> existingShelfNames = {};
+      int shelvesCreated = 0;
+      if (uniqueShelves.isNotEmpty) {
+        try {
+          final existingTags = await FfiService().getTags();
+          for (final tag in existingTags) {
+            existingShelfNames.add(tag.name.toLowerCase());
+          }
+
+          // Create shelves that don't exist
+          for (final shelfName in uniqueShelves) {
+            if (!existingShelfNames.contains(shelfName.toLowerCase())) {
+              try {
+                await FfiService().createTag(shelfName);
+                existingShelfNames.add(shelfName.toLowerCase());
+                shelvesCreated++;
+                debugPrint('Created shelf: $shelfName');
+              } catch (e) {
+                debugPrint('Error creating shelf "$shelfName": $e');
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('Error fetching/creating shelves: $e');
+        }
       }
 
       int imported = 0;
@@ -1974,7 +2026,12 @@ class ApiService {
             if (cellValue is xlsx.IntCellValue) return cellValue.value == 1;
             if (cellValue is xlsx.DoubleCellValue) return cellValue.value == 1.0;
             final strValue = cellValue.toString().toLowerCase().trim();
-            return strValue == 'true' || strValue == '1' || strValue == 'yes';
+            // Support English and French boolean values
+            return strValue == 'true' ||
+                strValue == 'vrai' ||
+                strValue == '1' ||
+                strValue == 'yes' ||
+                strValue == 'oui';
           }
 
           final title = getCellValue(titleIdx);
@@ -1986,41 +2043,83 @@ class ApiService {
           // Parse ISBN - may be in scientific notation (e.g., 9.782253140191E12)
           String? isbn = getCellValue(isbnIdx);
           if (isbn != null && isbn.isNotEmpty) {
-            // Handle scientific notation
-            if (isbn.contains('E') || isbn.contains('e')) {
+            var isbnValue = isbn;
+            // Handle scientific notation (e.g., 9.782253140191E12)
+            if (isbnValue.contains('E') || isbnValue.contains('e')) {
               try {
-                final numValue = double.parse(isbn);
-                isbn = numValue.toStringAsFixed(0);
+                final numValue = double.parse(isbnValue);
+                isbnValue = numValue.toStringAsFixed(0);
               } catch (_) {
                 // Keep original value if parsing fails
               }
             }
-            // Remove any non-digit characters except X (for ISBN-10)
-            if (isbn != null) {
-              isbn = isbn.replaceAll(RegExp(r'[^\dXx]'), '');
-              if (isbn.isEmpty) isbn = null;
+            // Handle decimal format (e.g., 9782253140191.0 → 9782253140191)
+            if (isbnValue.contains('.')) {
+              try {
+                final numValue = double.parse(isbnValue);
+                isbnValue = numValue.toStringAsFixed(0);
+              } catch (_) {
+                // Remove decimal part manually
+                isbnValue = isbnValue.split('.').first;
+              }
             }
+            // Remove any non-digit characters except X (for ISBN-10)
+            isbnValue = isbnValue.replaceAll(RegExp(r'[^\dXx]'), '');
+            isbn = isbnValue.isEmpty ? null : isbnValue;
           }
 
           // Determine reading status based on Gleeph flags
-          String? readingStatus;
-          if (getBoolValue(readIdx)) {
+          // Priority: wish (wanting) > read > reading > to_read
+          String readingStatus;
+          final isWish = getBoolValue(wishIdx);
+          final isOwn = getBoolValue(ownIdx);
+          final isReading = getBoolValue(readingIdx);
+          final isRead = getBoolValue(readIdx);
+
+          if (isWish) {
+            // Wishlist: book is wanted but not necessarily owned
+            readingStatus = 'wanting';
+          } else if (isRead) {
             readingStatus = 'read';
-          } else if (getBoolValue(readingIdx)) {
+          } else if (isReading) {
             readingStatus = 'reading';
-          } else if (getBoolValue(wishIdx)) {
+          } else {
             readingStatus = 'to_read';
           }
 
-          // Determine if owned (Gleeph "J'ai" option)
-          final owned = getBoolValue(ownIdx);
+          // Determine if owned:
+          // Gleeph export has own=false for ALL books (export bug/limitation)
+          // So we deduce ownership from context:
+          // - wish=true → wishlist item → not owned
+          // - wish=false → book in library → owned (default assumption)
+          // - If own column is explicitly true, respect it
+          final owned = isOwn || (!isWish);
 
-          // Create the book
+          // Get shelf name for this book
+          String? shelfName;
+          if (shelvesIdx >= 0 && shelvesIdx < row.length) {
+            final shelfCell = row[shelvesIdx];
+            if (shelfCell?.value != null) {
+              final cellValue = shelfCell!.value;
+              if (cellValue is xlsx.TextCellValue) {
+                shelfName = cellValue.value.text ?? '';
+              } else {
+                shelfName = cellValue.toString();
+              }
+              shelfName = shelfName.trim();
+              if (shelfName.isEmpty || shelfName == 'null') {
+                shelfName = null;
+              }
+            }
+          }
+
+          // Create the book with shelf as subject
           final book = frb.FrbBook(
             title: title,
             isbn: isbn,
             readingStatus: readingStatus,
             owned: owned,
+            subjects: shelfName != null ? jsonEncode([shelfName]) : null,
           );
 
           await FfiService().createBook(book);
@@ -2037,7 +2136,10 @@ class ApiService {
         data: {
           'imported': imported,
           'skipped': skipped,
-          'message': 'XLSX import successful',
+          'shelves_created': shelvesCreated,
+          'message': shelvesCreated > 0
+              ? 'XLSX import successful ($shelvesCreated shelves created)'
+              : 'XLSX import successful',
         },
       );
     } catch (e) {
